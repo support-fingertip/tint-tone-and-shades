@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="margin_threshold_config_list" model="ir.ui.view">
+        <field name="name">margin.threshold.config.list</field>
+        <field name="model">margin.threshold.config</field>
+        <field name="arch" type="xml">
+            <list string="Margin Thresholds" editable="bottom">
+                <field name="category_id"/>
+                <field name="minimum_margin"/>
+                <field name="approver_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="margin_threshold_config_form" model="ir.ui.view">
+        <field name="name">margin.threshold.config.form</field>
+        <field name="model">margin.threshold.config</field>
+        <field name="arch" type="xml">
+            <form string="Margin Threshold">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="category_id"/>
+                            <field name="minimum_margin"/>
+                        </group>
+                        <group>
+                            <field name="approver_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_margin_threshold_config" model="ir.actions.act_window">
+        <field name="name">Margin Thresholds</field>
+        <field name="res_model">margin.threshold.config</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menu under Purchase > Configuration -->
+    <menuitem
+        id="menu_margin_threshold_config"
+        name="Margin Thresholds"
+        parent="purchase.menu_purchase_config"
+        action="action_margin_threshold_config"
+        sequence="20"/>
+</odoo>

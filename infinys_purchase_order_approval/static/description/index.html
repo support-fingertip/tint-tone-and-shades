@@ -1,0 +1,565 @@
+<div
+  style="
+    max-width: 1140px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 12px;
+    padding-right: 12px;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+  "
+>
+  <hr style="margin-top: 1.5rem; margin-bottom: 1.5rem" />
+  <section
+    style="
+      background-color: #f6f6f6;
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      margin-bottom: 3rem;
+    "
+  >
+    <div style="display: flex; flex-wrap: wrap; justify-content: center">
+      <div style="flex: 0 0 100%; max-width: 100%; text-align: center">
+        <a href="https://www.infinyscloud.com/" target="_blank">
+          <h2 style="font-size: 35px; color: #0b0025; font-weight: 700">
+            Infinys Purchase Order Approval
+          </h2>
+        </a>
+      </div>
+    </div>
+  </section>
+  <section style="display: flex; flex-wrap: wrap; justify-content: center">
+    <div style="width: 100%;">
+      <div
+        style="
+          padding: 8px;
+          border: 1px solid rgba(0, 0, 0, 0.125);
+          border-radius: 0.25rem;
+          background-color: #cff4fc;
+          color: #055160;
+          text-align: center;
+        "
+      >
+        <i class="fa fa-info-circle"></i> <b>About the Module</b>
+      </div>
+      <p style="font-size: 0.875rem">
+        This module introduces a dynamic, multi-level approval workflow for
+        purchase orders, significantly enhancing control and oversight over your
+        procurement processes within Odoo. It provides a robust framework to
+        ensure that purchase orders are reviewed and approved by the appropriate
+        person based on their value.
+      </p>
+    </div>
+  </section>
+  <section style="display: flex; flex-wrap: wrap; justify-content: center; margin-top: 1.5rem;">
+    <div style="width: 100%;">
+      <div
+        style="
+          padding: 8px;
+          border: 1px solid rgba(0, 0, 0, 0.125);
+          border-radius: 0.25rem;
+          background-color: #cff4fc;
+          color: #055160;
+          text-align: center;
+        "
+      >
+        <i class="fa fa-star"></i> <b>Key Features</b>
+      </div>
+      <ul>
+        <li>Define multiple approval tiers with specific amount thresholds.</li>
+        <li>
+          Assign specific users that responsible for approving orders at each
+          level.
+        </li>
+        <li>
+          Purchase orders automatically enter the approval workflow if their
+          total amount falls within configured thresholds.
+        </li>
+        <li>
+          A dedicated menu item provides users with a centralized view of all
+          purchase orders awaiting their approval.
+        </li>
+        <li>
+          Visual cues in the purchase order list view provide immediate insight
+          into the approval status of each order.
+        </li>
+        <li>
+          Email notifications are automatically sent to the next approver, to
+          the creator when fully approved, and daily reminders for pending
+          approvals.
+        </li>
+      </ul>
+    </div>
+  </section>
+  <section style="display: flex; flex-wrap: wrap; justify-content: center">
+    <div style="text-align: center;">
+      <p style="padding: 1.5rem">
+        <img
+          alt="Infinys Purchase Order Approval"
+          src="approval_img1.png"
+          style="width: 100%"
+        />
+      </p>
+    </div>
+  </section>
+  <section
+    style="
+      background-color: #f6f6f6;
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      margin-top: 3rem;
+    "
+  >
+    <div style="display: flex; flex-wrap: wrap; justify-content: center">
+      <div style="flex: 0 0 100%; max-width: 100%; text-align: center">
+        <h4
+          style="
+            font-size: 35px;
+            color: #0b0025;
+            font-weight: 700;
+            margin-top: 8px;
+            margin-bottom: 8px;
+          "
+        >
+          Activate Module
+        </h4>
+        <p style="padding: 1.5rem">
+          <img
+            alt="Infinys Purchase Order Approval"
+            src="approval_img2.png"
+            style="width: 70%"
+          />
+        </p>
+      </div>
+    </div>
+  </section>
+  <section
+    style="
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      margin-top: 3rem;
+    "
+  >
+    <div style="display: flex; flex-wrap: wrap; justify-content: center">
+      <div style="flex: 0 0 100%; max-width: 100%; text-align: center">
+        <h4
+          style="
+            font-size: 35px;
+            color: #000000;
+            font-weight: 700;
+            margin-top: 8px;
+            margin-bottom: 8px;
+          "
+        >
+          Approval Levels Submenu
+        </h4>
+        <p style="padding: 1.5rem">
+          <img
+            alt="Infinys Purchase Order Approval"
+            src="approval_img3.png"
+            style="width: 70%"
+          />
+        </p>
+      </div>
+    </div>
+  </section>
+  <section
+    style="
+      background-color: #f6f6f6;
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      margin-top: 3rem;
+    "
+  >
+    <div style="display: flex; flex-wrap: wrap; justify-content: center">
+      <div style="flex: 0 0 100%; max-width: 100%; text-align: center">
+        <h4
+          style="
+            font-size: 35px;
+            color: #0b0025;
+            font-weight: 700;
+            margin-top: 8px;
+            margin-bottom: 8px;
+          "
+        >
+          Approval Levels List View
+        </h4>
+        <p style="padding: 1.5rem">
+          <img
+            alt="Infinys Purchase Order Approval"
+            src="approval_img4.png"
+            style="width: 70%"
+          />
+        </p>
+      </div>
+    </div>
+  </section>
+  <section
+    style="
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      margin-top: 3rem;
+    "
+  >
+    <div style="display: flex; flex-wrap: wrap; justify-content: center">
+      <div style="flex: 0 0 100%; max-width: 100%; text-align: center">
+        <h4
+          style="
+            font-size: 35px;
+            color: #0b0025;
+            font-weight: 700;
+            margin-top: 8px;
+            margin-bottom: 8px;
+          "
+        >
+          Approval Levels Form View
+        </h4>
+        <p style="padding: 1.5rem">
+          <img
+            alt="Infinys Purchase Order Approval"
+            src="approval_img5.png"
+            style="width: 70%"
+          />
+        </p>
+      </div>
+    </div>
+  </section>
+  <section
+    style="
+      background-color: #f6f6f6;
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      margin-top: 3rem;
+    "
+  >
+    <div style="display: flex; flex-wrap: wrap; justify-content: center">
+      <div style="flex: 0 0 100%; max-width: 100%; text-align: center">
+        <h4
+          style="
+            font-size: 35px;
+            color: #000000;
+            font-weight: 700;
+            margin-top: 8px;
+            margin-bottom: 8px;
+          "
+        >
+          RFQ List View
+        </h4>
+        <p style="padding: 1.5rem">
+          <img
+            alt="Infinys Purchase Order Approval"
+            src="approval_img6.png"
+            style="width: 70%"
+          />
+        </p>
+      </div>
+    </div>
+  </section>
+  <section
+    style="
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      margin-top: 3rem;
+    "
+  >
+    <div style="display: flex; flex-wrap: wrap; justify-content: center">
+      <div style="flex: 0 0 100%; max-width: 100%; text-align: center">
+        <h4
+          style="
+            font-size: 35px;
+            color: #0b0025;
+            font-weight: 700;
+            margin-top: 8px;
+            margin-bottom: 8px;
+          "
+        >
+          RFQ Form View
+        </h4>
+        <p style="padding: 1.5rem">
+          <img
+            alt="Infinys Purchase Order Approval"
+            src="approval_img7.png"
+            style="width: 70%"
+          />
+        </p>
+      </div>
+    </div>
+  </section>
+  <section
+    style="
+      background-color: #f6f6f6;
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      margin-top: 3rem;
+    "
+  >
+    <div style="display: flex; flex-wrap: wrap; justify-content: center">
+      <div style="flex: 0 0 100%; max-width: 100%; text-align: center">
+        <h4
+          style="
+            font-size: 35px;
+            color: #000000;
+            font-weight: 700;
+            margin-top: 8px;
+            margin-bottom: 8px;
+          "
+        >
+          Purchase Order Activity List View
+        </h4>
+        <p style="padding: 1.5rem">
+          <img
+            alt="Infinys Purchase Order Approval"
+            src="approval_img8.png"
+            style="width: 70%"
+          />
+        </p>
+      </div>
+    </div>
+  </section>
+  <section
+    style="
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      margin-top: 3rem;
+    "
+  >
+    <div style="display: flex; flex-wrap: wrap; justify-content: center">
+      <div style="flex: 0 0 100%; max-width: 100%; text-align: center">
+        <h4
+          style="
+            font-size: 35px;
+            color: #0b0025;
+            font-weight: 700;
+            margin-top: 8px;
+            margin-bottom: 8px;
+          "
+        >
+          My Approvals Submenu
+        </h4>
+        <p style="padding: 1.5rem">
+          <img
+            alt="Infinys Purchase Order Approval"
+            src="approval_img9.png"
+            style="width: 70%"
+          />
+        </p>
+      </div>
+    </div>
+  </section>
+  <section
+    style="
+      background-color: #f6f6f6;
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      margin-top: 3rem;
+    "
+  >
+    <div style="display: flex; flex-wrap: wrap; justify-content: center">
+      <div style="flex: 0 0 100%; max-width: 100%; text-align: center">
+        <h4
+          style="
+            font-size: 35px;
+            color: #000000;
+            font-weight: 700;
+            margin-top: 8px;
+            margin-bottom: 8px;
+          "
+        >
+          My Approvals List View
+        </h4>
+        <p style="padding: 1.5rem">
+          <img
+            alt="Infinys Purchase Order Approval"
+            src="approval_img10.png"
+            style="width: 70%"
+          />
+        </p>
+      </div>
+    </div>
+  </section>
+  <section
+    style="
+      background-color: #ffffff;
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      margin-top: 0.5rem;
+    "
+  >
+    <div style="display: flex; flex-wrap: wrap; justify-content: center">
+      <div style="flex: 0 0 100%; max-width: 100%; text-align: center">
+        <a href="https://www.infinyscloud.com/" target="_blank">
+          <h2
+            style="
+              font-size: 35px;
+              color: #000000;
+              font-weight: 700;
+              margin-top: 8px;
+            "
+          >
+            ABOUT INFINYS
+          </h2>
+        </a>
+      </div>
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 3rem;
+      "
+    >
+      <div style="text-align: center;">
+        <p>
+          Infinyscloud is a trusted leader in Indonesia's cloud computing
+          industry, delivering secure, scalable, and reliable cloud solutions
+          that help businesses grow and stay competitive. With comprehensive
+          services covering cloud consulting, strategy, migration, and
+          optimization, we guide businesses through every step of their cloud
+          journey making adoption smooth and effective.
+          <br /><br />
+          Our commitment to innovation and quality is reflected in our ISO
+          certifications and strong partnerships with global platforms like AWS
+          and Odoo. Known for our responsive customer service and deep expertise
+          in cloud technologies, Infinyscloud is here to support your business
+          with solutions you can depend on.
+          <br /><br />
+          Infinys System Indonesia is an Odoo Partner, a company that has been
+          officially recognized by Odoo to sell, implement, consult, and provide
+          technical support related to the use of Odoo. Odoo has a strict
+          partnership system to ensure that its partners are able to provide
+          high-quality services in accordance with Odoo's global standards.
+          These partners also have access to exclusive resources, training, and
+          support from Odoo to ensure the success of implementations in every
+          project. Since we also operate in the field of cloud computing, we
+          also provide Odoo Cloud Hosting services.
+        </p>
+      </div>
+    </div>
+  </section>
+  <section
+    style="
+      background-color: #ffffff;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+    "
+  >
+    <div
+      style="
+        max-width: 1140px;
+        margin: 0 auto;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        align-items: center;
+      "
+    >
+      <p
+        style="
+          font-size: 36px;
+          font-weight: 700;
+          color: #0b0025;
+          margin-bottom: 2rem;
+          text-align: center;
+        "
+      >
+        Try the Module :
+      </p>
+
+      <p style="font-size: 1.25rem; margin-bottom: 0.5rem; text-align: center">
+        Website:
+        <a
+          href="https://odoo-ce.atisicloud.com"
+          target="_blank"
+          style="color: #055160; font-weight: 700; text-decoration: underline"
+        >
+          https://odoo-ce.atisicloud.com
+        </a>
+      </p>
+
+      <p style="font-size: 1.25rem; margin-bottom: 0.5rem; text-align: center">
+        User: <span style="font-weight: 700">odoo-trial@isi.co.id</span>
+      </p>
+
+      <p style="font-size: 1.25rem; margin-bottom: 0; text-align: center">
+        Password: <span style="font-weight: 700">odoo-trial</span>
+      </p>
+    </div>
+  </section>
+  <section
+    style="
+      background-color: #f6f6f6;
+      width: 100%;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      margin-top: 3rem;
+    "
+  >
+    <div style="display: flex; flex-wrap: wrap; justify-content: center">
+      <div style="flex: 0 0 100%; max-width: 100%; text-align: center">
+        <h3
+          style="
+            font-size: 35px;
+            color: #0b0025;
+            font-weight: 700;
+            margin-top: 8px;
+            margin-bottom: 8px;
+          "
+        >
+          Help and Support
+        </h3>
+        <div class="oe_slogan">
+          <a
+            href="mailto:sales@isi.co.id"
+            style="
+              font-size: 1.25rem;
+              padding: 0.5rem 8px;
+              display: inline-block;
+              border-radius: 0.25rem;
+              text-decoration: none;
+              cursor: pointer;
+              background-color: #714b67;
+              color: #fff;
+            "
+          >
+            <i class="fa fa-envelope"></i> Contact Support
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

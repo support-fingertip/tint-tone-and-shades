@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+<!--    Inherit Purchase Order-->
+    <record id="view_purchase_order_form_inherit" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit.create.bill</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_rfq_send']" position="after">
+                <button name="%(tk_purchase_advance_payment.purchase_advance_payment_action)d"
+                        type="action"
+                        class="btn-primary"
+                        string="Create Bill"
+                        invisible="state != 'purchase'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

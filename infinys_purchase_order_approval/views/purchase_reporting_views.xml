@@ -1,0 +1,46 @@
+<odoo>
+  <data>
+
+    <record id="action_purchase_order_my_approval" model="ir.actions.act_window">
+      <field name="name">My Approvals</field>
+      <field name="res_model">purchase.order</field>
+      <field name="view_mode">list,form</field>
+      <field name="domain">[
+        '|',
+          '&amp;',
+            '&amp;',
+              ('state', '=', 'to approve'),
+              ('approval_line_ids.status', '=', 'current'),
+            ('approval_line_ids.user_ids', 'in', [uid]),
+          '|',
+            ('approval_line_ids.approved_by_user_id', '=', uid),
+            ('approval_line_ids.rejected_by_user_id', '=', uid)
+      ]</field>
+      <field name="context">{'create': false, 'search_default_my_pending_approvals': 1}</field>
+      <field name="target">current</field>
+    </record>
+
+    <record id="view_purchase_order_filter_inherit_approval" model="ir.ui.view">
+      <field name="name">purchase.order.select.inherit.approval</field>
+      <field name="model">purchase.order</field>
+      <field name="inherit_id" ref="purchase.view_purchase_order_filter"/>
+      <field name="arch" type="xml">
+        <xpath expr="//filter[@name='my_purchases']" position="after">
+          <separator/>
+          <filter string="Pending My Approval" name="my_pending_approvals"
+                  domain="[('state', '=', 'to approve'), ('approval_line_ids.status', '=', 'current'), ('approval_line_ids.user_ids', 'in', [uid])]"/>
+          <filter string="My History" name="my_approval_history"
+                  domain="['|', ('approval_line_ids.approved_by_user_id', '=', uid), ('approval_line_ids.rejected_by_user_id', '=', uid)]"/>
+        </xpath>
+      </field>
+    </record>
+
+    <menuitem 
+      id="menu_purchase_my_approval" 
+      name="My Approvals" 
+      parent="purchase.purchase_report_main"
+      action="action_purchase_order_my_approval"
+      sequence="100"/>
+      
+  </data>
+</odoo>

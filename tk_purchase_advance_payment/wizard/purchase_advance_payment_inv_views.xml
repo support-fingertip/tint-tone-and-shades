@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <!--      Views-->
+        <record id="view_purchase_advance_payment_inv_inherit" model="ir.ui.view">
+            <field name="name">view.purchase.advance.payment.inv.inherit</field>
+            <field name="model">purchase.advance.payment.inv</field>
+            <field name="arch" type="xml">
+                <form>
+                 <field name="invoice_status_message" widget="html" readonly="1"/>
+                    <i>
+                        <field name="invoice_draft_message" readonly="1" nolabel="1"
+                               style="color: #787775; white-space: nowrap;"/>
+                    </i>
+                    <group>
+                        <group>
+                            <field name="advance_payment_method" widget="radio"/>
+                            <label for="amount" string="Down Payment Percentage"
+                                   invisible="advance_payment_method != 'percentage'"/>
+                            <label for="fixed_amount" string="Down Payment Amount"
+                                   invisible="advance_payment_method != 'fixed'"/>
+                            <div id="payment_method_details">
+                                <field name="currency_id" invisible="1"/>
+                                <field name="fixed_amount"
+                                       invisible="advance_payment_method != 'fixed'"
+                                       required="advance_payment_method == 'fixed'"
+                                       widget="monetary"
+                                       class="oe_inline"/>
+                                <field name="amount"
+                                       invisible="advance_payment_method != 'percentage'"
+                                       required="advance_payment_method == 'percentage'"
+                                       class="oe_inline"/>
+                                <span invisible="advance_payment_method != 'percentage'"
+                                      class="oe_inline">%
+                                </span>
+                            </div>
+                        </group>
+                        <footer>
+                            <button name="action_create_purchase_advance_payment" type="object"
+                                    string="Create and View Bill"
+                                    class="btn-primary"/>
+                            <button special="cancel" string="Cancel" type="object" class="oe_highlight"/>
+                        </footer>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <!--        actions-->
+        <record id="purchase_advance_payment_action" model="ir.actions.act_window">
+            <field name="name">Create Bill</field>
+            <field name="res_model">purchase.advance.payment.inv</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+    </data>
+</odoo>
