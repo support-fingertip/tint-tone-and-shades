@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════
+         BOQ MANAGEMENT — Application Menu (Odoo 19 Enterprise)
+    ══════════════════════════════════════════════════════ -->
+
+    <!-- Root app menu -->
+    <menuitem id="menu_boq_root"
+              name="BOQ"
+              sequence="85"
+              web_icon="boq_management_v19,static/src/img/boq_icon.png"
+              groups="boq_management_v19.group_boq_user"/>
+
+    <!-- ── Dashboard — placed BEFORE the BOQ list section (sequence 5 < 10) ── -->
+    <!-- Task 4: Dashboard sits next to / before BOQ, NOT inside Purchase > RFQ -->
+    <menuitem id="menu_boq_dashboard"
+              name="Dashboard"
+              parent="menu_boq_root"
+              action="action_boq_dashboard"
+              sequence="5"
+              groups="boq_management_v19.group_boq_user"/>
+
+    <!-- ── Main section ── -->
+    <menuitem id="menu_boq_main"
+              name="BOQ"
+              parent="menu_boq_root"
+              sequence="10"/>
+
+    <menuitem id="menu_boq_all"
+              name="All BOQs"
+              parent="menu_boq_main"
+              action="action_boq_boq"
+              sequence="10"/>
+
+    <menuitem id="menu_boq_my"
+              name="My BOQs"
+              parent="menu_boq_main"
+              action="action_boq_boq"
+              sequence="20"/>
+
+    <!-- ── Reporting section ── -->
+    <menuitem id="menu_boq_report"
+              name="Reporting"
+              parent="menu_boq_root"
+              sequence="50"
+              groups="boq_management_v19.group_boq_manager"/>
+
+    <menuitem id="menu_boq_rfq_list"
+              name="RFQs from BOQ"
+              parent="menu_boq_report"
+              action="action_boq_rfq_list"
+              sequence="10"
+              groups="boq_management_v19.group_boq_manager"/>
+
+    <menuitem id="menu_boq_vendor_list"
+              name="Vendors"
+              parent="menu_boq_report"
+              action="action_boq_vendor_list"
+              sequence="20"
+              groups="boq_management_v19.group_boq_manager"/>
+
+    <!-- ── Configuration section ── -->
+    <menuitem id="menu_boq_config"
+              name="Configuration"
+              parent="menu_boq_root"
+              sequence="90"
+              groups="boq_management_v19.group_boq_manager"/>
+
+    <menuitem id="menu_boq_categories"
+              name="Work Categories"
+              parent="menu_boq_config"
+              action="action_boq_category"
+              sequence="10"/>
+
+</odoo>

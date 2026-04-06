@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_boq_category_user,boq.category.user,model_boq_category,boq_management_v19.group_boq_user,1,0,0,0
+access_boq_category_manager,boq.category.manager,model_boq_category,boq_management_v19.group_boq_manager,1,1,1,1
+access_boq_boq_user,boq.boq.user,model_boq_boq,boq_management_v19.group_boq_user,1,1,1,0
+access_boq_boq_manager,boq.boq.manager,model_boq_boq,boq_management_v19.group_boq_manager,1,1,1,1
+access_boq_order_line_user,boq.order.line.user,model_boq_order_line,boq_management_v19.group_boq_user,1,1,1,1
+access_boq_order_line_manager,boq.order.line.manager,model_boq_order_line,boq_management_v19.group_boq_manager,1,1,1,1

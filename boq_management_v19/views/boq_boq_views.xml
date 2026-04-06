@@ -1,0 +1,570 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     BOQ — MAIN FORM VIEW (Odoo 19 Standard UI)
+═══════════════════════════════════════════════════════════════════════ -->
+<record id="view_boq_boq_form" model="ir.ui.view">
+    <field name="name">boq.boq.form</field>
+    <field name="model">boq.boq</field>
+    <field name="arch" type="xml">
+        <form string="Bill of Quantities">
+
+            <!-- ── HEADER ──────────────────────────────────────────────── -->
+            <header>
+                <button name="action_submit"
+                        string="Submit"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state != 'draft'"/>
+                <button name="action_approve"
+                        string="Approve"
+                        type="object"
+                        class="btn-primary"
+                        groups="boq_management_v19.group_boq_manager"
+                        invisible="state != 'submitted'"/>
+                <button name="action_reject"
+                        string="Reject"
+                        type="object"
+                        class="btn-secondary"
+                        groups="boq_management_v19.group_boq_manager"
+                        invisible="state not in ('submitted',)"/>
+                <button name="action_done"
+                        string="Mark Done"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state != 'approved'"/>
+                <button name="action_reset_draft"
+                        string="Reset to Draft"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="state not in ('rejected', 'submitted')"/>
+                <!--
+                    CREATE RFQ — visible whenever at least 1 line exists.
+                    Uses line_count (Integer) for reliable invisible evaluation
+                    in Odoo 19 form-view expressions.
+                -->
+                <button name="action_create_rfq"
+                        string="Create RFQ"
+                        type="object"
+                        class="btn-primary"
+                        icon="fa-shopping-cart"
+                        invisible="line_count == 0"
+                        confirm="This will generate one RFQ per mapped vendor. Proceed?"/>
+                <field name="state"
+                       widget="statusbar"
+                       statusbar_visible="draft,submitted,approved,done"/>
+            </header>
+
+            <sheet>
+                <!-- ── SMART BUTTONS ──────────────────────────────────── -->
+                <div class="oe_button_box" name="button_box">
+                    <button name="action_view_lines"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-list-ul">
+                        <field name="line_count" widget="statinfo" string="Lines"/>
+                    </button>
+                    <button name="action_view_lines"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-money">
+                        <div class="o_stat_info">
+                            <span class="o_stat_value">
+                                <field name="grand_total"
+                                       widget="monetary"
+                                       options="{'currency_field': 'currency_id'}"
+                                       nolabel="1"/>
+                            </span>
+                            <span class="o_stat_text">Total</span>
+                        </div>
+                    </button>
+                    <button name="action_view_rfqs"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-shopping-cart"
+                            invisible="rfq_count == 0">
+                        <field name="rfq_count" widget="statinfo" string="RFQs"/>
+                    </button>
+                </div>
+
+                <!-- ── PRIORITY ───────────────────────────────────────── -->
+                <field name="priority" widget="priority" class="float-start me-3 mt-1"/>
+
+                <!-- ── TITLE ──────────────────────────────────────────── -->
+                <div class="oe_title">
+                    <label for="name" string="BOQ Reference"/>
+                    <h1>
+                        <field name="name" readonly="1"/>
+                    </h1>
+                </div>
+
+                <!-- ── MAIN FIELDS ────────────────────────────────────── -->
+                <group>
+                    <group string="Customer &amp; Project">
+                        <field name="partner_id"
+                               options="{'no_create_edit': True}"/>
+                        <field name="partner_shipping_id"/>
+                        <field name="project_id"
+                               options="{'no_create_edit': True}"/>
+                        <field name="project_name"/>
+                        <field name="project_location"/>
+                    </group>
+                    <group string="Details">
+                        <field name="date"/>
+                        <field name="validity_date"/>
+                        <field name="user_id" widget="many2one_avatar_user"
+                               options="{'no_create_edit': True}"/>
+                        <field name="company_id"
+                               options="{'no_create': True}"
+                               groups="base.group_multi_company"/>
+                    </group>
+                </group>
+
+                <!-- ── WORK CATEGORIES ───────────────────────────────── -->
+                <group string="Work Categories">
+                    <field name="category_ids"
+                           widget="many2many_tags"
+                           options="{'color_field': 'color', 'no_create_edit': True}"
+                           placeholder="Select work categories to activate their tabs…"
+                           nolabel="1"/>
+                </group>
+
+                <!-- ═══════════════════════════════════════════════════════
+                     NOTEBOOK — one page per work category.
+                     Each page is hidden when its boolean flag is False.
+                     vendor_ids column on every line lets you map the vendor
+                     that will receive the RFQ when "Create RFQ" is clicked.
+                ═══════════════════════════════════════════════════════ -->
+                <notebook>
+
+                    <!-- ─────────────── ELECTRICAL ───────────────────── -->
+                    <page string="Electrical" name="tab_electrical"
+                          invisible="not show_electrical">
+                        <field name="electrical_line_ids"
+                               context="{'default_category_id': electrical_category_id}"
+                               mode="list">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle" string="#"/>
+                                <field name="product_id" required="1" string="Product"
+                                       options="{'no_create_edit': False}"/>
+                                <field name="product_name" string="Description"/>
+                                <field name="product_type" string="Type"/>
+                                <field name="qty" string="Qty"/>
+                                <field name="uom_id" string="Unit" optional="show"/>
+                                <field name="unit_price" string="Unit Price"/>
+                                <field name="tax_ids" string="Taxes"
+                                       widget="many2many_tags"
+                                       domain="[('type_tax_use','in',('purchase','all'))]"
+                                       optional="show"/>
+                                <field name="cost_price" string="Cost Price" optional="hide"/>
+                                <field name="discount" string="Disc %" optional="hide"/>
+                                <field name="subtotal" string="Subtotal"
+                                       readonly="1" sum="Tab Total"/>
+                                <field name="tax_amount" string="Total Tax"
+                                       readonly="1" optional="show" sum="Total Tax"/>
+                                <field name="total_value" string="Total Value"
+                                       readonly="1" optional="show" sum="Total (incl. Tax)"/>
+                                <field name="margin_percent" string="Margin %"
+                                       readonly="1" optional="show"/>
+                                <field name="vendor_ids"
+                                       widget="many2many_tags"
+                                       string="Vendors"
+                                       domain="[('supplier_rank','>',0)]"
+                                       options="{'no_create_edit': True}"/>
+                                <field name="currency_id" column_invisible="True"/>
+                                <field name="notes" string="Notes" optional="hide"/>
+                                <field name="category_id" column_invisible="True"
+                                       required="1"/>
+                            </list>
+                        </field>
+                    </page>
+
+                    <!-- ─────────────── CIVIL ─────────────────────────── -->
+                    <page string="Civil" name="tab_civil"
+                          invisible="not show_civil">
+                        <field name="civil_line_ids"
+                               context="{'default_category_id': civil_category_id}"
+                               mode="list">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle" string="#"/>
+                                <field name="product_id" required="1" string="Product"/>
+                                <field name="product_name" string="Description"/>
+                                <field name="product_type" string="Type"/>
+                                <field name="qty" string="Qty"/>
+                                <field name="uom_id" string="Unit" optional="show"/>
+                                <field name="unit_price" string="Unit Price"/>
+                                <field name="tax_ids" string="Taxes"
+                                       widget="many2many_tags"
+                                       domain="[('type_tax_use','in',('purchase','all'))]"
+                                       optional="show"/>
+                                <field name="cost_price" string="Cost Price" optional="hide"/>
+                                <field name="discount" string="Disc %" optional="hide"/>
+                                <field name="subtotal" string="Subtotal"
+                                       readonly="1" sum="Tab Total"/>
+                                <field name="tax_amount" string="Total Tax"
+                                       readonly="1" optional="show" sum="Total Tax"/>
+                                <field name="total_value" string="Total Value"
+                                       readonly="1" optional="show" sum="Total (incl. Tax)"/>
+                                <field name="margin_percent" string="Margin %"
+                                       readonly="1" optional="show"/>
+                                <field name="vendor_ids"
+                                       widget="many2many_tags"
+                                       string="Vendors"
+                                       domain="[('supplier_rank','>',0)]"
+                                       options="{'no_create_edit': True}"/>
+                                <field name="currency_id" column_invisible="True"/>
+                                <field name="notes" string="Notes" optional="hide"/>
+                                <field name="category_id" column_invisible="True"
+                                       required="1"/>
+                            </list>
+                        </field>
+                    </page>
+
+                    <!-- ─────────────── LIGHTING ──────────────────────── -->
+                    <page string="Lighting" name="tab_lighting"
+                          invisible="not show_lighting">
+                        <field name="lighting_line_ids"
+                               context="{'default_category_id': lighting_category_id}"
+                               mode="list">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle" string="#"/>
+                                <field name="product_id" required="1" string="Product"/>
+                                <field name="product_name" string="Description"/>
+                                <field name="product_type" string="Type"/>
+                                <field name="qty" string="Qty"/>
+                                <field name="uom_id" string="Unit" optional="show"/>
+                                <field name="unit_price" string="Unit Price"/>
+                                <field name="tax_ids" string="Taxes"
+                                       widget="many2many_tags"
+                                       domain="[('type_tax_use','in',('purchase','all'))]"
+                                       optional="show"/>
+                                <field name="cost_price" string="Cost Price" optional="hide"/>
+                                <field name="discount" string="Disc %" optional="hide"/>
+                                <field name="subtotal" string="Subtotal"
+                                       readonly="1" sum="Tab Total"/>
+                                <field name="tax_amount" string="Total Tax"
+                                       readonly="1" optional="show" sum="Total Tax"/>
+                                <field name="total_value" string="Total Value"
+                                       readonly="1" optional="show" sum="Total (incl. Tax)"/>
+                                <field name="margin_percent" string="Margin %"
+                                       readonly="1" optional="show"/>
+                                <field name="vendor_ids"
+                                       widget="many2many_tags"
+                                       string="Vendors"
+                                       domain="[('supplier_rank','>',0)]"
+                                       options="{'no_create_edit': True}"/>
+                                <field name="currency_id" column_invisible="True"/>
+                                <field name="notes" string="Notes" optional="hide"/>
+                                <field name="category_id" column_invisible="True"
+                                       required="1"/>
+                            </list>
+                        </field>
+                    </page>
+
+                    <!-- ─────────────── PLUMBING ──────────────────────── -->
+                    <page string="Plumbing" name="tab_plumbing"
+                          invisible="not show_plumbing">
+                        <field name="plumbing_line_ids"
+                               context="{'default_category_id': plumbing_category_id}"
+                               mode="list">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle" string="#"/>
+                                <field name="product_id" required="1" string="Product"/>
+                                <field name="product_name" string="Description"/>
+                                <field name="product_type" string="Type"/>
+                                <field name="qty" string="Qty"/>
+                                <field name="uom_id" string="Unit" optional="show"/>
+                                <field name="unit_price" string="Unit Price"/>
+                                <field name="tax_ids" string="Taxes"
+                                       widget="many2many_tags"
+                                       domain="[('type_tax_use','in',('purchase','all'))]"
+                                       optional="show"/>
+                                <field name="cost_price" string="Cost Price" optional="hide"/>
+                                <field name="discount" string="Disc %" optional="hide"/>
+                                <field name="subtotal" string="Subtotal"
+                                       readonly="1" sum="Tab Total"/>
+                                <field name="tax_amount" string="Total Tax"
+                                       readonly="1" optional="show" sum="Total Tax"/>
+                                <field name="total_value" string="Total Value"
+                                       readonly="1" optional="show" sum="Total (incl. Tax)"/>
+                                <field name="margin_percent" string="Margin %"
+                                       readonly="1" optional="show"/>
+                                <field name="vendor_ids"
+                                       widget="many2many_tags"
+                                       string="Vendors"
+                                       domain="[('supplier_rank','>',0)]"
+                                       options="{'no_create_edit': True}"/>
+                                <field name="currency_id" column_invisible="True"/>
+                                <field name="notes" string="Notes" optional="hide"/>
+                                <field name="category_id" column_invisible="True"
+                                       required="1"/>
+                            </list>
+                        </field>
+                    </page>
+
+                    <!-- ─────────────── HVAC ───────────────────────────── -->
+                    <page string="HVAC" name="tab_hvac"
+                          invisible="not show_hvac">
+                        <field name="hvac_line_ids"
+                               context="{'default_category_id': hvac_category_id}"
+                               mode="list">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle" string="#"/>
+                                <field name="product_id" required="1" string="Product"/>
+                                <field name="product_name" string="Description"/>
+                                <field name="product_type" string="Type"/>
+                                <field name="qty" string="Qty"/>
+                                <field name="uom_id" string="Unit" optional="show"/>
+                                <field name="unit_price" string="Unit Price"/>
+                                <field name="tax_ids" string="Taxes"
+                                       widget="many2many_tags"
+                                       domain="[('type_tax_use','in',('purchase','all'))]"
+                                       optional="show"/>
+                                <field name="cost_price" string="Cost Price" optional="hide"/>
+                                <field name="discount" string="Disc %" optional="hide"/>
+                                <field name="subtotal" string="Subtotal"
+                                       readonly="1" sum="Tab Total"/>
+                                <field name="tax_amount" string="Total Tax"
+                                       readonly="1" optional="show" sum="Total Tax"/>
+                                <field name="total_value" string="Total Value"
+                                       readonly="1" optional="show" sum="Total (incl. Tax)"/>
+                                <field name="margin_percent" string="Margin %"
+                                       readonly="1" optional="show"/>
+                                <field name="vendor_ids"
+                                       widget="many2many_tags"
+                                       string="Vendors"
+                                       domain="[('supplier_rank','>',0)]"
+                                       options="{'no_create_edit': True}"/>
+                                <field name="currency_id" column_invisible="True"/>
+                                <field name="notes" string="Notes" optional="hide"/>
+                                <field name="category_id" column_invisible="True"
+                                       required="1"/>
+                            </list>
+                        </field>
+                    </page>
+
+                    <!-- ─────────────── FINISHING ─────────────────────── -->
+                    <page string="Finishing" name="tab_finishing"
+                          invisible="not show_finishing">
+                        <field name="finishing_line_ids"
+                               context="{'default_category_id': finishing_category_id}"
+                               mode="list">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle" string="#"/>
+                                <field name="product_id" required="1" string="Product"/>
+                                <field name="product_name" string="Description"/>
+                                <field name="product_type" string="Type"/>
+                                <field name="qty" string="Qty"/>
+                                <field name="uom_id" string="Unit" optional="show"/>
+                                <field name="unit_price" string="Unit Price"/>
+                                <field name="tax_ids" string="Taxes"
+                                       widget="many2many_tags"
+                                       domain="[('type_tax_use','in',('purchase','all'))]"
+                                       optional="show"/>
+                                <field name="cost_price" string="Cost Price" optional="hide"/>
+                                <field name="discount" string="Disc %" optional="hide"/>
+                                <field name="subtotal" string="Subtotal"
+                                       readonly="1" sum="Tab Total"/>
+                                <field name="tax_amount" string="Total Tax"
+                                       readonly="1" optional="show" sum="Total Tax"/>
+                                <field name="total_value" string="Total Value"
+                                       readonly="1" optional="show" sum="Total (incl. Tax)"/>
+                                <field name="margin_percent" string="Margin %"
+                                       readonly="1" optional="show"/>
+                                <field name="vendor_ids"
+                                       widget="many2many_tags"
+                                       string="Vendors"
+                                       domain="[('supplier_rank','>',0)]"
+                                       options="{'no_create_edit': True}"/>
+                                <field name="currency_id" column_invisible="True"/>
+                                <field name="notes" string="Notes" optional="hide"/>
+                                <field name="category_id" column_invisible="True"
+                                       required="1"/>
+                            </list>
+                        </field>
+                    </page>
+
+                    <!-- ─────────────── TERMS &amp; NOTES ─────────────── -->
+                    <page string="Terms &amp; Notes" name="tab_notes">
+                        <field name="notes"
+                               placeholder="Enter terms, conditions, special notes…"/>
+                    </page>
+
+                </notebook>
+
+                <!-- ── TOTALS FOOTER (like purchase order) ───────────── -->
+                <div class="row justify-content-end mt-2 mb-3">
+                    <div class="col-sm-6 col-md-5 col-lg-4">
+                        <div class="border rounded overflow-hidden">
+                            <div class="d-flex justify-content-between px-3 py-2 border-bottom">
+                                <span class="text-muted">Untaxed Amount</span>
+                                <field name="total_amount"
+                                       widget="monetary"
+                                       options="{'currency_field': 'currency_id'}"
+                                       readonly="1" nolabel="1"
+                                       class="fw-semibold text-end"/>
+                            </div>
+                            <div class="d-flex justify-content-between px-3 py-2 border-bottom">
+                                <span class="text-muted">Total Tax</span>
+                                <field name="total_tax"
+                                       widget="monetary"
+                                       options="{'currency_field': 'currency_id'}"
+                                       readonly="1" nolabel="1"
+                                       class="text-end"/>
+                            </div>
+                            <div class="d-flex justify-content-between px-3 py-2 fw-bold bg-light">
+                                <span>Total</span>
+                                <field name="grand_total"
+                                       widget="monetary"
+                                       options="{'currency_field': 'currency_id'}"
+                                       readonly="1" nolabel="1"
+                                       class="text-end fs-6"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── hidden fields required by view expressions ─────── -->
+                <field name="currency_id"     invisible="1"/>
+                <field name="show_electrical" invisible="1"/>
+                <field name="show_civil"      invisible="1"/>
+                <field name="show_lighting"   invisible="1"/>
+                <field name="show_plumbing"   invisible="1"/>
+                <field name="show_hvac"       invisible="1"/>
+                <field name="show_finishing"  invisible="1"/>
+                <field name="rfq_count"       invisible="1"/>
+
+            </sheet>
+
+            <chatter/>
+
+        </form>
+    </field>
+</record>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     BOQ — LIST VIEW
+═══════════════════════════════════════════════════════════════════════ -->
+<record id="view_boq_boq_list" model="ir.ui.view">
+    <field name="name">boq.boq.list</field>
+    <field name="model">boq.boq</field>
+    <field name="arch" type="xml">
+        <list string="Bills of Quantities"
+              decoration-success="state == 'done'"
+              decoration-info="state == 'approved'"
+              decoration-warning="state == 'submitted'"
+              decoration-muted="state in ('rejected',)">
+            <field name="priority" widget="priority" nolabel="1" optional="show"/>
+            <field name="name"/>
+            <field name="partner_id"/>
+            <field name="project_id" optional="show"/>
+            <field name="project_name" optional="show"/>
+            <field name="user_id" widget="many2one_avatar_user" optional="show"/>
+            <field name="date"/>
+            <field name="validity_date" optional="hide"/>
+            <field name="category_ids" widget="many2many_tags"
+                   options="{'color_field': 'color'}"/>
+            <field name="line_count" string="Lines" optional="show"/>
+            <field name="total_amount" widget="monetary"
+                   options="{'currency_field': 'currency_id'}"
+                   sum="Grand Total"/>
+            <field name="currency_id" column_invisible="True"/>
+            <field name="state" widget="badge"
+                   decoration-success="state == 'done'"
+                   decoration-info="state == 'approved'"
+                   decoration-warning="state == 'submitted'"
+                   decoration-primary="state == 'draft'"
+                   decoration-danger="state == 'rejected'"/>
+        </list>
+    </field>
+</record>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     BOQ — KANBAN VIEW
+═══════════════════════════════════════════════════════════════════════ -->
+<record id="view_boq_boq_kanban" model="ir.ui.view">
+    <field name="name">boq.boq.kanban</field>
+    <field name="model">boq.boq</field>
+    <field name="arch" type="xml">
+        <kanban default_group_by="state"
+                quick_create="false"
+                group_create="false">
+            <field name="name"/>
+            <field name="partner_id"/>
+            <field name="project_name"/>
+            <field name="user_id"/>
+            <field name="date"/>
+            <field name="state"/>
+            <field name="priority"/>
+            <field name="total_amount"/>
+            <field name="currency_id"/>
+            <field name="category_ids"/>
+            <field name="line_count"/>
+            <templates>
+                <t t-name="card">
+                    <div class="oe_kanban_card oe_kanban_global_click">
+                        <div class="o_kanban_record_top mb8">
+                            <div class="o_kanban_record_headings mt4">
+                                <strong class="o_kanban_record_title">
+                                    <field name="priority" widget="priority"/>
+                                    <field name="name"/>
+                                </strong>
+                            </div>
+                            <field name="state" widget="label_selection"
+                                   options="{'classes': {
+                                       'draft':     'default',
+                                       'submitted': 'warning',
+                                       'approved':  'info',
+                                       'rejected':  'danger',
+                                       'done':      'success'
+                                   }}"/>
+                        </div>
+                        <div class="o_kanban_record_body">
+                            <div><field name="partner_id"/></div>
+                            <div invisible="not project_name">
+                                <field name="project_name"/>
+                            </div>
+                            <div><field name="date"/></div>
+                            <div invisible="not user_id">
+                                <field name="user_id" widget="many2one_avatar_user"/>
+                            </div>
+                        </div>
+                        <div class="o_kanban_record_bottom">
+                            <div class="oe_kanban_bottom_left">
+                                <field name="category_ids" widget="many2many_tags"
+                                       options="{'color_field': 'color'}"/>
+                            </div>
+                            <div class="oe_kanban_bottom_right">
+                                <field name="total_amount" widget="monetary"
+                                       options="{'currency_field': 'currency_id'}"/>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </templates>
+        </kanban>
+    </field>
+</record>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     BOQ — WINDOW ACTION
+═══════════════════════════════════════════════════════════════════════ -->
+<record id="action_boq_boq" model="ir.actions.act_window">
+    <field name="name">Bills of Quantities</field>
+    <field name="res_model">boq.boq</field>
+    <field name="view_mode">list,kanban,form</field>
+    <field name="context">{'search_default_draft': 1}</field>
+    <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">
+            Create your first Bill of Quantities!
+        </p>
+        <p>
+            Link BOQs to customers, select work categories and fill in
+            product lines per tab. Assign vendors on each line, then click
+            "Create RFQ" to generate purchase requests automatically.
+        </p>
+    </field>
+</record>
+
+</odoo>

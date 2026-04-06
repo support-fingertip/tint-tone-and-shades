@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Task 4 — BOQ Dashboard
+        Client action that loads the OWL BoqDashboard component.
+        Menu placed BEFORE the BOQ list menu (sequence=5 vs BOQ menu sequence=10).
+    -->
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         BOQ DASHBOARD — ir.actions.client
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <record id="action_boq_dashboard" model="ir.actions.client">
+        <field name="name">BOQ Dashboard</field>
+        <field name="tag">boq_management_v19.boq_dashboard_action</field>
+        <field name="target">current</field>
+        <field name="context">{}</field>
+    </record>
+
+</odoo>

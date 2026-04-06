@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="boq_cat_electrical" model="boq.category">
+            <field name="name">Electrical</field>
+            <field name="code">electrical</field>
+            <field name="sequence">10</field>
+            <field name="color">4</field>
+            <field name="icon">fa-bolt</field>
+            <field name="description">All electrical installation works including wiring, panels, sockets and fittings.</field>
+        </record>
+
+        <record id="boq_cat_civil" model="boq.category">
+            <field name="name">Civil</field>
+            <field name="code">civil</field>
+            <field name="sequence">20</field>
+            <field name="color">6</field>
+            <field name="icon">fa-building</field>
+            <field name="description">Civil construction works including foundations, masonry, concrete and structural elements.</field>
+        </record>
+
+        <record id="boq_cat_lighting" model="boq.category">
+            <field name="name">Lighting</field>
+            <field name="code">lighting</field>
+            <field name="sequence">30</field>
+            <field name="color">3</field>
+            <field name="icon">fa-lightbulb-o</field>
+            <field name="description">Interior and exterior lighting fixtures, drivers, controls and cabling.</field>
+        </record>
+
+        <record id="boq_cat_plumbing" model="boq.category">
+            <field name="name">Plumbing</field>
+            <field name="code">plumbing</field>
+            <field name="sequence">40</field>
+            <field name="color">1</field>
+            <field name="icon">fa-tint</field>
+            <field name="description">Water supply, drainage, sanitary ware and associated plumbing works.</field>
+        </record>
+
+        <record id="boq_cat_hvac" model="boq.category">
+            <field name="name">HVAC</field>
+            <field name="code">hvac</field>
+            <field name="sequence">50</field>
+            <field name="color">7</field>
+            <field name="icon">fa-snowflake-o</field>
+            <field name="description">Heating, ventilation and air conditioning systems including ductwork and controls.</field>
+        </record>
+
+        <record id="boq_cat_finishing" model="boq.category">
+            <field name="name">Finishing</field>
+            <field name="code">finishing</field>
+            <field name="sequence">60</field>
+            <field name="color">5</field>
+            <field name="icon">fa-paint-brush</field>
+            <field name="description">Interior finishing works including plastering, painting, tiling and flooring.</field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <!-- BOQ User: can create/edit their own BOQs -->
+        <record id="group_boq_user" model="res.groups">
+            <field name="name">BOQ User</field>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        </record>
+
+        <!-- BOQ Manager: can approve/reject, see all BOQs -->
+        <record id="group_boq_manager" model="res.groups">
+            <field name="name">BOQ Manager</field>
+            <field name="implied_ids" eval="[(4, ref('group_boq_user'))]"/>
+        </record>
+
+    </data>
+</odoo>

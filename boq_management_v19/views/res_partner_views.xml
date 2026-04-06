@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════════
+         RES.PARTNER — Inherit form: add BOQ smart button
+    ═══════════════════════════════════════════════════════ -->
+    <record id="view_res_partner_boq_v19" model="ir.ui.view">
+        <field name="name">res.partner.form.boq.v19</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button type="object"
+                        name="action_view_boqs"
+                        class="oe_stat_button"
+                        icon="fa-calculator"
+                        invisible="boq_count == 0">
+                    <field name="boq_count" widget="statinfo" string="BOQs"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
