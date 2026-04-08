@@ -62,8 +62,14 @@ class PurchaseOrderBoqExtend(models.Model):
         store=False,
     )
 
-    @api.depends('origin', 'boq_id', 'boq_id.name', 'boq_id.project_name')
+    @api.depends('origin')
     def _compute_boq_description(self):
+        """
+        Non-stored display field — depends only on `origin` to avoid the
+        Odoo 19 warning about non-searchable intermediate computed fields.
+        `boq_id` is read live inside the method (it is also non-stored,
+        so it is always recomputed on access and never stale).
+        """
         for order in self:
             parts = []
             if order.boq_id:
