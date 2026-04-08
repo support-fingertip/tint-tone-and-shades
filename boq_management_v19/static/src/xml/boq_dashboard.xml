@@ -10,7 +10,8 @@
 -->
 <t t-name="boq_management_v19.BoqDashboard">
     <div class="boq_dashboard o_action"
-         style="display:flex;flex-direction:column;height:100%;color-scheme:light;">
+         data-bs-theme="light"
+         style="display:flex;flex-direction:column;height:100%;color-scheme:light;background:#f8f9fa;color:#212529;">
 
         <!-- ── LOADING STATE ─────────────────────────────────────────── -->
         <t t-if="state.loading">

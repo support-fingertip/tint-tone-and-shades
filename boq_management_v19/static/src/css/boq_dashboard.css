@@ -24,13 +24,33 @@
     position: relative;
 }
 
-/* ── Page wrapper ───────────────────────────────────────────── */
+/* ── Page wrapper — force light theme regardless of OS/Odoo dark mode ── */
 .boq_dashboard {
     background: #f8f9fa !important;
     min-height: 100%;
     font-family: inherit;
-    color-scheme: light;
+    color-scheme: light !important;
     color: #212529 !important;
+    /* Reset Bootstrap 5 dark-mode CSS custom properties to light values */
+    --bs-body-bg: #ffffff;
+    --bs-body-color: #212529;
+    --bs-body-color-rgb: 33, 37, 41;
+    --bs-body-bg-rgb: 255, 255, 255;
+    --bs-secondary-bg: #f8f9fa;
+    --bs-tertiary-bg: #f0f2f5;
+    --bs-border-color: #dee2e6;
+    --bs-border-color-translucent: rgba(0, 0, 0, 0.175);
+    --bs-emphasis-color: #000000;
+    --bs-secondary-color: #6c757d;
+    --bs-link-color: #0d6efd;
+    --bs-link-hover-color: #0a58ca;
+    --bs-heading-color: #212529;
+    --bs-card-bg: #ffffff;
+    --bs-card-border-color: rgba(0, 0, 0, 0.125);
+    --bs-table-color: #212529;
+    --bs-table-border-color: #dee2e6;
+    --bs-table-striped-bg: rgba(0, 0, 0, 0.05);
+    --bs-table-hover-bg: rgba(0, 0, 0, 0.075);
 }
 
 /* ── Header bar ─────────────────────────────────────────────── */

@@ -63,6 +63,7 @@ export class BoqDashboard extends Component {
         actionId:          { optional: true },
         updateActionState: { type: Function, optional: true },
         className:         { type: String,   optional: true },
+        "*":               true,   // allow any extra props from Odoo's action manager (e.g. globalState)
     };
 
     setup() {
