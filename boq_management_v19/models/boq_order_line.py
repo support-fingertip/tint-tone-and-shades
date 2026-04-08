@@ -204,12 +204,6 @@ class BoqOrderLine(models.Model):
                 ADD COLUMN IF NOT EXISTS rating_count INTEGER       DEFAULT 0;
         """)
 
-        # ── purchase_order.approval_state (BUG 5) ────────────────────────
-        self.env.cr.execute("""
-            ALTER TABLE purchase_order
-                ADD COLUMN IF NOT EXISTS approval_state VARCHAR;
-        """)
-
         # ── Clean up stale ir.rule for boq.vendor.rating ──────────────────
         # The old vendor.po.rating model left an ir.rule with domain_force
         # [('res_model','=','res.partner')] that crashes any partner read.

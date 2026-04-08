@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'BOQ Management — Bill of Quantities (Odoo 19)',
-    'version': '19.0.2.0.0',
-    'summary': 'BOQ with margin fixes, trade assignments, vendor ratings, approval flow, and dashboard enhancements',
+    'version': '19.0.2.1.0',
+    'summary': 'BOQ with margin fixes, trade-level vendor assignment, vendor ratings, and dashboard enhancements',
     'description': """
-        BOQ Management v2.0
+        BOQ Management v2.1
         ====================
-        ✅ BUG 1  — Margin formula fixed: (sale - cost) / sale × 100; down-payment category → 0%
+        ✅ BUG 1  — Margin formula fixed: (sale - cost) / sale × 100
         ✅ BUG 2  — Trade Assignments dashboard section (grouped by work_category_id)
         ✅ BUG 3  — Vendor rating triggered AFTER receipt done + invoice paid
         ✅ BUG 4  — Margin % prominently shown on dashboard vendor cards
-        ✅ BUG 5  — Approval flow for low-margin RFQs (from BOQ or direct)
         ✅ BUG 6  — Payment status column on dashboard trade-wise & vendor rows
-        ✅ NEW 1  — Partner type: Vendor / Supplier / Employee / Customer split
+        ✅ NEW 1  — Partner type: Vendor / Supplier split (Vendor RFQ / Supplier RFQ menus)
         ✅ NEW 2  — Dashboard Vendor | Supplier toggle tab
         ✅ NEW 3  — Margin % on RFQ comparison (purchase.order.line)
         ✅ NEW 4  — boq.vendor.rating model; avg_rating on res.partner
         ✅ NEW 5  — Mail template for vendor portal quotation submission
+        ✅ NEW 6  — Trade-level vendor/supplier assignment tab in BOQ form
     """,
     'author': 'Senior Odoo Developer',
     'category': 'Industries/Construction',

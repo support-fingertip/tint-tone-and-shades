@@ -275,6 +275,14 @@ class BoqBoq(models.Model):
         store=False,
     )
 
+    # ── Trade-Level Vendor Assignments ───────────────────────────────────
+    trade_vendor_ids = fields.One2many(
+        comodel_name='boq.trade.vendor',
+        inverse_name='boq_id',
+        string='Trade Vendor Assignments',
+        copy=True,
+    )
+
     # ── Linked Purchase RFQs ──────────────────────────────────────────────
     rfq_ids = fields.Many2many(
         comodel_name='purchase.order',
@@ -461,6 +469,12 @@ class BoqBoq(models.Model):
             'domain': [('id', 'in', created_orders.ids)],
             'target': 'current',
         }
+
+    def action_apply_all_trade_vendors(self):
+        """Apply all trade-level vendor assignments to their respective lines."""
+        for rec in self:
+            rec.trade_vendor_ids.action_apply_to_lines()
+        return True
 
     def action_view_rfqs(self):
         """Open linked RFQs / Purchase Orders from the smart button."""
