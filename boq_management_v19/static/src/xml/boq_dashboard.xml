@@ -2,15 +2,19 @@
 <templates xml:space="preserve">
 
 <!--
-    BOQ Dashboard Template — Task 4
-    Vendor-wise RFQ summary with margin %, project stage, payment status.
+    BOQ Dashboard Template
+    Sections:
+      1. Stat cards  (BOQs, amounts, RFQs, pending approval, payment summary)
+      2. Status badges breakdown
+      3. Trade Assignments (per work-category value/margin/payment)
+      4. Vendor-wise RFQ summary cards (margin, approval, payment, rating)
+      5. Dynamic Vendor Notebook (Summary / Projects / Status / Payments / Approval)
 -->
 <t t-name="boq_management_v19.BoqDashboard">
     <!--
-        Root: flex-column container.
+        Root: flex-column.
         - boq_dash_header  : fixed height, never scrolls
         - boq_dash_scroll  : flex:1; min-height:0; overflow-y:auto
-          This is the ONLY scroll container — we target it via t-ref.
     -->
     <div class="boq_dashboard o_action"
          style="display:flex;flex-direction:column;height:100%;color-scheme:light;">
@@ -71,7 +75,7 @@
                  ╚═══════════════════════════════════════════════════════╝ -->
             <div class="boq_dash_scroll" t-ref="scrollContainer">
 
-                <!-- ── STAT CARDS ROW ─────────────────────────────── -->
+                <!-- ── STAT CARDS ROW (with approval + payment stats) ── -->
                 <div class="boq_dash_stat_row d-flex flex-wrap gap-3 p-4">
 
                     <!-- Total BOQs -->
@@ -127,7 +131,7 @@
                         </div>
                     </div>
 
-                    <!-- RFQs -->
+                    <!-- RFQs (with pending approval badge) -->
                     <div class="boq_stat_card flex-fill" t-on-click="openRfqs"
                          style="cursor:pointer;">
                         <div class="boq_stat_icon bg-secondary-subtle text-secondary">
@@ -140,13 +144,20 @@
                             <div class="boq_stat_label">
                                 RFQs
                                 <span class="badge bg-warning text-dark ms-1 small">
-                                    <t t-esc="state.stats.rfq_draft || 0"/> pending
+                                    <t t-esc="state.stats.rfq_draft || 0"/> draft
                                 </span>
+                                <t t-if="state.stats.rfq_to_approve">
+                                    <span class="badge bg-danger ms-1 small boq_appr_badge_link"
+                                          t-on-click.stop="openRfqsToApprove">
+                                        <i class="fa fa-clock-o me-1"/>
+                                        <t t-esc="state.stats.rfq_to_approve"/> need approval
+                                    </span>
+                                </t>
                             </div>
                         </div>
                     </div>
 
-                    <!-- RFQ Total Value -->
+                    <!-- RFQ Total Value (untaxed) -->
                     <div class="boq_stat_card flex-fill">
                         <div class="boq_stat_icon" style="background:rgba(108,117,125,.12);color:#6c757d;">
                             <i class="fa fa-file-text-o fa-2x"/>
@@ -156,9 +167,27 @@
                                 <t t-esc="fmtCurrency(state.stats.rfq_total_value)"/>
                             </div>
                             <div class="boq_stat_label">
-                                RFQ Value
+                                RFQ Value (excl. Tax)
                                 <span class="text-muted small d-block">
                                     Tax: <t t-esc="fmtCurrency(state.stats.rfq_total_tax)"/>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Summary -->
+                    <div class="boq_stat_card flex-fill">
+                        <div class="boq_stat_icon bg-success-subtle text-success">
+                            <i class="fa fa-check-circle fa-2x"/>
+                        </div>
+                        <div class="boq_stat_body">
+                            <div class="boq_stat_value">
+                                <t t-esc="state.stats.rfq_paid_count || 0"/>
+                            </div>
+                            <div class="boq_stat_label">
+                                POs Fully Paid
+                                <span class="text-muted small d-block">
+                                    <t t-esc="state.stats.rfq_unpaid_count || 0"/> with outstanding invoices
                                 </span>
                             </div>
                         </div>
@@ -175,6 +204,94 @@
                         </span>
                     </t>
                 </div>
+
+                <!-- ╔═══════════════════════════════════════════════════════╗
+                     ║  TRADE ASSIGNMENTS SECTION                            ║
+                     ║  Per work-category: BOQ value, RFQ value,            ║
+                     ║  margin %, vendor count, payment status               ║
+                     ╚═══════════════════════════════════════════════════════╝ -->
+                <t t-if="state.trades.length">
+                    <div class="px-4 pb-2 pt-2">
+                        <h5 class="mb-0 fw-bold boq_section_title">
+                            <i class="fa fa-tasks me-2 text-primary"/>
+                            Trade Assignments
+                            <span class="badge bg-secondary rounded-pill ms-2 small">
+                                <t t-esc="state.trades.length"/> trade<t t-if="state.trades.length !== 1">s</t>
+                            </span>
+                        </h5>
+                    </div>
+                    <div class="boq_trade_scroll px-4 pb-4">
+                        <div class="boq_trade_grid">
+                            <t t-foreach="state.trades" t-as="trade" t-key="trade.code">
+                                <div class="boq_trade_card">
+                                    <!-- Trade header with colour stripe -->
+                                    <div class="boq_trade_header"
+                                         t-attf-style="border-left: 4px solid {{ trade.color }};">
+                                        <div class="boq_trade_icon"
+                                             t-attf-style="background:{{ trade.color }}20;color:{{ trade.color }};">
+                                            <i class="fa fa-wrench"/>
+                                        </div>
+                                        <div>
+                                            <div class="boq_trade_name fw-bold">
+                                                <t t-esc="trade.trade"/>
+                                            </div>
+                                            <div class="boq_trade_meta text-muted small">
+                                                <t t-esc="trade.vendor_count"/> vendor<t t-if="trade.vendor_count !== 1">s</t>
+                                                · <t t-esc="trade.rfq_count"/> RFQ<t t-if="trade.rfq_count !== 1">s</t>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Values row -->
+                                    <div class="boq_trade_values">
+                                        <div class="boq_trade_val_item">
+                                            <div class="boq_trade_val_label">BOQ Value</div>
+                                            <div class="boq_trade_val_amount fw-bold">
+                                                <t t-esc="fmtCurrency(trade.boq_value)"/>
+                                            </div>
+                                        </div>
+                                        <div class="boq_trade_val_item">
+                                            <div class="boq_trade_val_label">RFQ Value</div>
+                                            <div class="boq_trade_val_amount">
+                                                <t t-if="trade.rfq_value > 0">
+                                                    <t t-esc="fmtCurrency(trade.rfq_value)"/>
+                                                </t>
+                                                <t t-else="">
+                                                    <span class="text-muted fst-italic small">No RFQ</span>
+                                                </t>
+                                            </div>
+                                        </div>
+                                        <div class="boq_trade_val_item">
+                                            <div class="boq_trade_val_label">Margin %</div>
+                                            <div t-attf-class="boq_trade_val_amount fw-bold {{ marginClass(trade.margin_percent) }}">
+                                                <t t-esc="trade.margin_percent"/>%
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Payment status badge -->
+                                    <div class="boq_trade_footer">
+                                        <span t-attf-class="badge {{ paymentClass(trade.payment_status) }} boq_trade_pay_badge">
+                                            <i class="fa fa-credit-card me-1"/>
+                                            <t t-esc="trade.payment_status"/>
+                                        </span>
+                                        <!-- Vendor list (first 3) -->
+                                        <div class="boq_trade_vendors mt-2">
+                                            <t t-foreach="trade.vendors.slice(0, 3)" t-as="tv" t-key="tv.vendor_id">
+                                                <span class="boq_trade_vendor_chip">
+                                                    <t t-esc="tv.name"/>
+                                                </span>
+                                            </t>
+                                            <t t-if="trade.vendors.length > 3">
+                                                <span class="boq_trade_vendor_chip boq_trade_vendor_more">
+                                                    +<t t-esc="trade.vendors.length - 3"/> more
+                                                </span>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </t>
 
                 <!-- ╔═══════════════════════════════════════════════════════╗
                      ║  VENDOR SUMMARY SECTION                               ║
@@ -265,29 +382,56 @@
                                 </div>
                             </div>
 
-                            <!-- Card Body: stats row -->
+                            <!-- Card Body: stats row (Value / Tax / Margin) -->
                             <div class="boq_vendor_stats">
                                 <div class="boq_vendor_stat">
-                                    <div class="boq_vendor_stat_label">Total Value</div>
+                                    <div class="boq_vendor_stat_label">RFQ Value</div>
                                     <div class="boq_vendor_stat_value fw-bold">
                                         <t t-esc="fmtCurrency(vendor.total_value)"/>
                                     </div>
                                 </div>
                                 <div class="boq_vendor_stat">
-                                    <div class="boq_vendor_stat_label">Total Tax</div>
+                                    <div class="boq_vendor_stat_label">Tax</div>
                                     <div class="boq_vendor_stat_value">
                                         <t t-esc="fmtCurrency(vendor.total_tax)"/>
                                     </div>
                                 </div>
                                 <div class="boq_vendor_stat">
-                                    <div class="boq_vendor_stat_label">Margin</div>
+                                    <div class="boq_vendor_stat_label">Margin %</div>
                                     <div t-attf-class="boq_vendor_stat_value {{ marginClass(vendor.margin_percent) }} fw-bold">
-                                        <t t-esc="vendor.margin_percent"/>%
+                                        <t t-esc="vendor.margin_percent.toFixed(1)"/>%
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Card Footer: project &amp; status -->
+                            <!-- Approval + Payment status row -->
+                            <div class="d-flex flex-wrap gap-1 align-items-center">
+                                <!-- Approval badge -->
+                                <t t-if="vendor.approval_status and vendor.approval_status !== '—'">
+                                    <span t-attf-class="badge boq_appr_badge {{ approvalClass(vendor.approval_status) }}">
+                                        <i class="fa fa-check-square-o me-1"/>
+                                        <t t-esc="vendor.approval_status"/>
+                                    </span>
+                                </t>
+                                <!-- Payment badge -->
+                                <span t-attf-class="badge boq_pay_badge {{ paymentClass(vendor.payment_status) }}">
+                                    <i class="fa fa-credit-card me-1"/>
+                                    <t t-esc="vendor.payment_status"/>
+                                </span>
+                                <!-- Vendor rating stars (only if rated) -->
+                                <t t-if="vendor.avg_rating > 0">
+                                    <span class="boq_vendor_rating ms-auto" title="Avg vendor rating">
+                                        <span class="boq_stars">
+                                            <t t-esc="starRating(vendor.avg_rating)"/>
+                                        </span>
+                                        <span class="boq_rating_num">
+                                            <t t-esc="vendor.avg_rating.toFixed(1)"/>
+                                        </span>
+                                    </span>
+                                </t>
+                            </div>
+
+                            <!-- Card Footer: project &amp; BOQ/RFQ states -->
                             <div class="boq_vendor_footer">
                                 <div class="boq_vendor_footer_row">
                                     <i class="fa fa-folder-o me-1 text-muted"/>
@@ -325,7 +469,7 @@
                     <div class="boq_vendor_notebook card mx-4 mb-4 shadow-sm" t-ref="notebook"
                          style="color-scheme:light;background:#fff;color:#212529;">
 
-                        <!-- Notebook Header with Tabs -->
+                        <!-- Notebook Header with Tabs (5 tabs) -->
                         <div class="card-header d-flex align-items-center justify-content-between p-0 ps-3">
                             <ul class="nav nav-tabs border-0" role="tablist">
                                 <li class="nav-item">
@@ -346,6 +490,18 @@
                                         <i class="fa fa-flag-o me-1"/>Status
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a t-attf-class="nav-link {{ state.activeTab === 'payments' ? 'active fw-semibold' : 'text-muted' }}"
+                                       href="#" t-on-click.prevent="() => this.setActiveTab('payments')">
+                                        <i class="fa fa-credit-card me-1"/>Payments
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a t-attf-class="nav-link {{ state.activeTab === 'approval' ? 'active fw-semibold' : 'text-muted' }}"
+                                       href="#" t-on-click.prevent="() => this.setActiveTab('approval')">
+                                        <i class="fa fa-check-square-o me-1"/>Approval
+                                    </a>
+                                </li>
                             </ul>
                             <div class="d-flex align-items-center gap-2 pe-3">
                                 <button class="btn btn-sm btn-primary"
@@ -359,12 +515,12 @@
                             </div>
                         </div>
 
-                        <!-- Notebook Vendor Title Bar -->
-                        <div class="d-flex align-items-center gap-3 px-4 py-2 bg-light border-bottom">
+                        <!-- Notebook Vendor Title Bar (with rating and payment status) -->
+                        <div class="d-flex align-items-center gap-3 px-4 py-2 bg-light border-bottom flex-wrap">
                             <div class="boq_vendor_avatar" style="width:40px;height:40px;font-size:1.2rem;">
                                 <t t-esc="(state.selectedVendor.vendor_name || '?').charAt(0).toUpperCase()"/>
                             </div>
-                            <div>
+                            <div class="flex-fill">
                                 <div class="fw-bold fs-6">
                                     <t t-esc="state.selectedVendor.vendor_name"/>
                                 </div>
@@ -372,7 +528,23 @@
                                     <t t-esc="state.selectedVendor.vendor_email || '—'"/>
                                 </div>
                             </div>
-                            <span class="badge bg-primary rounded-pill ms-auto">
+                            <!-- Rating stars -->
+                            <t t-if="state.selectedVendor.avg_rating > 0">
+                                <span class="boq_vendor_rating_lg" title="Average vendor rating">
+                                    <span class="boq_stars_lg">
+                                        <t t-esc="starRating(state.selectedVendor.avg_rating)"/>
+                                    </span>
+                                    <span class="text-muted small ms-1">
+                                        (<t t-esc="state.selectedVendor.avg_rating.toFixed(1)"/>)
+                                    </span>
+                                </span>
+                            </t>
+                            <!-- Payment status badge -->
+                            <span t-attf-class="badge boq_pay_badge {{ paymentClass(state.selectedVendor.payment_status) }}">
+                                <i class="fa fa-credit-card me-1"/>
+                                <t t-esc="state.selectedVendor.payment_status"/>
+                            </span>
+                            <span class="badge bg-primary rounded-pill">
                                 <t t-esc="state.selectedVendor.rfq_count"/> RFQ<t t-if="state.selectedVendor.rfq_count !== 1">s</t>
                             </span>
                         </div>
@@ -457,7 +629,7 @@
                                         </div>
                                     </t>
 
-                                    <!-- Grouped table -->
+                                    <!-- Grouped table (with RFQ cost + margin per BOQ) -->
                                     <t t-elif="vendorBoqSummary.length">
                                         <div class="boq_summary_table_wrap">
                                             <table class="boq_summary_table w-100">
@@ -465,9 +637,10 @@
                                                     <tr>
                                                         <th>BOQ Reference</th>
                                                         <th class="text-center">Items</th>
-                                                        <th class="text-end">Subtotal</th>
+                                                        <th class="text-end">Sell (Subtotal)</th>
                                                         <th class="text-end">Tax</th>
-                                                        <th class="text-end">Total</th>
+                                                        <th class="text-end">Vendor Cost</th>
+                                                        <th class="text-end">Total (incl. Tax)</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -488,6 +661,14 @@
                                                             <td class="text-end text-muted">
                                                                 <t t-esc="fmtCurrency(grp.tax)"/>
                                                             </td>
+                                                            <td class="text-end text-muted">
+                                                                <t t-if="grp.rfq_price_total > 0">
+                                                                    <t t-esc="fmtCurrency(grp.rfq_price_total)"/>
+                                                                </t>
+                                                                <t t-else="">
+                                                                    <span class="text-muted fst-italic small">—</span>
+                                                                </t>
+                                                            </td>
                                                             <td class="text-end fw-bold">
                                                                 <t t-esc="fmtCurrency(grp.subtotal + grp.tax)"/>
                                                             </td>
@@ -502,6 +683,9 @@
                                                         </td>
                                                         <td class="text-end fw-bold text-muted">
                                                             <t t-esc="fmtCurrency(vendorBoqSummaryTotals.tax)"/>
+                                                        </td>
+                                                        <td class="text-end fw-bold text-muted">
+                                                            <t t-esc="fmtCurrency(vendorBoqSummaryTotals.rfq_price_total)"/>
                                                         </td>
                                                         <td class="text-end fw-bold text-success">
                                                             <t t-esc="fmtCurrency(vendorBoqSummaryTotals.subtotal + vendorBoqSummaryTotals.tax)"/>
@@ -580,6 +764,142 @@
                                             <div class="fw-semibold">
                                                 <t t-esc="state.selectedVendor.rfq_states || '—'"/>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+
+                            <!-- ── Payments Tab ────────────────────────── -->
+                            <t t-elif="state.activeTab === 'payments'">
+                                <div class="row g-3">
+                                    <!-- Payment Status overview -->
+                                    <div class="col-12">
+                                        <div class="boq_pay_overview border rounded p-3 d-flex align-items-center gap-4">
+                                            <div class="text-center px-3">
+                                                <div class="boq_pay_status_value fw-bold fs-4">
+                                                    <span t-attf-class="{{ paymentClass(state.selectedVendor.payment_status) }}">
+                                                        <t t-esc="state.selectedVendor.payment_status"/>
+                                                    </span>
+                                                </div>
+                                                <div class="text-muted small">Payment Status</div>
+                                            </div>
+                                            <div class="vr"/>
+                                            <div class="text-center px-3">
+                                                <div class="fw-bold fs-5">
+                                                    <t t-esc="fmtCurrency(state.selectedVendor.total_value)"/>
+                                                </div>
+                                                <div class="text-muted small">Total RFQ Value</div>
+                                            </div>
+                                            <div class="vr"/>
+                                            <div class="text-center px-3">
+                                                <div class="fw-bold fs-5">
+                                                    <t t-esc="fmtCurrency(state.selectedVendor.total_tax)"/>
+                                                </div>
+                                                <div class="text-muted small">Total Tax</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Trade-wise payment breakdown (from trade assignments) -->
+                                    <div class="col-12">
+                                        <div class="boq_summary_section_title mb-2">
+                                            <i class="fa fa-tasks me-1 text-primary"/>
+                                            Payment by Trade
+                                        </div>
+                                        <div class="boq_summary_table_wrap">
+                                            <table class="boq_summary_table w-100">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Trade</th>
+                                                        <th class="text-end">BOQ Value</th>
+                                                        <th class="text-end">RFQ Value</th>
+                                                        <th class="text-center">Payment Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <t t-foreach="state.trades" t-as="tr" t-key="tr.code">
+                                                        <tr>
+                                                            <td>
+                                                                <span class="boq_trade_dot"
+                                                                      t-attf-style="background:{{ tr.color }};"/>
+                                                                <t t-esc="tr.trade"/>
+                                                            </td>
+                                                            <td class="text-end fw-semibold">
+                                                                <t t-esc="fmtCurrency(tr.boq_value)"/>
+                                                            </td>
+                                                            <td class="text-end">
+                                                                <t t-if="tr.rfq_value > 0">
+                                                                    <t t-esc="fmtCurrency(tr.rfq_value)"/>
+                                                                </t>
+                                                                <t t-else="">
+                                                                    <span class="text-muted fst-italic small">—</span>
+                                                                </t>
+                                                            </td>
+                                                            <td class="text-center">
+                                                                <span t-attf-class="badge {{ paymentClass(tr.payment_status) }}">
+                                                                    <t t-esc="tr.payment_status"/>
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    </t>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+
+                            <!-- ── Approval Tab ────────────────────────── -->
+                            <t t-elif="state.activeTab === 'approval'">
+                                <div class="row g-3">
+                                    <!-- Approval status overview -->
+                                    <div class="col-12">
+                                        <div class="border rounded p-3 d-flex align-items-center gap-3 flex-wrap">
+                                            <div>
+                                                <div class="text-muted small mb-1">Approval Status</div>
+                                                <t t-if="state.selectedVendor.approval_status and state.selectedVendor.approval_status !== '—'">
+                                                    <span t-attf-class="badge boq_appr_badge {{ approvalClass(state.selectedVendor.approval_status) }} fs-6 px-3 py-2">
+                                                        <i class="fa fa-check-square-o me-1"/>
+                                                        <t t-esc="state.selectedVendor.approval_status"/>
+                                                    </span>
+                                                </t>
+                                                <t t-else="">
+                                                    <span class="text-muted fst-italic">No approval workflow configured</span>
+                                                </t>
+                                            </div>
+                                            <div class="ms-auto text-end">
+                                                <div class="text-muted small mb-1">RFQ States</div>
+                                                <div class="fw-semibold">
+                                                    <t t-esc="state.selectedVendor.rfq_states || '—'"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Rating section -->
+                                    <div class="col-12">
+                                        <div class="border rounded p-3">
+                                            <div class="text-muted small mb-2">
+                                                <i class="fa fa-star me-1"/>Vendor Rating
+                                            </div>
+                                            <t t-if="state.selectedVendor.avg_rating > 0">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <span class="boq_stars_xl">
+                                                        <t t-esc="starRating(state.selectedVendor.avg_rating)"/>
+                                                    </span>
+                                                    <span class="fs-4 fw-bold">
+                                                        <t t-esc="state.selectedVendor.avg_rating.toFixed(1)"/>
+                                                    </span>
+                                                    <span class="text-muted">/ 5.0</span>
+                                                </div>
+                                                <p class="text-muted small mt-2 mb-0">
+                                                    Rating is based on completed purchase orders where receipts are confirmed.
+                                                </p>
+                                            </t>
+                                            <t t-else="">
+                                                <p class="text-muted fst-italic mb-0">
+                                                    No rating yet. Rate the vendor on the purchase order form
+                                                    after all goods receipts are confirmed.
+                                                </p>
+                                            </t>
                                         </div>
                                     </div>
                                 </div>

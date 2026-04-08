@@ -4,18 +4,11 @@ from odoo import models, fields, api, _
 
 class PurchaseOrderBoqExtend(models.Model):
     """
-    Extends purchase.order with a back-link to the originating BOQ record
-    and a convenience total_tax field.
-
-    Task 3 — RFQ inside BOQ.
-
-    IMPORTANT — no stored fields on purchase.order:
-    Both boq_id and total_tax are non-stored so they never need a DB column
-    and no module upgrade / ALTER TABLE is required on purchase_order.
-
-    boq_id   — computed from the existing boq_boq_purchase_order_rel M2M table
-                that is created by boq.boq.rfq_ids (already exists after install).
-    total_tax — non-stored related alias of amount_tax (reads live, no column).
+    Extends purchase.order with:
+    - BOQ back-link (non-stored, from M2M table)
+    - Vendor Rating (stored, editable after all receipts done)
+    - All Receipts Done flag (non-stored, controls rating visibility)
+    - Payment Status Display (non-stored computed)
     """
     _inherit = 'purchase.order'
 
@@ -24,7 +17,7 @@ class PurchaseOrderBoqExtend(models.Model):
         comodel_name='boq.boq',
         string='BOQ Reference',
         compute='_compute_boq_id',
-        store=False,          # No DB column on purchase_order table
+        store=False,
         help='BOQ that generated this RFQ (read from the BOQ ↔ RFQ M2M link).',
     )
 
@@ -53,7 +46,7 @@ class PurchaseOrderBoqExtend(models.Model):
     total_tax = fields.Monetary(
         string='Total Tax',
         related='amount_tax',
-        store=False,          # No DB column on purchase_order table
+        store=False,
         currency_field='currency_id',
         help='Total tax on all order lines (alias of amount_tax).',
     )
@@ -78,6 +71,66 @@ class PurchaseOrderBoqExtend(models.Model):
                 parts.append(order.origin)
             order.boq_description = '\n'.join(parts) if parts else ''
 
+    # ── Vendor Rating (STORED — user fills in after receipt is done) ──────
+    # Persisted on purchase_order table. Only visible/editable when
+    # all_receipts_done is True (controlled via invisible in the view).
+    vendor_rating = fields.Selection(
+        selection=[
+            ('1', '1 - Poor'),
+            ('2', '2 - Fair'),
+            ('3', '3 - Good'),
+            ('4', '4 - Very Good'),
+            ('5', '5 - Excellent'),
+        ],
+        string='Vendor Rating',
+        tracking=True,
+        help='Rate vendor delivery, quality and responsiveness.\n'
+             'Becomes editable once all goods receipts are completed.',
+    )
+
+    # ── All Receipts Done (non-stored — drives vendor_rating visibility) ──
+    all_receipts_done = fields.Boolean(
+        string='All Receipts Done',
+        compute='_compute_all_receipts_done',
+        store=False,
+    )
+
+    @api.depends('picking_ids', 'picking_ids.state')
+    def _compute_all_receipts_done(self):
+        for order in self:
+            # Only consider non-cancelled receipts
+            active_picks = order.picking_ids.filtered(lambda p: p.state != 'cancel')
+            if active_picks:
+                order.all_receipts_done = all(
+                    p.state == 'done' for p in active_picks
+                )
+            else:
+                order.all_receipts_done = False
+
+    # ── Payment Status Display (non-stored computed) ───────────────────────
+    payment_status_display = fields.Char(
+        string='Payment Status',
+        compute='_compute_payment_status_display',
+        store=False,
+    )
+
+    @api.depends('invoice_ids', 'invoice_ids.payment_state', 'invoice_ids.state',
+                 'invoice_status')
+    def _compute_payment_status_display(self):
+        for order in self:
+            posted = order.invoice_ids.filtered(lambda i: i.state == 'posted')
+            if not posted:
+                order.payment_status_display = 'Not Invoiced'
+            else:
+                states = posted.mapped('payment_state')
+                if all(s == 'paid' for s in states):
+                    order.payment_status_display = 'Fully Paid'
+                elif any(s in ('paid', 'partial') for s in states):
+                    order.payment_status_display = 'Partially Paid'
+                else:
+                    order.payment_status_display = 'Unpaid'
+
+    # ── Open BOQ ───────────────────────────────────────────────────────────
     def action_open_boq(self):
         """Open the linked BOQ record in form view."""
         self.ensure_one()

@@ -634,6 +634,242 @@
     background: #f8f9ff;
 }
 
+/* ── Approval "need approval" link badge ─────────────────────── */
+.boq_appr_badge_link {
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.boq_appr_badge_link:hover { opacity: 0.85; }
+
+/* ── Payment Status CSS classes ──────────────────────────────── */
+.boq_pay_paid     { color: #198754 !important; }
+.boq_pay_partial  { color: #fd7e14 !important; }
+.boq_pay_unpaid   { color: #dc3545 !important; }
+.boq_pay_none     { color: #6c757d !important; }
+
+/* ── Payment badge (used in vendor cards and notebook) ───────── */
+.boq_pay_badge {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+.boq_pay_badge.boq_pay_paid     { background:#d1e7dd; color:#0f5132; border:1px solid #badbcc; }
+.boq_pay_badge.boq_pay_partial  { background:#ffe8d4; color:#7d3a00; border:1px solid #ffc28a; }
+.boq_pay_badge.boq_pay_unpaid   { background:#f8d7da; color:#842029; border:1px solid #f5c2c7; }
+.boq_pay_badge.boq_pay_none     { background:#f0f2f5; color:#6c757d; border:1px solid #dee2e6; }
+
+/* ── Approval Status CSS classes ─────────────────────────────── */
+.boq_appr_approved { color: #198754 !important; }
+.boq_appr_pending  { color: #fd7e14 !important; }
+.boq_appr_rejected { color: #dc3545 !important; }
+.boq_appr_none     { color: #6c757d !important; }
+
+/* ── Approval badge ──────────────────────────────────────────── */
+.boq_appr_badge {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+.boq_appr_badge.boq_appr_approved { background:#d1e7dd; color:#0f5132; border:1px solid #badbcc; }
+.boq_appr_badge.boq_appr_pending  { background:#ffe8d4; color:#7d3a00; border:1px solid #ffc28a; }
+.boq_appr_badge.boq_appr_rejected { background:#f8d7da; color:#842029; border:1px solid #f5c2c7; }
+.boq_appr_badge.boq_appr_none     { background:#f0f2f5; color:#6c757d; border:1px solid #dee2e6; }
+
+/* ── Vendor rating (inline in card) ─────────────────────────── */
+.boq_vendor_rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.82rem;
+}
+.boq_stars {
+    color: #f59e0b;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+}
+.boq_rating_num {
+    color: #6c757d;
+    font-size: 0.78rem;
+}
+
+/* ── Vendor rating (notebook title bar — larger) ─────────────── */
+.boq_vendor_rating_lg {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.boq_stars_lg {
+    color: #f59e0b;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+}
+
+/* ── Vendor rating (Approval tab — extra large) ──────────────── */
+.boq_stars_xl {
+    color: #f59e0b;
+    font-size: 1.6rem;
+    letter-spacing: 2px;
+}
+
+/* ── Payment overview block (Payments tab) ───────────────────── */
+.boq_pay_overview {
+    background: #f8f9fa;
+}
+.boq_pay_status_value .boq_pay_paid    { font-weight: 700; }
+.boq_pay_status_value .boq_pay_unpaid  { font-weight: 700; }
+.boq_pay_status_value .boq_pay_partial { font-weight: 700; }
+
+/* ── Trade color dot (used in payment table) ─────────────────── */
+.boq_trade_dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  TRADE ASSIGNMENT CARDS
+   ╚═══════════════════════════════════════════════════════════════ */
+
+/* Horizontal scroll wrapper for trade cards */
+.boq_trade_scroll {
+    overflow-x: auto;
+}
+
+/* Grid: fills row, cards are fixed-width, single row via nowrap */
+.boq_trade_grid {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 16px;
+    padding-bottom: 8px;   /* space for scrollbar */
+    min-width: max-content; /* prevents grid from compressing */
+}
+
+/* Individual trade card */
+.boq_trade_card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 14px;
+    padding: 18px 20px;
+    width: 260px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: box-shadow 0.18s, transform 0.18s;
+}
+.boq_trade_card:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10);
+    transform: translateY(-2px);
+}
+
+/* Trade card header row */
+.boq_trade_header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-left: 4px;  /* inner padding so left-border stripe has breathing room */
+}
+
+.boq_trade_icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.boq_trade_name {
+    font-size: 0.95rem;
+    color: #212529;
+}
+
+.boq_trade_meta {
+    font-size: 0.75rem;
+    margin-top: 2px;
+}
+
+/* Values row: 3 stacked label+amount pairs */
+.boq_trade_values {
+    display: flex;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.boq_trade_val_item {
+    flex: 1;
+    padding: 8px 10px;
+    text-align: center;
+    border-right: 1px solid #e9ecef;
+}
+.boq_trade_val_item:last-child {
+    border-right: none;
+}
+
+.boq_trade_val_label {
+    font-size: 0.68rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 3px;
+}
+
+.boq_trade_val_amount {
+    font-size: 0.82rem;
+    color: #212529;
+    word-break: break-all;
+}
+
+/* Trade card footer */
+.boq_trade_footer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Payment badge inside trade card */
+.boq_trade_pay_badge {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    align-self: flex-start;
+}
+/* reuse the boq_pay_badge palette */
+.boq_trade_pay_badge.boq_pay_paid     { background:#d1e7dd; color:#0f5132; border:1px solid #badbcc; }
+.boq_trade_pay_badge.boq_pay_partial  { background:#ffe8d4; color:#7d3a00; border:1px solid #ffc28a; }
+.boq_trade_pay_badge.boq_pay_unpaid   { background:#f8d7da; color:#842029; border:1px solid #f5c2c7; }
+.boq_trade_pay_badge.boq_pay_none     { background:#f0f2f5; color:#6c757d; border:1px solid #dee2e6; }
+
+/* Vendor chip list inside trade card */
+.boq_trade_vendors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.boq_trade_vendor_chip {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: #f0f2f5;
+    color: #495057;
+    border: 1px solid #e2e6ea;
+    white-space: nowrap;
+}
+
+.boq_trade_vendor_more {
+    background: #e8f0fe;
+    color: #0d6efd;
+    border-color: #c8d8fb;
+}
+
 /* ── Responsive tweaks ───────────────────────────────────────── */
 @media (max-width: 768px) {
     .boq_dash_stat_row {
@@ -646,6 +882,13 @@
         grid-template-columns: 1fr;
     }
     .boq_vendor_filter_wrap {
+        width: 100%;
+    }
+    .boq_trade_grid {
+        flex-wrap: wrap;
+        min-width: unset;
+    }
+    .boq_trade_card {
         width: 100%;
     }
 }

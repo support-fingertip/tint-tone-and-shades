@@ -525,8 +525,18 @@ class BoqBoq(models.Model):
         total_value = sum(boqs.mapped('total_amount'))
         total_tax   = sum(boqs.mapped('total_tax'))
         grand_total = sum(boqs.mapped('grand_total'))
-        rfq_total = sum(rfqs.mapped('amount_total'))
-        rfq_tax = sum(rfqs.mapped('amount_tax'))
+        rfq_total   = sum(rfqs.mapped('amount_untaxed'))
+        rfq_tax     = sum(rfqs.mapped('amount_tax'))
+
+        # Payment summary across all RFQs
+        paid_count = 0
+        unpaid_count = 0
+        for rfq in rfqs:
+            posted = rfq.invoice_ids.filtered(lambda i: i.state == 'posted')
+            if posted and all(i.payment_state == 'paid' for i in posted):
+                paid_count += 1
+            elif posted:
+                unpaid_count += 1
 
         return {
             'total_boqs': len(boqs),
@@ -536,87 +546,174 @@ class BoqBoq(models.Model):
             'state_counts': state_counts,
             'total_rfqs': len(rfqs),
             'rfq_draft': len(rfqs.filtered(lambda r: r.state in ('draft', 'sent'))),
+            'rfq_to_approve': len(rfqs.filtered(lambda r: r.state == 'to approve')),
             'rfq_total_value': rfq_total,
             'rfq_total_tax': rfq_tax,
+            'rfq_paid_count': paid_count,
+            'rfq_unpaid_count': unpaid_count,
             'currency_symbol': self.env.company.currency_id.symbol or '$',
             'currency_position': self.env.company.currency_id.position or 'before',
         }
+
+    # ── Internal helper: fetch RFQ data for a set of BOQs ─────────────────
+    def _get_rfq_data_for_boqs(self, boqs):
+        """
+        Returns (rfq_boq_map, rfqs, vendor_rfq_prices) for the given BOQs.
+
+        rfq_boq_map      : {purchase_id: boq_id}
+        rfqs             : purchase.order recordset
+        vendor_rfq_prices: {vendor_id: {product_id: price_unit}}
+                           — uses the last-seen price when a vendor has multiple
+                             lines for the same product across linked RFQs.
+        """
+        rfq_boq_map = {}
+        if boqs.ids:
+            self.env.cr.execute(
+                "SELECT purchase_id, boq_id "
+                "  FROM boq_boq_purchase_order_rel "
+                " WHERE boq_id IN %s",
+                (tuple(boqs.ids),)
+            )
+            rfq_boq_map = {row[0]: row[1] for row in self.env.cr.fetchall()}
+
+        rfqs = (
+            self.env['purchase.order'].browse(list(rfq_boq_map.keys()))
+            if rfq_boq_map
+            else self.env['purchase.order']
+        )
+
+        # vendor → product → price_unit mapping (from linked RFQ lines)
+        vendor_rfq_prices = {}
+        for rfq in rfqs:
+            vid = rfq.partner_id.id
+            if vid not in vendor_rfq_prices:
+                vendor_rfq_prices[vid] = {}
+            for pol in rfq.order_line:
+                if pol.product_id and pol.price_unit > 0:
+                    vendor_rfq_prices[vid][pol.product_id.id] = pol.price_unit
+
+        return rfq_boq_map, rfqs, vendor_rfq_prices
+
+    # ── Internal helper: payment status string ─────────────────────────────
+    @staticmethod
+    def _rfq_payment_status(rfq):
+        posted = rfq.invoice_ids.filtered(lambda i: i.state == 'posted')
+        if not posted:
+            return 'Not Invoiced'
+        states = posted.mapped('payment_state')
+        if all(s == 'paid' for s in states):
+            return 'Fully Paid'
+        if any(s in ('paid', 'partial') for s in states):
+            return 'Partially Paid'
+        return 'Unpaid'
+
+    # ── Internal helper: approval status string (safe for optional module) ─
+    @staticmethod
+    def _rfq_approval_status(rfq):
+        if 'approval_line_ids' not in rfq._fields:
+            return ''
+        lines = rfq.approval_line_ids
+        if not lines:
+            return ''
+        if all(l.status == 'approved' for l in lines):
+            return 'Approved'
+        if any(l.status == 'rejected' for l in lines):
+            return 'Rejected'
+        if any(l.status == 'current' for l in lines):
+            return 'Pending Approval'
+        return 'Pending'
 
     @api.model
     def get_vendor_summary(self):
         """
         Return vendor-wise RFQ summary for dashboard kanban cards.
-        Each entry: vendor name, rfq count, total value, avg margin, project stages,
-        payment status.
+
+        Margin is now calculated using the actual vendor RFQ price_unit as the
+        cost (falls back to product standard_price when no RFQ price exists).
+        Payment status, approval status and vendor rating are included.
         """
         company_domain = [('company_id', '=', self.env.company.id)]
         boqs = self.search(company_domain)
 
-        # boq_id on purchase.order is non-stored — query M2M table directly
-        # rfq_boq_map: {purchase_id: boq_id}
-        rfq_boq_map = {}
-        if boqs.ids:
-            self.env.cr.execute(
-                "SELECT purchase_id, boq_id FROM boq_boq_purchase_order_rel WHERE boq_id IN %s",
-                (tuple(boqs.ids),)
-            )
-            rfq_boq_map = {row[0]: row[1] for row in self.env.cr.fetchall()}
-        rfqs = self.env['purchase.order'].browse(list(rfq_boq_map.keys())) if rfq_boq_map else self.env['purchase.order']
+        if not boqs.ids:
+            return []
 
-        # Build boq_id → project info map
+        rfq_boq_map, rfqs, vendor_rfq_prices = self._get_rfq_data_for_boqs(boqs)
+
         boq_info = {
             b.id: {
-                'project_name': b.project_name or b.project_id.name or '—',
+                'project_name': b.project_name or (b.project_id.name if b.project_id else '—'),
                 'state': b.state,
-                'total_amount': b.total_amount,
             }
             for b in boqs
         }
 
+        # ── Build vendor_map from linked RFQs ─────────────────────────────
         vendor_map = {}
         for rfq in rfqs:
             vid = rfq.partner_id.id
             if vid not in vendor_map:
                 vendor_map[vid] = {
-                    'vendor_id': vid,
-                    'vendor_name': rfq.partner_id.name,
-                    'vendor_email': rfq.partner_id.email or '',
-                    'rfq_count': 0,
-                    'total_value': 0.0,
-                    'total_tax': 0.0,
-                    'paid_value': 0.0,
-                    'states': [],
-                    'project_names': [],
-                    'rfq_states': [],
+                    'vendor_id':         vid,
+                    'vendor_name':       rfq.partner_id.name,
+                    'vendor_email':      rfq.partner_id.email or '',
+                    'rfq_count':         0,
+                    'total_value':       0.0,
+                    'total_tax':         0.0,
+                    'states':            [],
+                    'project_names':     [],
+                    'rfq_states':        [],
+                    'approval_statuses': [],
+                    'payment_statuses':  [],
+                    'rating_sum':        0,
+                    'rating_count':      0,
                 }
             entry = vendor_map[vid]
             entry['rfq_count'] += 1
-            entry['total_value'] += rfq.amount_total
-            entry['total_tax'] += rfq.amount_tax
+            entry['total_value'] += rfq.amount_untaxed
+            entry['total_tax']   += rfq.amount_tax
 
-            # Payment status: invoice status on PO
+            # RFQ workflow state label
             rfq_state_label = {
-                'draft': 'RFQ',
-                'sent': 'Sent',
+                'draft':      'RFQ',
+                'sent':       'Sent',
                 'to approve': 'To Approve',
-                'purchase': 'PO',
-                'done': 'Done',
-                'cancel': 'Cancelled',
+                'purchase':   'PO',
+                'done':       'Done',
+                'cancel':     'Cancelled',
             }.get(rfq.state, rfq.state)
             if rfq_state_label not in entry['rfq_states']:
                 entry['rfq_states'].append(rfq_state_label)
 
+            # Approval status (infinys_purchase_order_approval module, if installed)
+            appr = self._rfq_approval_status(rfq)
+            if appr and appr not in entry['approval_statuses']:
+                entry['approval_statuses'].append(appr)
+
+            # Payment status
+            pay = self._rfq_payment_status(rfq)
+            if pay not in entry['payment_statuses']:
+                entry['payment_statuses'].append(pay)
+
+            # Vendor rating
+            if rfq.vendor_rating:
+                entry['rating_sum']   += int(rfq.vendor_rating)
+                entry['rating_count'] += 1
+
+            # Project / BOQ state
             boq_id_val = rfq_boq_map.get(rfq.id)
             if boq_id_val and boq_id_val in boq_info:
                 b = boq_info[boq_id_val]
                 pname = b['project_name']
                 if pname not in entry['project_names']:
                     entry['project_names'].append(pname)
-                state = b['state']
-                if state not in entry['states']:
-                    entry['states'].append(state)
+                if b['state'] not in entry['states']:
+                    entry['states'].append(b['state'])
 
-        # Compute margin per vendor using BOQ lines
+        # ── Compute margin using RFQ price_unit (falls back to cost_price) ─
+        # Sell  = BOQ unit_price × qty (what we charge the customer)
+        # Cost  = RFQ price_unit × qty (what we pay the vendor)
+        # Negative margin means the vendor quote exceeds the BOQ sell price.
         vendor_margins = {}
         for boq in boqs:
             for line in boq.line_ids:
@@ -624,24 +721,187 @@ class BoqBoq(models.Model):
                     vid = vendor.id
                     if vid not in vendor_margins:
                         vendor_margins[vid] = {'total_sell': 0.0, 'total_cost': 0.0}
-                    sell = line.unit_price * line.qty * (1.0 - line.discount / 100.0)
-                    cost = (line.cost_price or 0.0) * line.qty
+                    sell = line.unit_price * line.qty * (
+                        1.0 - (line.discount or 0.0) / 100.0
+                    )
+                    # Prefer actual RFQ vendor price; fall back to product cost
+                    pid = line.product_id.id if line.product_id else 0
+                    rfq_price = vendor_rfq_prices.get(vid, {}).get(pid, 0.0)
+                    cost_unit = rfq_price if rfq_price > 0 else (line.cost_price or 0.0)
                     vendor_margins[vid]['total_sell'] += sell
-                    vendor_margins[vid]['total_cost'] += cost
+                    vendor_margins[vid]['total_cost'] += cost_unit * line.qty
 
+        # ── Assemble final result ──────────────────────────────────────────
         result = []
         for vid, entry in vendor_map.items():
-            margin_data = vendor_margins.get(vid, {'total_sell': 0.0, 'total_cost': 0.0})
-            sell = margin_data['total_sell']
-            cost = margin_data['total_cost']
-            entry['margin_percent'] = round(((sell - cost) / sell * 100) if sell > 0 else 0.0, 2)
-            entry['project_names'] = ', '.join(entry['project_names']) or '—'
-            entry['rfq_states'] = ', '.join(entry['rfq_states']) or '—'
-            entry['boq_states'] = ', '.join(entry['states']) or '—'
+            md   = vendor_margins.get(vid, {'total_sell': 0.0, 'total_cost': 0.0})
+            sell = md['total_sell']
+            cost = md['total_cost']
+            entry['margin_percent'] = (
+                round((sell - cost) / sell * 100, 2) if sell > 0 else 0.0
+            )
+
+            entry['avg_rating'] = (
+                round(entry['rating_sum'] / entry['rating_count'], 1)
+                if entry['rating_count'] > 0 else 0.0
+            )
+
+            entry['project_names']   = ', '.join(entry['project_names']) or '—'
+            entry['rfq_states']      = ', '.join(entry['rfq_states']) or '—'
+            entry['boq_states']      = ', '.join(entry['states']) or '—'
+            entry['approval_status'] = ', '.join(entry['approval_statuses']) or '—'
+            entry['payment_status']  = ', '.join(
+                dict.fromkeys(entry['payment_statuses'])  # deduplicate, preserve order
+            ) or '—'
+
             result.append(entry)
 
-        # Sort by total_value desc
         result.sort(key=lambda x: x['total_value'], reverse=True)
+        return result
+
+    @api.model
+    def get_trade_assignments(self):
+        """
+        Return per-trade (work category) assignment breakdown for the dashboard.
+
+        Each entry: trade name/code, BOQ value, RFQ value, vendor count,
+        RFQ count, margin %, payment status, list of vendors with their values.
+        """
+        company_domain = [('company_id', '=', self.env.company.id)]
+        boqs = self.search(company_domain)
+
+        if not boqs.ids:
+            return []
+
+        rfq_boq_map, rfqs, vendor_rfq_prices = self._get_rfq_data_for_boqs(boqs)
+
+        # Build a {vendor_id: [rfq, ...]} map to look up RFQs per vendor
+        vendor_rfqs = {}
+        for rfq in rfqs:
+            vid = rfq.partner_id.id
+            vendor_rfqs.setdefault(vid, []).append(rfq)
+
+        # Category colour mapping
+        cat_colors = {
+            'electrical': '#f59e0b',
+            'civil':      '#3b82f6',
+            'lighting':   '#8b5cf6',
+            'plumbing':   '#06b6d4',
+            'hvac':       '#10b981',
+            'finishing':  '#ef4444',
+        }
+
+        trade_map = {}
+        for boq in boqs:
+            for line in boq.line_ids:
+                if not line.category_id:
+                    continue
+                cat = line.category_id
+                key = cat.id
+                if key not in trade_map:
+                    trade_map[key] = {
+                        'trade':         cat.name,
+                        'code':          cat.code or '',
+                        'color':         cat_colors.get(cat.code, '#6c757d'),
+                        'boq_value':     0.0,
+                        'total_sell':    0.0,
+                        'total_cost':    0.0,
+                        'vendor_ids':    set(),
+                        'rfq_ids':       set(),
+                        'vendors':       {},      # {vendor_id: {name, boq_value, rfq_value, rfq_state}}
+                        'pay_paid':      0.0,
+                        'pay_total':     0.0,
+                    }
+                tm = trade_map[key]
+
+                sell = line.unit_price * line.qty * (
+                    1.0 - (line.discount or 0.0) / 100.0
+                )
+                tm['boq_value'] += line.subtotal
+
+                for vendor in line.vendor_ids:
+                    vid = vendor.id
+                    tm['vendor_ids'].add(vid)
+
+                    pid       = line.product_id.id if line.product_id else 0
+                    rfq_price = vendor_rfq_prices.get(vid, {}).get(pid, 0.0)
+                    cost_unit = rfq_price if rfq_price > 0 else (line.cost_price or 0.0)
+
+                    tm['total_sell'] += sell
+                    tm['total_cost'] += cost_unit * line.qty
+
+                    if vid not in tm['vendors']:
+                        tm['vendors'][vid] = {
+                            'vendor_id':  vid,
+                            'name':       vendor.name,
+                            'boq_value':  0.0,
+                            'rfq_value':  0.0,
+                            'rfq_state':  '—',
+                        }
+                    tm['vendors'][vid]['boq_value'] += line.subtotal
+
+        # Enrich trade_map with RFQ values and payment info
+        for rfq in rfqs:
+            vid = rfq.partner_id.id
+            for key, tm in trade_map.items():
+                if vid not in tm['vendor_ids']:
+                    continue
+                tm['rfq_ids'].add(rfq.id)
+                if vid in tm['vendors']:
+                    tm['vendors'][vid]['rfq_value'] += rfq.amount_untaxed
+                    tm['vendors'][vid]['rfq_state'] = {
+                        'draft':      'RFQ',
+                        'sent':       'Sent',
+                        'to approve': 'To Approve',
+                        'purchase':   'PO',
+                        'done':       'Done',
+                        'cancel':     'Cancelled',
+                    }.get(rfq.state, rfq.state)
+
+                # Payment aggregation per trade
+                for inv in rfq.invoice_ids.filtered(lambda i: i.state == 'posted'):
+                    tm['pay_total'] += inv.amount_total
+                    if inv.payment_state == 'paid':
+                        tm['pay_paid'] += inv.amount_total
+
+        # Assemble result
+        result = []
+        for tm in trade_map.values():
+            sell = tm['total_sell']
+            cost = tm['total_cost']
+            margin = round((sell - cost) / sell * 100, 2) if sell > 0 else 0.0
+
+            if tm['pay_total'] == 0:
+                pay_status = 'Not Invoiced'
+            elif tm['pay_paid'] >= tm['pay_total']:
+                pay_status = 'Fully Paid'
+            elif tm['pay_paid'] > 0:
+                pay_status = 'Partially Paid'
+            else:
+                pay_status = 'Unpaid'
+
+            result.append({
+                'trade':          tm['trade'],
+                'code':           tm['code'],
+                'color':          tm['color'],
+                'boq_value':      round(tm['boq_value'], 2),
+                'rfq_value':      round(
+                    sum(v['rfq_value'] for v in tm['vendors'].values()), 2
+                ),
+                'vendor_count':   len(tm['vendor_ids']),
+                'rfq_count':      len(tm['rfq_ids']),
+                'margin_percent': margin,
+                'payment_status': pay_status,
+                'payment_paid':   round(tm['pay_paid'], 2),
+                'payment_total':  round(tm['pay_total'], 2),
+                'vendors': sorted(
+                    tm['vendors'].values(),
+                    key=lambda v: v['rfq_value'],
+                    reverse=True,
+                ),
+            })
+
+        result.sort(key=lambda x: x['boq_value'], reverse=True)
         return result
 
     @api.model
@@ -649,6 +909,7 @@ class BoqBoq(models.Model):
         """
         Return all BOQ order lines assigned to vendor_id so the dashboard
         Summary tab can show a line-level breakdown (like the BOQ form view).
+        Margin uses RFQ price_unit when available.
         """
         partner = self.env['res.partner'].browse(vendor_id)
         if not partner.exists():
@@ -657,21 +918,38 @@ class BoqBoq(models.Model):
         company_domain = [('company_id', '=', self.env.company.id)]
         boqs = self.search(company_domain)
 
+        _rfq_boq_map, rfqs, vendor_rfq_prices = self._get_rfq_data_for_boqs(boqs)
+        vendor_prices = vendor_rfq_prices.get(vendor_id, {})
+
         rows = []
         for boq in boqs:
             for line in boq.line_ids:
                 if partner not in line.vendor_ids:
                     continue
+
+                pid       = line.product_id.id if line.product_id else 0
+                rfq_price = vendor_prices.get(pid, 0.0)
+                cost_unit = rfq_price if rfq_price > 0 else (line.cost_price or 0.0)
+                sell_unit = line.unit_price * (1.0 - (line.discount or 0.0) / 100.0)
+                margin = (
+                    round((sell_unit - cost_unit) / sell_unit * 100, 2)
+                    if sell_unit > 0 else 0.0
+                )
+
                 rows.append({
                     'boq_name':      boq.name or '—',
-                    'product_name':  line.product_name or (line.product_id.name if line.product_id else '—'),
+                    'category':      line.category_id.name if line.category_id else '—',
+                    'product_name':  line.product_name or (
+                        line.product_id.name if line.product_id else '—'
+                    ),
                     'qty':           line.qty,
                     'unit_price':    line.unit_price,
-                    'cost_price':    line.cost_price,
+                    'rfq_price':     rfq_price,
+                    'cost_price':    cost_unit,
                     'discount':      line.discount,
                     'subtotal':      line.subtotal,
                     'tax_amount':    line.tax_amount,
                     'total_value':   line.total_value,
-                    'margin_percent': round(line.margin_percent, 2),
+                    'margin_percent': margin,
                 })
         return rows
