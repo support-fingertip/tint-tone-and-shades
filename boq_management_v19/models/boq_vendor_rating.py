@@ -65,7 +65,7 @@ class BoqVendorRating(models.Model):
     )
 
     # ── Constraints ──────────────────────────────────────────────────────
-    unique_po_rating = models.Constraint(
+    _unique_po_rating = models.Constraint(
         'unique(purchase_order_id)',
         'A rating already exists for this Purchase Order. Edit the existing rating.',
     )

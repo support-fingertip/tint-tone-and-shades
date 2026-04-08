@@ -204,11 +204,20 @@ class BoqOrderLine(models.Model):
                 ADD COLUMN IF NOT EXISTS rating_count INTEGER       DEFAULT 0;
         """)
 
-        # ── purchase_order.approval_state (BUG 5) ────────────────────────
-        self.env.cr.execute("""
-            ALTER TABLE purchase_order
-                ADD COLUMN IF NOT EXISTS approval_state VARCHAR;
-        """)
+        # ── Clean up stale ir.rule for boq.vendor.rating ──────────────────
+        # The old vendor.po.rating model left an ir.rule with domain_force
+        # [('res_model','=','res.partner')] that crashes any partner read.
+        # We MUST use the ORM .unlink() (not raw SQL) so Odoo's ir.rule
+        # ormcache is properly invalidated — raw SQL bypasses the cache
+        # and the stale rule survives in memory until the next restart.
+        try:
+            stale_rules = self.env['ir.rule'].sudo().search([
+                ('model_id.model', 'in', ['boq.vendor.rating', 'vendor.po.rating']),
+            ])
+            if stale_rules:
+                stale_rules.unlink()
+        except Exception:
+            pass  # model may not exist yet on first install; safe to skip
 
         return res
 

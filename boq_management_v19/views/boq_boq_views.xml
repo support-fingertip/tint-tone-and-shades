@@ -385,6 +385,43 @@
                         </field>
                     </page>
 
+                    <!-- ─────────────── VENDOR ASSIGNMENT ───────────── -->
+                    <page string="Vendor Assignment" name="tab_vendor_assignment">
+                        <p class="text-muted small mb-2">
+                            Assign <b>Vendors</b> and <b>Suppliers</b> per trade in bulk.
+                            Click <b>Apply to Lines</b> on a row to push that selection onto
+                            every line in that trade, or use <b>Apply All</b> to update all trades at once.
+                        </p>
+                        <field name="trade_vendor_ids" mode="list">
+                            <list editable="bottom">
+                                <field name="category_id" string="Trade"
+                                       options="{'no_create_edit': True}"/>
+                                <field name="vendor_ids"
+                                       widget="many2many_tags"
+                                       string="Vendors"
+                                       domain="[('supplier_rank', '&gt;', 0)]"
+                                       options="{'no_create_edit': True}"/>
+                                <field name="supplier_ids"
+                                       widget="many2many_tags"
+                                       string="Suppliers"
+                                       domain="[('supplier_rank', '&gt;', 0), ('partner_type', '=', 'supplier')]"
+                                       options="{'no_create_edit': True}"/>
+                                <field name="line_count" string="Lines" readonly="1"/>
+                                <button name="action_apply_to_lines" type="object"
+                                        string="Apply to Lines"
+                                        class="btn-sm btn-secondary"
+                                        title="Overwrite vendor_ids on all lines in this trade"/>
+                            </list>
+                        </field>
+                        <div class="mt-2" invisible="not trade_vendor_ids">
+                            <button name="action_apply_all_trade_vendors"
+                                    type="object"
+                                    string="Apply All to Lines"
+                                    class="btn btn-primary btn-sm"
+                                    confirm="This will overwrite vendor assignments on ALL lines for every trade listed above. Proceed?"/>
+                        </div>
+                    </page>
+
                     <!-- ─────────────── TERMS &amp; NOTES ─────────────── -->
                     <page string="Terms &amp; Notes" name="tab_notes">
                         <field name="notes"

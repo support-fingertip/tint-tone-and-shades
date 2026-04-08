@@ -60,8 +60,8 @@ class BoqCategory(models.Model):
     )
 
     # ── Constraints ──────────────────────────────────────────────────────
-    name_uniq = models.Constraint('unique(name)', 'Category name must be unique.')
-    code_uniq = models.Constraint('unique(code)', 'Category code must be unique.')
+    _name_uniq = models.Constraint('unique(name)', 'Category name must be unique.')
+    _code_uniq = models.Constraint('unique(code)', 'Category code must be unique.')
 
     # ── Computes ─────────────────────────────────────────────────────────
     @api.depends('color')

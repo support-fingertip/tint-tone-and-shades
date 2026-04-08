@@ -4,10 +4,8 @@
     <!--
         purchase.order form extension:
         ─ BOQ back-link smart button              (existing)
-        ─ Rate Vendor button  (BUG 3)             visible after receipt done + invoice paid
-        ─ Request Approval button (BUG 5)         visible when margin < threshold
-        ─ Approve/Reject buttons (BUG 5)          visible to managers when pending
-        ─ Margin % + Approval status fields       (BUG 4 / BUG 5)
+        ─ Rate Vendor button                      visible after receipt done + invoice paid
+        ─ Margin % field                          (header)
         ─ Payment Status display                  (BUG 6)
         ─ margin_percent on PO lines              (NEW TASK 3)
     -->
@@ -36,32 +34,6 @@
 
             </xpath>
 
-            <!-- ── Header buttons ────────────────────────────────────── -->
-            <xpath expr="//header/button[last()]" position="after">
-
-                <!-- BUG 5 — Request Approval (shown when margin below threshold) -->
-                <button name="action_request_approval" type="object"
-                        class="btn btn-warning"
-                        invisible="not show_request_approval"
-                        string="Request Approval"
-                        confirm="This RFQ has a low margin. Send approval request to the BOQ Manager?"/>
-
-                <!-- BUG 5 — Approve (BOQ Managers only, when pending) -->
-                <button name="action_approve_rfq" type="object"
-                        class="btn btn-success"
-                        invisible="not show_approve_btn"
-                        groups="boq_management_v19.group_boq_manager"
-                        string="Approve RFQ"/>
-
-                <!-- BUG 5 — Reject (BOQ Managers only, when pending) -->
-                <button name="action_reject_rfq" type="object"
-                        class="btn btn-danger"
-                        invisible="not show_approve_btn"
-                        groups="boq_management_v19.group_boq_manager"
-                        string="Reject RFQ"/>
-
-            </xpath>
-
             <!-- ── BOQ Reference field after partner ─────────────────── -->
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="boq_id" string="BOQ Reference"
@@ -70,16 +42,9 @@
 
             <!-- ── Approval + Margin fields (below partner block) ──────── -->
             <xpath expr="//field[@name='partner_ref']" position="after">
-                <!-- BUG 4 — Margin % on PO header -->
+                <!-- Margin % on PO header -->
                 <field name="margin_percent" string="Margin %"
                        widget="percentage" readonly="1"/>
-                <!-- BUG 5 — Approval state -->
-                <field name="approval_state" string="Approval Status"
-                       widget="badge"
-                       decoration-warning="approval_state == 'pending'"
-                       decoration-success="approval_state == 'approved'"
-                       decoration-danger="approval_state == 'rejected'"
-                       invisible="not approval_state"/>
                 <!-- BUG 6 — Payment status display -->
                 <field name="payment_status_display" string="Payment Status" readonly="1"
                        invisible="state not in ('purchase','done')"/>
@@ -97,9 +62,7 @@
                 <field name="margin_percent" string="Margin %"
                        widget="percentage"
                        optional="show"
-                       decoration-danger="margin_warning"
                        readonly="1"/>
-                <field name="margin_warning" column_invisible="1"/>
             </xpath>
 
         </field>
