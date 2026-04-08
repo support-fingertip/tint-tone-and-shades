@@ -93,15 +93,6 @@ class BoqCategory(models.Model):
         compute='_compute_boq_count',
     )
 
-    # ── _auto_init: add is_down_payment column on every server start ─────
-    def _auto_init(self):
-        res = super()._auto_init()
-        self.env.cr.execute("""
-            ALTER TABLE boq_category
-                ADD COLUMN IF NOT EXISTS is_down_payment BOOLEAN DEFAULT FALSE;
-        """)
-        return res
-
     # ── Constraints ──────────────────────────────────────────────────────
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Category name must be unique.'),
