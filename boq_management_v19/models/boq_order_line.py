@@ -205,19 +205,29 @@ class BoqOrderLine(models.Model):
         """)
 
         # ── Clean up stale ir.rule for boq.vendor.rating ──────────────────
-        # The old vendor.po.rating model left an ir.rule with domain_force
-        # [('res_model','=','res.partner')] that crashes any partner read.
-        # We MUST use the ORM .unlink() (not raw SQL) so Odoo's ir.rule
-        # ormcache is properly invalidated — raw SQL bypasses the cache
-        # and the stale rule survives in memory until the next restart.
+        # A legacy ir.rule has domain_force [('res_model','=','res.partner')]
+        # which crashes every res.partner read because boq.vendor.rating has
+        # no `res_model` field.
+        #
+        # The ORM search [('model_id.model', 'in', [...])] misses this rule
+        # when its model_id FK points to an already-deleted ir.model row
+        # (dangling FK → the relational filter returns 0 rows).
+        #
+        # Strategy: use raw SQL to find the rule IDs (no FK traversal),
+        # then browse+unlink via ORM so the ir.rule ormcache is invalidated.
         try:
-            stale_rules = self.env['ir.rule'].sudo().search([
-                ('model_id.model', 'in', ['boq.vendor.rating', 'vendor.po.rating']),
-            ])
-            if stale_rules:
-                stale_rules.unlink()
+            self.env.cr.execute("""
+                SELECT r.id
+                  FROM ir_rule r
+             LEFT JOIN ir_model m ON r.model_id = m.id
+                 WHERE (m.model IN ('boq.vendor.rating', 'vendor.po.rating'))
+                    OR (r.domain_force ILIKE '%%res_model%%')
+            """)
+            stale_ids = [row[0] for row in self.env.cr.fetchall()]
+            if stale_ids:
+                self.env['ir.rule'].sudo().browse(stale_ids).unlink()
         except Exception:
-            pass  # model may not exist yet on first install; safe to skip
+            pass  # ir_rule table may not exist yet on very first install
 
         return res
 
