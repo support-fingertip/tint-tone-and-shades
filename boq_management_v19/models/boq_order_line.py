@@ -211,7 +211,7 @@ class BoqOrderLine(models.Model):
         """)
 
         # ── Clean up stale ir.rule with invalid domain on boq.vendor.rating ─
-        # Old vendor.po.rating model left an ir.rule with domain
+        # Old vendor.po.rating model left an ir.rule with domain_force
         # ('res_model', '=', 'res.partner') — boq.vendor.rating has no
         # res_model field, so the domain crashes any partner form read.
         self.env.cr.execute("""
@@ -219,7 +219,7 @@ class BoqOrderLine(models.Model):
             WHERE model_id IN (
                 SELECT id FROM ir_model WHERE model = 'boq.vendor.rating'
             )
-            AND domain::text LIKE '%%res_model%%';
+            AND domain_force::text LIKE '%%res_model%%';
         """)
 
         return res
