@@ -204,12 +204,6 @@ class BoqOrderLine(models.Model):
                 ADD COLUMN IF NOT EXISTS rating_count INTEGER       DEFAULT 0;
         """)
 
-        # ── boq_category.is_down_payment (BUG 1) ─────────────────────────
-        self.env.cr.execute("""
-            ALTER TABLE boq_category
-                ADD COLUMN IF NOT EXISTS is_down_payment BOOLEAN DEFAULT FALSE;
-        """)
-
         # ── purchase_order.approval_state (BUG 5) ────────────────────────
         self.env.cr.execute("""
             ALTER TABLE purchase_order
@@ -261,24 +255,17 @@ class BoqOrderLine(models.Model):
                 line.tax_amount = 0.0
                 line.total_value = line.subtotal
 
-    @api.depends('unit_price', 'discount', 'cost_price', 'category_id', 'category_id.is_down_payment')
+    @api.depends('unit_price', 'discount', 'cost_price')
     def _compute_margin(self):
         """
-        BUG 1 fix — Margin formula: ((sale_price - purchase_price) / sale_price) × 100
-        • sale_price  = unit_price after discount
-        • purchase_price = cost_price (product standard_price)
-        • If sale_price == 0  → margin = 0  (avoid divide-by-zero)
-        • If category is_down_payment → margin forced to 0 (down-payment convention)
+        Margin formula: ((sale_price - cost_price) / sale_price) × 100
+        • sale_price = unit_price after discount
+        • If sale_price == 0 → margin = 0 (avoid divide-by-zero)
         """
         for line in self:
-            # Down-payment lines always carry 0% margin
-            if line.category_id and line.category_id.is_down_payment:
-                line.margin_percent = 0.0
-                continue
             sale_price = line.unit_price * (1.0 - (line.discount or 0.0) / 100.0)
             if sale_price > 0:
-                purchase_price = line.cost_price or 0.0
-                line.margin_percent = ((sale_price - purchase_price) / sale_price) * 100.0
+                line.margin_percent = ((sale_price - (line.cost_price or 0.0)) / sale_price) * 100.0
             else:
                 line.margin_percent = 0.0
 

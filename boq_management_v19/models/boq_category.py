@@ -1,22 +1,11 @@
 # -*- coding: utf-8 -*-
-import json
 from odoo import models, fields, api
-
-# ir.config_parameter key that stores the set of category IDs with is_dynamic=True.
-# Format: JSON-encoded list of integers, e.g. "[1, 5, 12]"
-# Using an existing system-parameter table means zero new DB columns needed.
-_DYNAMIC_PARAM = 'boq.category.dynamic_ids'
 
 
 class BoqCategory(models.Model):
     """
     BOQ Work Category — maps to a notebook tab in the BOQ form.
     Examples: Electrical, Civil, Lighting, Plumbing, HVAC, Finishing.
-
-    Task 1 — Work Category UI fix:
-    'is_dynamic' controls whether the "Add new category" (sub-categories) section
-    is visible on the form.  It is stored in ir.config_parameter so no new
-    DB column is required on boq_category.
     """
     _name = 'boq.category'
     _description = 'BOQ Work Category'
@@ -57,29 +46,6 @@ class BoqCategory(models.Model):
         store=True,
     )
 
-    # ── Task 1: Dynamic Category Flag ────────────────────────────────────
-    # Stored in ir.config_parameter (existing table) — NO new DB column.
-    # Hidden by default (is_dynamic=False).  Enable to reveal the
-    # "Add new category" sub-categories section on this category's form.
-    is_dynamic = fields.Boolean(
-        string='Dynamic Category',
-        compute='_compute_is_dynamic',
-        inverse='_inverse_is_dynamic',
-        store=False,
-        help='When enabled, the "Add new category" section becomes visible '
-             'on this Work Category form.  Disabled by default.',
-    )
-
-    # ── Down Payment Flag ─────────────────────────────────────────────────
-    # BUG 1 fix: Lines in a "Down Payment" category must always report 0% margin.
-    # This Boolean is stored on the table so it can be queried from boq.order.line.
-    is_down_payment = fields.Boolean(
-        string='Down Payment Category',
-        default=False,
-        help='When enabled, all BOQ lines under this category will always show '
-             '0% margin (down-payment lines carry no margin by convention).',
-    )
-
     # ── Status ───────────────────────────────────────────────────────────
     active = fields.Boolean(default=True)
 
@@ -94,43 +60,8 @@ class BoqCategory(models.Model):
     )
 
     # ── Constraints ──────────────────────────────────────────────────────
-    _sql_constraints = [
-        ('name_uniq', 'unique(name)', 'Category name must be unique.'),
-        ('code_uniq', 'unique(code)', 'Category code must be unique.'),
-    ]
-
-    # ── Helpers ───────────────────────────────────────────────────────────
-    def _get_dynamic_ids(self):
-        """Return the set of category IDs that have is_dynamic=True."""
-        raw = self.env['ir.config_parameter'].sudo().get_param(
-            _DYNAMIC_PARAM, '[]'
-        )
-        try:
-            return set(json.loads(raw))
-        except (ValueError, TypeError):
-            return set()
-
-    def _set_dynamic_ids(self, id_set):
-        """Persist the set of dynamic category IDs to ir.config_parameter."""
-        self.env['ir.config_parameter'].sudo().set_param(
-            _DYNAMIC_PARAM, json.dumps(sorted(id_set))
-        )
-
-    # ── is_dynamic compute / inverse ─────────────────────────────────────
-    @api.depends()
-    def _compute_is_dynamic(self):
-        dynamic_ids = self._get_dynamic_ids()
-        for rec in self:
-            rec.is_dynamic = rec.id in dynamic_ids
-
-    def _inverse_is_dynamic(self):
-        dynamic_ids = self._get_dynamic_ids()
-        for rec in self:
-            if rec.is_dynamic:
-                dynamic_ids.add(rec.id)
-            else:
-                dynamic_ids.discard(rec.id)
-        self._set_dynamic_ids(dynamic_ids)
+    name_uniq = models.Constraint('unique(name)', 'Category name must be unique.')
+    code_uniq = models.Constraint('unique(code)', 'Category code must be unique.')
 
     # ── Computes ─────────────────────────────────────────────────────────
     @api.depends('color')

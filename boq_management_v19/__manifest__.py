@@ -29,6 +29,7 @@
         'web',
         'uom',
         'purchase',
+        'purchase_stock',
         'account',
         'project',
         'stock',
