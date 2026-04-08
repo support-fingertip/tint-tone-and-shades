@@ -640,7 +640,108 @@ class BoqBoq(models.Model):
             entry['boq_states'] = ', '.join(entry['states']) or '—'
             result.append(entry)
 
+        # BUG 6 — Add payment_status from account.move (vendor bills) linked to each PO
+        for rfq in rfqs:
+            vid = rfq.partner_id.id
+            if vid not in vendor_map:
+                continue
+            entry = vendor_map[vid]
+            if 'payment_states' not in entry:
+                entry['payment_states'] = []
+            for inv in rfq.invoice_ids:
+                ps = inv.payment_state or 'not_paid'
+                entry['payment_states'].append(ps)
+
+        for vid, entry in vendor_map.items():
+            ps_list = entry.pop('payment_states', [])
+            if not ps_list:
+                entry['payment_status'] = 'not_paid'
+                entry['payment_status_label'] = 'Not Paid'
+            elif all(s in ('paid', 'in_payment') for s in ps_list):
+                entry['payment_status'] = 'paid'
+                entry['payment_status_label'] = 'Fully Paid'
+            elif any(s in ('paid', 'in_payment', 'partial') for s in ps_list):
+                entry['payment_status'] = 'partial'
+                entry['payment_status_label'] = 'Partially Paid'
+            else:
+                entry['payment_status'] = 'not_paid'
+                entry['payment_status_label'] = 'Not Paid'
+
         # Sort by total_value desc
+        result.sort(key=lambda x: x['total_value'], reverse=True)
+        return result
+
+    @api.model
+    def get_trade_summary(self):
+        """
+        BUG 2 — Trade Assignments for the dashboard.
+        Group BOQ lines by work_category_id (trade) and sum total_value per trade.
+        Each entry: trade_name, total BOQ value, RFQ count, vendor names.
+        """
+        company_domain = [('company_id', '=', self.env.company.id)]
+        boqs = self.search(company_domain)
+
+        # Collect rfq_boq_map for vendor→rfq count per trade
+        rfq_boq_map = {}
+        if boqs.ids:
+            self.env.cr.execute(
+                "SELECT purchase_id, boq_id FROM boq_boq_purchase_order_rel WHERE boq_id IN %s",
+                (tuple(boqs.ids),)
+            )
+            rfq_boq_map = {row[0]: row[1] for row in self.env.cr.fetchall()}
+
+        rfqs = self.env['purchase.order'].browse(list(rfq_boq_map.keys())) if rfq_boq_map else self.env['purchase.order']
+
+        trade_map = {}
+        for boq in boqs:
+            for line in boq.line_ids:
+                if not line.category_id:
+                    continue
+                cat_id = line.category_id.id
+                if cat_id not in trade_map:
+                    trade_map[cat_id] = {
+                        'trade_id': cat_id,
+                        'trade_name': line.category_id.name,
+                        'trade_code': line.category_id.code or '',
+                        'trade_icon': line.category_id.icon or 'fa-cogs',
+                        'total_value': 0.0,
+                        'line_count': 0,
+                        'vendor_id_set': set(),
+                        'vendor_names': [],
+                        'boq_ids': set(),
+                    }
+                entry = trade_map[cat_id]
+                entry['total_value'] += line.subtotal
+                entry['line_count'] += 1
+                entry['boq_ids'].add(boq.id)
+                for vendor in line.vendor_ids:
+                    if vendor.id not in entry['vendor_id_set']:
+                        entry['vendor_id_set'].add(vendor.id)
+                        entry['vendor_names'].append(vendor.name or '—')
+
+        # Compute RFQ count per trade: count how many POs have at least one line
+        # whose partner is in the trade's vendor set
+        rfq_vendor_map = {}  # vendor_id → list of rfq.id
+        for rfq in rfqs:
+            vid = rfq.partner_id.id
+            rfq_vendor_map.setdefault(vid, []).append(rfq.id)
+
+        result = []
+        for cat_id, entry in trade_map.items():
+            rfq_ids_for_trade = set()
+            for vid in entry['vendor_id_set']:
+                for rid in rfq_vendor_map.get(vid, []):
+                    rfq_ids_for_trade.add(rid)
+            entry['rfq_count'] = len(rfq_ids_for_trade)
+            entry['vendor_count'] = len(entry['vendor_id_set'])
+            entry['vendor_names_str'] = ', '.join(entry['vendor_names']) or '—'
+            entry['boq_count'] = len(entry['boq_ids'])
+            # Clean up sets (not JSON-serializable)
+            del entry['vendor_id_set']
+            del entry['vendor_names']
+            del entry['boq_ids']
+            result.append(entry)
+
         result.sort(key=lambda x: x['total_value'], reverse=True)
         return result
 

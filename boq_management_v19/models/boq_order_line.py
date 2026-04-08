@@ -223,12 +223,24 @@ class BoqOrderLine(models.Model):
                 line.tax_amount = 0.0
                 line.total_value = line.subtotal
 
-    @api.depends('unit_price', 'discount', 'cost_price')
+    @api.depends('unit_price', 'discount', 'cost_price', 'category_id', 'category_id.is_down_payment')
     def _compute_margin(self):
+        """
+        BUG 1 fix — Margin formula: ((sale_price - purchase_price) / sale_price) × 100
+        • sale_price  = unit_price after discount
+        • purchase_price = cost_price (product standard_price)
+        • If sale_price == 0  → margin = 0  (avoid divide-by-zero)
+        • If category is_down_payment → margin forced to 0 (down-payment convention)
+        """
         for line in self:
-            selling = line.unit_price * (1.0 - line.discount / 100.0)
-            if selling > 0:
-                line.margin_percent = ((selling - (line.cost_price or 0.0)) / selling) * 100.0
+            # Down-payment lines always carry 0% margin
+            if line.category_id and line.category_id.is_down_payment:
+                line.margin_percent = 0.0
+                continue
+            sale_price = line.unit_price * (1.0 - (line.discount or 0.0) / 100.0)
+            if sale_price > 0:
+                purchase_price = line.cost_price or 0.0
+                line.margin_percent = ((sale_price - purchase_price) / sale_price) * 100.0
             else:
                 line.margin_percent = 0.0
 

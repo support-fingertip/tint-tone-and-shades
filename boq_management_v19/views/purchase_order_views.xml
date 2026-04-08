@@ -2,9 +2,14 @@
 <odoo>
 
     <!--
-        Task 3 — RFQ inside BOQ: form view inheritance only.
-        List view inheritance removed — boq_id is non-stored computed;
-        //list xpath hits nested lists in Odoo 19, causing ParseError.
+        purchase.order form extension:
+        ─ BOQ back-link smart button              (existing)
+        ─ Rate Vendor button  (BUG 3)             visible after receipt done + invoice paid
+        ─ Request Approval button (BUG 5)         visible when margin < threshold
+        ─ Approve/Reject buttons (BUG 5)          visible to managers when pending
+        ─ Margin % + Approval status fields       (BUG 4 / BUG 5)
+        ─ Payment Status display                  (BUG 6)
+        ─ margin_percent on PO lines              (NEW TASK 3)
     -->
 
     <record id="view_purchase_order_form_boq_inherit" model="ir.ui.view">
@@ -13,40 +18,123 @@
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
 
+            <!-- ── Smart buttons ────────────────────────────────────── -->
             <xpath expr="//div[@name='button_box']" position="inside">
+
+                <!-- View BOQ (existing) -->
                 <button name="action_open_boq" type="object"
                         class="oe_stat_button" icon="fa-calculator"
                         invisible="not boq_id" string="View BOQ">
                     <field name="boq_id" widget="statinfo" string="BOQ"/>
                 </button>
+
+                <!-- BUG 3 / NEW TASK 4 — Rate Vendor (only after receipt done + paid) -->
+                <button name="action_rate_vendor" type="object"
+                        class="oe_stat_button" icon="fa-star"
+                        invisible="not show_rate_vendor"
+                        string="Rate Vendor"/>
+
             </xpath>
 
+            <!-- ── Header buttons ────────────────────────────────────── -->
+            <xpath expr="//header/button[last()]" position="after">
+
+                <!-- BUG 5 — Request Approval (shown when margin below threshold) -->
+                <button name="action_request_approval" type="object"
+                        class="btn btn-warning"
+                        invisible="not show_request_approval"
+                        string="Request Approval"
+                        confirm="This RFQ has a low margin. Send approval request to the BOQ Manager?"/>
+
+                <!-- BUG 5 — Approve (BOQ Managers only, when pending) -->
+                <button name="action_approve_rfq" type="object"
+                        class="btn btn-success"
+                        invisible="not show_approve_btn"
+                        groups="boq_management_v19.group_boq_manager"
+                        string="Approve RFQ"/>
+
+                <!-- BUG 5 — Reject (BOQ Managers only, when pending) -->
+                <button name="action_reject_rfq" type="object"
+                        class="btn btn-danger"
+                        invisible="not show_approve_btn"
+                        groups="boq_management_v19.group_boq_manager"
+                        string="Reject RFQ"/>
+
+            </xpath>
+
+            <!-- ── BOQ Reference field after partner ─────────────────── -->
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="boq_id" string="BOQ Reference"
                        options="{'no_create': True}" invisible="not boq_id"/>
             </xpath>
 
+            <!-- ── Approval + Margin fields (below partner block) ──────── -->
+            <xpath expr="//field[@name='partner_ref']" position="after">
+                <!-- BUG 4 — Margin % on PO header -->
+                <field name="margin_percent" string="Margin %"
+                       widget="percentage" readonly="1"/>
+                <!-- BUG 5 — Approval state -->
+                <field name="approval_state" string="Approval Status"
+                       widget="badge"
+                       decoration-warning="approval_state == 'pending'"
+                       decoration-success="approval_state == 'approved'"
+                       decoration-danger="approval_state == 'rejected'"
+                       invisible="not approval_state"/>
+                <!-- BUG 6 — Payment status display -->
+                <field name="payment_status_display" string="Payment Status" readonly="1"
+                       invisible="state not in ('purchase','done')"/>
+            </xpath>
+
+            <!-- ── PO lines: make name optional + add margin column ────── -->
             <xpath expr="//field[@name='order_line']//field[@name='name']"
                    position="attributes">
                 <attribute name="optional">show</attribute>
             </xpath>
 
+            <!-- NEW TASK 3 — Margin % column on PO lines (for comparison view) -->
+            <xpath expr="//field[@name='order_line']//field[@name='price_subtotal']"
+                   position="after">
+                <field name="margin_percent" string="Margin %"
+                       widget="percentage"
+                       optional="show"
+                       decoration-danger="margin_warning"
+                       readonly="1"/>
+                <field name="margin_warning" column_invisible="1"/>
+            </xpath>
+
         </field>
     </record>
 
+    <!-- ══════════════════════════════════════════════════════════════════════
+         NEW TASK 1 — Vendor RFQ action (partner_type = 'vendor' or unset)
+         Previously named "RFQs from BOQ" → now "Vendor RFQ"
+    ══════════════════════════════════════════════════════════════════════════ -->
     <record id="action_boq_rfq_list" model="ir.actions.act_window">
-        <field name="name">RFQs from BOQ</field>
+        <field name="name">Vendor RFQ</field>
         <field name="res_model">purchase.order</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[]</field>
         <field name="context">{'search_default_draft': 1}</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">No RFQs linked to a BOQ yet!</p>
+            <p class="o_view_nocontent_smiling_face">No Vendor RFQs yet!</p>
             <p>Open a BOQ, assign vendors to lines, then click <b>Create RFQ</b>.</p>
         </field>
     </record>
 
-    <!-- ── Vendors list (suppliers that appear on BOQ lines) ─────────── -->
+    <!-- NEW TASK 1 — Supplier RFQ action (partner_type = 'supplier') -->
+    <record id="action_boq_supplier_rfq_list" model="ir.actions.act_window">
+        <field name="name">Supplier RFQ</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('partner_id.partner_type', '=', 'supplier')]</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No Supplier RFQs yet!</p>
+            <p>Assign partner_type = "Supplier" to a vendor, then create RFQs for them.</p>
+        </field>
+    </record>
+
+    <!-- Vendors list (existing, unchanged) -->
     <record id="action_boq_vendor_list" model="ir.actions.act_window">
         <field name="name">Vendors</field>
         <field name="res_model">res.partner</field>
