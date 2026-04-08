@@ -194,6 +194,16 @@ class BoqOrderLine(models.Model):
         """
         res = super()._register_hook()
 
+        # ── boq_trade_vendor: add partner_type column + fix unique constraint ─
+        # partner_type column added in v2.1 — safe to add if already exists.
+        # Old unique constraint (boq_id, category_id) renamed to include partner_type.
+        self.env.cr.execute("""
+            ALTER TABLE boq_trade_vendor
+                ADD COLUMN IF NOT EXISTS partner_type VARCHAR DEFAULT 'vendor';
+            ALTER TABLE boq_trade_vendor
+                DROP CONSTRAINT IF EXISTS boq_trade_vendor_boq_id_category_id_key;
+        """)
+
         # ── res_partner columns (BOQ v2.0 — NEW TASK 1 + NEW TASK 4) ─────
         # Cannot use res.partner._auto_init() because res.partner is owned
         # by 'base' and Odoo won't call _auto_init() on it for our module.
