@@ -167,11 +167,6 @@
                                        readonly="1" optional="show" sum="Total (incl. Tax)"/>
                                 <field name="margin_percent" string="Margin %"
                                        readonly="1" optional="show"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank','>',0)]"
-                                       options="{'no_create_edit': True}"/>
                                 <field name="currency_id" column_invisible="True"/>
                                 <field name="notes" string="Notes" optional="hide"/>
                                 <field name="category_id" column_invisible="True"
@@ -208,11 +203,6 @@
                                        readonly="1" optional="show" sum="Total (incl. Tax)"/>
                                 <field name="margin_percent" string="Margin %"
                                        readonly="1" optional="show"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank','>',0)]"
-                                       options="{'no_create_edit': True}"/>
                                 <field name="currency_id" column_invisible="True"/>
                                 <field name="notes" string="Notes" optional="hide"/>
                                 <field name="category_id" column_invisible="True"
@@ -249,11 +239,6 @@
                                        readonly="1" optional="show" sum="Total (incl. Tax)"/>
                                 <field name="margin_percent" string="Margin %"
                                        readonly="1" optional="show"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank','>',0)]"
-                                       options="{'no_create_edit': True}"/>
                                 <field name="currency_id" column_invisible="True"/>
                                 <field name="notes" string="Notes" optional="hide"/>
                                 <field name="category_id" column_invisible="True"
@@ -290,11 +275,6 @@
                                        readonly="1" optional="show" sum="Total (incl. Tax)"/>
                                 <field name="margin_percent" string="Margin %"
                                        readonly="1" optional="show"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank','>',0)]"
-                                       options="{'no_create_edit': True}"/>
                                 <field name="currency_id" column_invisible="True"/>
                                 <field name="notes" string="Notes" optional="hide"/>
                                 <field name="category_id" column_invisible="True"
@@ -331,11 +311,6 @@
                                        readonly="1" optional="show" sum="Total (incl. Tax)"/>
                                 <field name="margin_percent" string="Margin %"
                                        readonly="1" optional="show"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank','>',0)]"
-                                       options="{'no_create_edit': True}"/>
                                 <field name="currency_id" column_invisible="True"/>
                                 <field name="notes" string="Notes" optional="hide"/>
                                 <field name="category_id" column_invisible="True"
@@ -372,11 +347,6 @@
                                        readonly="1" optional="show" sum="Total (incl. Tax)"/>
                                 <field name="margin_percent" string="Margin %"
                                        readonly="1" optional="show"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank','>',0)]"
-                                       options="{'no_create_edit': True}"/>
                                 <field name="currency_id" column_invisible="True"/>
                                 <field name="notes" string="Notes" optional="hide"/>
                                 <field name="category_id" column_invisible="True"
