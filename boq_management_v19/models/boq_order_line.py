@@ -45,7 +45,7 @@ class BoqOrderLine(models.Model):
     )
     product_name = fields.Char(
         string='Description',
-        compute='_compute_from_product',
+        compute='_compute_product_info',
         store=True,
         readonly=False,
         precompute=True,
@@ -67,7 +67,7 @@ class BoqOrderLine(models.Model):
     uom_id = fields.Many2one(
         comodel_name='uom.uom',
         string='Unit of Measure',
-        compute='_compute_from_product',
+        compute='_compute_product_info',
         store=True,
         readonly=False,
         precompute=True,
@@ -145,7 +145,7 @@ class BoqOrderLine(models.Model):
     # ── Cost & Margin ──────────────────────────────────────────────────────
     cost_price = fields.Float(
         string='Cost Price',
-        compute='_compute_from_product',
+        compute='_compute_cost_price',
         store=False,
         readonly=False,
         digits='Product Price',
@@ -210,20 +210,31 @@ class BoqOrderLine(models.Model):
                 ADD COLUMN IF NOT EXISTS is_down_payment BOOLEAN DEFAULT FALSE;
         """)
 
+        # ── purchase_order.approval_state (BUG 5) ────────────────────────
+        self.env.cr.execute("""
+            ALTER TABLE purchase_order
+                ADD COLUMN IF NOT EXISTS approval_state VARCHAR;
+        """)
+
         return res
 
     # ── Computes ──────────────────────────────────────────────────────────
     @api.depends('product_id')
-    def _compute_from_product(self):
+    def _compute_product_info(self):
+        """Stored fields derived from product_id: product_name and uom_id."""
         for line in self:
             if line.product_id:
                 line.product_name = line.product_id.display_name
                 line.uom_id = line.product_id.uom_id
-                line.cost_price = line.product_id.standard_price or 0.0
             else:
                 line.product_name = False
                 line.uom_id = False
-                line.cost_price = 0.0
+
+    @api.depends('product_id')
+    def _compute_cost_price(self):
+        """Non-stored: unit cost from product standard_price."""
+        for line in self:
+            line.cost_price = line.product_id.standard_price or 0.0 if line.product_id else 0.0
 
     @api.depends('qty', 'unit_price', 'discount')
     def _compute_subtotal(self):
