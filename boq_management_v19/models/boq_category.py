@@ -94,10 +94,8 @@ class BoqCategory(models.Model):
     )
 
     # ── Constraints ──────────────────────────────────────────────────────
-    _sql_constraints = [
-        ('name_uniq', 'unique(name)', 'Category name must be unique.'),
-        ('code_uniq', 'unique(code)', 'Category code must be unique.'),
-    ]
+    name_uniq = models.Constraint('unique(name)', 'Category name must be unique.')
+    code_uniq = models.Constraint('unique(code)', 'Category code must be unique.')
 
     # ── Helpers ───────────────────────────────────────────────────────────
     def _get_dynamic_ids(self):
