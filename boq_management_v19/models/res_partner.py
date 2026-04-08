@@ -5,6 +5,19 @@ from odoo import models, fields, api, _
 class ResPartner(models.Model):
     _inherit = 'res.partner'
 
+    # ── _auto_init: add new columns on every server start ────────────────
+    # Mirrors the pattern in boq_order_line._auto_init().
+    # Runs without requiring `odoo -u boq_management_v19`.
+    def _auto_init(self):
+        res = super()._auto_init()
+        self.env.cr.execute("""
+            ALTER TABLE res_partner
+                ADD COLUMN IF NOT EXISTS partner_type   VARCHAR,
+                ADD COLUMN IF NOT EXISTS avg_rating     NUMERIC(6, 2) DEFAULT 0.0,
+                ADD COLUMN IF NOT EXISTS rating_count   INTEGER       DEFAULT 0;
+        """)
+        return res
+
     # ── Existing BOQ relation ─────────────────────────────────────────────
     boq_ids = fields.One2many(
         comodel_name='boq.boq',
