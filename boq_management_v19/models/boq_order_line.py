@@ -162,18 +162,21 @@ class BoqOrderLine(models.Model):
     # ── Notes ─────────────────────────────────────────────────────────────
     notes = fields.Char(string='Remarks')
 
-    # ── _auto_init: guarantee M2M relation table on every startup ─────────
+    # ── _auto_init: idempotent schema bootstrap on every startup ──────────
     def _auto_init(self):
         """
-        Create boq_order_line_tax_rel unconditionally before super() runs.
+        boq.order.line is owned by boq_management_v19, so this _auto_init()
+        is guaranteed to run on EVERY server startup (not just -u upgrades).
 
-        Odoo does NOT auto-create M2M relation tables for installed modules
-        unless the module is explicitly upgraded (-u).  By creating the table
-        here with IF NOT EXISTS we ensure it is present on every server
-        startup, eliminating the UndefinedTable crash without requiring an
-        explicit module upgrade by the administrator.
+        We use it to ensure all boq_management_v19 schema changes exist,
+        including columns on tables owned by other modules (res_partner, etc.)
+        that cannot be bootstrapped from those models' own _auto_init().
+
+        All statements use IF NOT EXISTS / DO NOTHING so repeated calls are safe.
         """
         res = super()._auto_init()
+
+        # ── 1. M2M relation table for BOQ line taxes ──────────────────────
         self.env.cr.execute("""
             CREATE TABLE IF NOT EXISTS boq_order_line_tax_rel (
                 line_id INTEGER NOT NULL
@@ -183,6 +186,23 @@ class BoqOrderLine(models.Model):
                 PRIMARY KEY (line_id, tax_id)
             );
         """)
+
+        # ── 2. res_partner columns for BOQ v2.0 (NEW TASK 1 + NEW TASK 4) ─
+        # _auto_init() on _inherit='res.partner' is NOT called by Odoo because
+        # res.partner is owned by 'base'. We add them here instead.
+        self.env.cr.execute("""
+            ALTER TABLE res_partner
+                ADD COLUMN IF NOT EXISTS partner_type VARCHAR,
+                ADD COLUMN IF NOT EXISTS avg_rating   NUMERIC(6, 2) DEFAULT 0.0,
+                ADD COLUMN IF NOT EXISTS rating_count INTEGER       DEFAULT 0;
+        """)
+
+        # ── 3. boq_category.is_down_payment column (BUG 1) ───────────────
+        self.env.cr.execute("""
+            ALTER TABLE boq_category
+                ADD COLUMN IF NOT EXISTS is_down_payment BOOLEAN DEFAULT FALSE;
+        """)
+
         return res
 
     # ── Computes ──────────────────────────────────────────────────────────
