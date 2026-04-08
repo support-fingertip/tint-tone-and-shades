@@ -13,8 +13,6 @@
                 <field name="name"/>
                 <field name="code"/>
                 <field name="icon" optional="show"/>
-                <field name="is_dynamic" string="Dynamic" optional="show"
-                       widget="boolean_toggle"/>
                 <field name="boq_count" string="BOQs"/>
                 <field name="line_count" string="Lines"/>
                 <field name="active" column_invisible="True"/>
@@ -63,42 +61,12 @@
                         <group string="Visual">
                             <field name="color" widget="color_picker"/>
                             <field name="icon" placeholder="fa-bolt"/>
-                            <!--
-                                Task 1 — Dynamic Category flag.
-                                Stored in ir.config_parameter (no new DB column).
-                                Default = False → sub-categories section hidden.
-                            -->
-                            <field name="is_dynamic" widget="boolean_toggle"
-                                   string="Dynamic Category (allow sub-categories)"/>
                         </group>
                     </group>
                     <notebook>
                         <page string="Description" name="desc_tab">
                             <field name="description"
                                    placeholder="Describe the scope of this work category…"/>
-                        </page>
-
-                        <!--
-                            Task 1: "Add new category" section.
-                            HIDDEN by default (invisible="not is_dynamic").
-                            Only appears when Dynamic Category toggle is ON.
-                        -->
-                        <page string="Add New Category" name="add_new_category_tab"
-                              invisible="not is_dynamic">
-                            <div class="alert alert-success mb-3" role="alert"
-                                 style="font-size:13px;">
-                                <i class="fa fa-check-circle me-1"/>
-                                <b>Dynamic Category is enabled.</b>
-                                You can now create additional categories linked
-                                to this one from the Work Categories list.
-                            </div>
-                            <group string="Quick-create a linked category">
-                                <p class="text-muted" style="padding:8px 16px;">
-                                    Use <b>Configuration → Work Categories → New</b>
-                                    to add more categories. Mark the parent category
-                                    by naming convention (e.g. "Electrical — LV Panel").
-                                </p>
-                            </group>
                         </page>
                     </notebook>
                 </sheet>
@@ -120,7 +88,6 @@
                 <field name="color"/>
                 <field name="boq_count"/>
                 <field name="line_count"/>
-                <field name="is_dynamic"/>
                 <templates>
                     <t t-name="card">
                         <div class="boq_cat_kanban_card">
@@ -142,10 +109,6 @@
                                 <span class="badge rounded-pill bg-secondary ms-1">
                                     <field name="line_count"/> lines
                                 </span>
-                                <span t-if="record.is_dynamic.raw_value"
-                                      class="badge rounded-pill bg-info ms-1">
-                                    Dynamic
-                                </span>
                             </div>
                         </div>
                     </t>
@@ -162,14 +125,8 @@
         <field name="res_model">boq.category</field>
         <field name="view_mode">list,kanban,form</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                No work categories yet!
-            </p>
-            <p>
-                Create categories like <b>Electrical</b>, <b>Civil</b>,
-                <b>Lighting</b>, <b>Plumbing</b> to enable dynamic tabs
-                on your BOQ forms.
-            </p>
+            <p class="o_view_nocontent_smiling_face">No work categories yet!</p>
+            <p>Create categories like <b>Electrical</b>, <b>Civil</b>, <b>Lighting</b>, <b>Plumbing</b> to enable dynamic tabs on your BOQ forms.</p>
         </field>
     </record>
 

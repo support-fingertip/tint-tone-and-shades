@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════════
+         VENDOR PO RATING — Form View (popup dialog)
+    ═══════════════════════════════════════════════════════ -->
+    <record id="view_vendor_po_rating_form" model="ir.ui.view">
+        <field name="name">vendor.po.rating.form</field>
+        <field name="model">vendor.po.rating</field>
+        <field name="arch" type="xml">
+            <form string="Vendor Rating">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="display_name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Purchase Order Details">
+                            <field name="purchase_order_id" readonly="1"/>
+                            <field name="vendor_id" readonly="1"/>
+                            <field name="po_amount_total" readonly="1"/>
+                            <field name="rated_by_id" readonly="1"/>
+                            <field name="rating_date" readonly="1"/>
+                        </group>
+                        <group string="Overall Rating">
+                            <field name="rating" widget="radio"/>
+                            <field name="rating_value" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Detailed Rating Criteria">
+                        <group>
+                            <field name="quality_rating" widget="radio"/>
+                            <field name="delivery_rating" widget="radio"/>
+                        </group>
+                        <group>
+                            <field name="pricing_rating" widget="radio"/>
+                            <field name="communication_rating" widget="radio"/>
+                        </group>
+                    </group>
+                    <group string="Feedback">
+                        <field name="feedback"
+                               placeholder="Enter your feedback about the vendor's performance..."
+                               nolabel="1" colspan="2"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════
+         VENDOR PO RATING — List View
+    ═══════════════════════════════════════════════════════ -->
+    <record id="view_vendor_po_rating_list" model="ir.ui.view">
+        <field name="name">vendor.po.rating.list</field>
+        <field name="model">vendor.po.rating</field>
+        <field name="arch" type="xml">
+            <list string="Vendor Ratings" create="0"
+                  decoration-success="rating in ('4','5')"
+                  decoration-warning="rating == '3'"
+                  decoration-danger="rating in ('1','2')">
+                <field name="vendor_id"/>
+                <field name="purchase_order_id"/>
+                <field name="rating"/>
+                <field name="rating_value" string="Score"/>
+                <field name="quality_rating" optional="show"/>
+                <field name="delivery_rating" optional="show"/>
+                <field name="pricing_rating" optional="show"/>
+                <field name="communication_rating" optional="show"/>
+                <field name="po_amount_total" string="PO Amount" optional="show"/>
+                <field name="rated_by_id"/>
+                <field name="rating_date"/>
+                <field name="feedback" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+ 
+    <!-- ═══════════════════════════════════════════════════════
+         VENDOR PO RATING — Graph View (Rating by Vendor)
+    ═══════════════════════════════════════════════════════ -->
+    <record id="view_vendor_po_rating_graph" model="ir.ui.view">
+        <field name="name">vendor.po.rating.graph</field>
+        <field name="model">vendor.po.rating</field>
+        <field name="arch" type="xml">
+            <graph string="Ratings by Vendor" type="bar" sample="1">
+                <field name="vendor_id"/>
+                <field name="rating_value" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════
+         VENDOR PO RATING — Action
+    ═══════════════════════════════════════════════════════ -->
+    <record id="action_vendor_po_rating" model="ir.actions.act_window">
+        <field name="name">Vendor Ratings</field>
+        <field name="res_model">vendor.po.rating</field>
+        <field name="view_mode">list,graph,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No vendor ratings yet!</p>
+            <p>Vendor ratings are collected after Purchase Orders are completed
+            and payment is released. Only BOQ Managers can submit ratings.</p>
+        </field>
+    </record>
+
+</odoo>

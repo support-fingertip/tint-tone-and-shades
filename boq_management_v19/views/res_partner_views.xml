@@ -2,13 +2,15 @@
 <odoo>
 
     <!-- ═══════════════════════════════════════════════════════
-         RES.PARTNER — Inherit form: add BOQ smart button
+         RES.PARTNER — Inherit form: add BOQ smart button + Vendor Rating
     ═══════════════════════════════════════════════════════ -->
     <record id="view_res_partner_boq_v19" model="ir.ui.view">
         <field name="name">res.partner.form.boq.v19</field>
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
+
+            <!-- Smart Buttons -->
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button type="object"
                         name="action_view_boqs"
@@ -17,7 +19,56 @@
                         invisible="boq_count == 0">
                     <field name="boq_count" widget="statinfo" string="BOQs"/>
                 </button>
+                <!-- Vendor Rating smart button -->
+                <button type="object"
+                        name="action_view_vendor_ratings"
+                        class="oe_stat_button"
+                        icon="fa-star"
+                        invisible="vendor_rating_count == 0">
+                    <div class="o_stat_info">
+                        <span class="o_stat_value">
+                            <field name="vendor_rating_avg" widget="float" digits="[3,1]"/>
+                            <span> / 5</span>
+                        </span>
+                        <span class="o_stat_text">
+                            Rating (<field name="vendor_rating_count"/> POs)
+                        </span>
+                    </div>
+                </button>
             </xpath>
+
+            <!-- Vendor Rating section on partner form (for suppliers) -->
+            <xpath expr="//page[@name='internal_notes']" position="before">
+                <page string="Vendor Rating" name="vendor_rating"
+                      invisible="supplier_rank == 0">
+                    <group>
+                        <group string="Overall Rating">
+                            <field name="vendor_rating_avg" readonly="1" widget="float" digits="[3,1]"/>
+                            <field name="vendor_rating_count" readonly="1"/>
+                        </group>
+                        <group string="Rating Summary">
+                            <div class="text-muted" invisible="vendor_rating_count != 0">
+                                No ratings yet. Ratings are collected after PO completion and payment release.
+                            </div>
+                        </group>
+                    </group>
+                    <field name="vendor_rating_ids" readonly="1" nolabel="1"
+                           invisible="vendor_rating_count == 0">
+                        <list create="0" delete="0" edit="0">
+                            <field name="purchase_order_id"/>
+                            <field name="rating" decoration-success="rating in ('4','5')" decoration-warning="rating == '3'" decoration-danger="rating in ('1','2')"/>
+                            <field name="quality_rating" optional="show"/>
+                            <field name="delivery_rating" optional="show"/>
+                            <field name="pricing_rating" optional="show"/>
+                            <field name="communication_rating" optional="show"/>
+                            <field name="feedback" optional="hide"/>
+                            <field name="rated_by_id"/>
+                            <field name="rating_date"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
         </field>
     </record>
 

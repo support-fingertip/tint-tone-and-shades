@@ -3,6 +3,8 @@
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      BOQ — MAIN FORM VIEW (Odoo 19 Standard UI)
+     Trade-wise vendor selection: vendors set per trade tab (not per line).
+     Approve/Reject removed — not part of the actual workflow.
 ═══════════════════════════════════════════════════════════════════════ -->
 <record id="view_boq_boq_form" model="ir.ui.view">
     <field name="name">boq.boq.form</field>
@@ -12,48 +14,39 @@
 
             <!-- ── HEADER ──────────────────────────────────────────────── -->
             <header>
+                <!-- DRAFT → Submit -->
                 <button name="action_submit"
                         string="Submit"
                         type="object"
                         class="btn-primary"
                         invisible="state != 'draft'"/>
-                <button name="action_approve"
-                        string="Approve"
-                        type="object"
-                        class="btn-primary"
-                        groups="boq_management_v19.group_boq_manager"
-                        invisible="state != 'submitted'"/>
-                <button name="action_reject"
-                        string="Reject"
-                        type="object"
-                        class="btn-secondary"
-                        groups="boq_management_v19.group_boq_manager"
-                        invisible="state not in ('submitted',)"/>
-                <button name="action_done"
-                        string="Mark Done"
-                        type="object"
-                        class="btn-primary"
-                        invisible="state != 'approved'"/>
-                <button name="action_reset_draft"
-                        string="Reset to Draft"
-                        type="object"
-                        class="btn-secondary"
-                        invisible="state not in ('rejected', 'submitted')"/>
-                <!--
-                    CREATE RFQ — visible whenever at least 1 line exists.
-                    Uses line_count (Integer) for reliable invisible evaluation
-                    in Odoo 19 form-view expressions.
-                -->
+
+                <!-- SUBMITTED + no RFQ yet → Create RFQ -->
                 <button name="action_create_rfq"
                         string="Create RFQ"
                         type="object"
                         class="btn-primary"
                         icon="fa-shopping-cart"
-                        invisible="line_count == 0"
-                        confirm="This will generate one RFQ per mapped vendor. Proceed?"/>
+                        invisible="state != 'submitted' or line_count == 0 or rfq_count &gt; 0"
+                        confirm="This will generate one RFQ per vendor (per trade). Proceed?"/>
+
+                <!-- SUBMITTED + RFQ created → Mark Done -->
+                <button name="action_done"
+                        string="Mark as Done"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state != 'submitted' or rfq_count == 0"/>
+
+                <!-- Always available on submitted to go back -->
+                <button name="action_reset_draft"
+                        string="Reset to Draft"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="state != 'submitted'"/>
+
                 <field name="state"
                        widget="statusbar"
-                       statusbar_visible="draft,submitted,approved,done"/>
+                       statusbar_visible="draft,submitted,done"/>
             </header>
 
             <sheet>
@@ -132,15 +125,26 @@
 
                 <!-- ═══════════════════════════════════════════════════════
                      NOTEBOOK — one page per work category.
-                     Each page is hidden when its boolean flag is False.
-                     vendor_ids column on every line lets you map the vendor
-                     that will receive the RFQ when "Create RFQ" is clicked.
+                     Each page header now shows a TRADE-LEVEL vendor picker.
+                     All items in the trade go to the selected vendors.
+                     Add 2+ vendors per trade for comparative quotes.
                 ═══════════════════════════════════════════════════════ -->
                 <notebook>
 
                     <!-- ─────────────── ELECTRICAL ───────────────────── -->
                     <page string="Electrical" name="tab_electrical"
                           invisible="not show_electrical">
+                        <!-- Trade-level vendor selection -->
+                        <group string="Vendors for Electrical Trade"
+                               class="o_group_col_4">
+                            <field name="electrical_vendor_ids"
+                                   widget="many2many_tags"
+                                   domain="[('supplier_rank','>',0)]"
+                                   options="{'no_create_edit': True}"
+                                   placeholder="Select vendors for ALL Electrical items (add 2+ for comparative quotes)…"
+                                   nolabel="1"
+                                   colspan="4"/>
+                        </group>
                         <field name="electrical_line_ids"
                                context="{'default_category_id': electrical_category_id}"
                                mode="list">
@@ -167,11 +171,6 @@
                                        readonly="1" optional="show" sum="Total (incl. Tax)"/>
                                 <field name="margin_percent" string="Margin %"
                                        readonly="1" optional="show"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank','>',0)]"
-                                       options="{'no_create_edit': True}"/>
                                 <field name="currency_id" column_invisible="True"/>
                                 <field name="notes" string="Notes" optional="hide"/>
                                 <field name="category_id" column_invisible="True"
@@ -183,6 +182,16 @@
                     <!-- ─────────────── CIVIL ─────────────────────────── -->
                     <page string="Civil" name="tab_civil"
                           invisible="not show_civil">
+                        <group string="Vendors for Civil Trade"
+                               class="o_group_col_4">
+                            <field name="civil_vendor_ids"
+                                   widget="many2many_tags"
+                                   domain="[('supplier_rank','>',0)]"
+                                   options="{'no_create_edit': True}"
+                                   placeholder="Select vendors for ALL Civil items (add 2+ for comparative quotes)…"
+                                   nolabel="1"
+                                   colspan="4"/>
+                        </group>
                         <field name="civil_line_ids"
                                context="{'default_category_id': civil_category_id}"
                                mode="list">
@@ -208,11 +217,6 @@
                                        readonly="1" optional="show" sum="Total (incl. Tax)"/>
                                 <field name="margin_percent" string="Margin %"
                                        readonly="1" optional="show"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank','>',0)]"
-                                       options="{'no_create_edit': True}"/>
                                 <field name="currency_id" column_invisible="True"/>
                                 <field name="notes" string="Notes" optional="hide"/>
                                 <field name="category_id" column_invisible="True"
@@ -224,6 +228,16 @@
                     <!-- ─────────────── LIGHTING ──────────────────────── -->
                     <page string="Lighting" name="tab_lighting"
                           invisible="not show_lighting">
+                        <group string="Vendors for Lighting Trade"
+                               class="o_group_col_4">
+                            <field name="lighting_vendor_ids"
+                                   widget="many2many_tags"
+                                   domain="[('supplier_rank','>',0)]"
+                                   options="{'no_create_edit': True}"
+                                   placeholder="Select vendors for ALL Lighting items (add 2+ for comparative quotes)…"
+                                   nolabel="1"
+                                   colspan="4"/>
+                        </group>
                         <field name="lighting_line_ids"
                                context="{'default_category_id': lighting_category_id}"
                                mode="list">
@@ -249,11 +263,6 @@
                                        readonly="1" optional="show" sum="Total (incl. Tax)"/>
                                 <field name="margin_percent" string="Margin %"
                                        readonly="1" optional="show"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank','>',0)]"
-                                       options="{'no_create_edit': True}"/>
                                 <field name="currency_id" column_invisible="True"/>
                                 <field name="notes" string="Notes" optional="hide"/>
                                 <field name="category_id" column_invisible="True"
@@ -265,6 +274,16 @@
                     <!-- ─────────────── PLUMBING ──────────────────────── -->
                     <page string="Plumbing" name="tab_plumbing"
                           invisible="not show_plumbing">
+                        <group string="Vendors for Plumbing Trade"
+                               class="o_group_col_4">
+                            <field name="plumbing_vendor_ids"
+                                   widget="many2many_tags"
+                                   domain="[('supplier_rank','>',0)]"
+                                   options="{'no_create_edit': True}"
+                                   placeholder="Select vendors for ALL Plumbing items (add 2+ for comparative quotes)…"
+                                   nolabel="1"
+                                   colspan="4"/>
+                        </group>
                         <field name="plumbing_line_ids"
                                context="{'default_category_id': plumbing_category_id}"
                                mode="list">
@@ -290,11 +309,6 @@
                                        readonly="1" optional="show" sum="Total (incl. Tax)"/>
                                 <field name="margin_percent" string="Margin %"
                                        readonly="1" optional="show"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank','>',0)]"
-                                       options="{'no_create_edit': True}"/>
                                 <field name="currency_id" column_invisible="True"/>
                                 <field name="notes" string="Notes" optional="hide"/>
                                 <field name="category_id" column_invisible="True"
@@ -306,6 +320,16 @@
                     <!-- ─────────────── HVAC ───────────────────────────── -->
                     <page string="HVAC" name="tab_hvac"
                           invisible="not show_hvac">
+                        <group string="Vendors for HVAC Trade"
+                               class="o_group_col_4">
+                            <field name="hvac_vendor_ids"
+                                   widget="many2many_tags"
+                                   domain="[('supplier_rank','>',0)]"
+                                   options="{'no_create_edit': True}"
+                                   placeholder="Select vendors for ALL HVAC items (add 2+ for comparative quotes)…"
+                                   nolabel="1"
+                                   colspan="4"/>
+                        </group>
                         <field name="hvac_line_ids"
                                context="{'default_category_id': hvac_category_id}"
                                mode="list">
@@ -331,11 +355,6 @@
                                        readonly="1" optional="show" sum="Total (incl. Tax)"/>
                                 <field name="margin_percent" string="Margin %"
                                        readonly="1" optional="show"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank','>',0)]"
-                                       options="{'no_create_edit': True}"/>
                                 <field name="currency_id" column_invisible="True"/>
                                 <field name="notes" string="Notes" optional="hide"/>
                                 <field name="category_id" column_invisible="True"
@@ -347,6 +366,16 @@
                     <!-- ─────────────── FINISHING ─────────────────────── -->
                     <page string="Finishing" name="tab_finishing"
                           invisible="not show_finishing">
+                        <group string="Vendors for Finishing Trade"
+                               class="o_group_col_4">
+                            <field name="finishing_vendor_ids"
+                                   widget="many2many_tags"
+                                   domain="[('supplier_rank','>',0)]"
+                                   options="{'no_create_edit': True}"
+                                   placeholder="Select vendors for ALL Finishing items (add 2+ for comparative quotes)…"
+                                   nolabel="1"
+                                   colspan="4"/>
+                        </group>
                         <field name="finishing_line_ids"
                                context="{'default_category_id': finishing_category_id}"
                                mode="list">
@@ -372,11 +401,6 @@
                                        readonly="1" optional="show" sum="Total (incl. Tax)"/>
                                 <field name="margin_percent" string="Margin %"
                                        readonly="1" optional="show"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank','>',0)]"
-                                       options="{'no_create_edit': True}"/>
                                 <field name="currency_id" column_invisible="True"/>
                                 <field name="notes" string="Notes" optional="hide"/>
                                 <field name="category_id" column_invisible="True"
@@ -452,9 +476,8 @@
     <field name="arch" type="xml">
         <list string="Bills of Quantities"
               decoration-success="state == 'done'"
-              decoration-info="state == 'approved'"
-              decoration-warning="state == 'submitted'"
-              decoration-muted="state in ('rejected',)">
+              decoration-info="state == 'submitted'"
+              decoration-muted="state == 'draft'">
             <field name="priority" widget="priority" nolabel="1" optional="show"/>
             <field name="name"/>
             <field name="partner_id"/>
@@ -472,10 +495,8 @@
             <field name="currency_id" column_invisible="True"/>
             <field name="state" widget="badge"
                    decoration-success="state == 'done'"
-                   decoration-info="state == 'approved'"
-                   decoration-warning="state == 'submitted'"
-                   decoration-primary="state == 'draft'"
-                   decoration-danger="state == 'rejected'"/>
+                   decoration-info="state == 'submitted'"
+                   decoration-primary="state == 'draft'"/>
         </list>
     </field>
 </record>
@@ -515,8 +536,6 @@
                                    options="{'classes': {
                                        'draft':     'default',
                                        'submitted': 'warning',
-                                       'approved':  'info',
-                                       'rejected':  'danger',
                                        'done':      'success'
                                    }}"/>
                         </div>
@@ -561,8 +580,9 @@
         </p>
         <p>
             Link BOQs to customers, select work categories and fill in
-            product lines per tab. Assign vendors on each line, then click
-            "Create RFQ" to generate purchase requests automatically.
+            product lines per tab. Assign vendors at the trade level in each
+            category tab, then click "Create RFQ" to generate comparative
+            purchase requests per vendor automatically.
         </p>
     </field>
 </record>

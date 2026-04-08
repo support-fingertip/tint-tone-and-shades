@@ -19,16 +19,60 @@
                         invisible="not boq_id" string="View BOQ">
                     <field name="boq_id" widget="statinfo" string="BOQ"/>
                 </button>
+                <!-- Vendor Rating stat button — shows rating or rate action -->
+                <button name="action_view_rating" type="object"
+                        class="oe_stat_button" icon="fa-star"
+                        invisible="not vendor_rating_id">
+                    <field name="vendor_rating_value" widget="statinfo" string="Rating"/>
+                </button>
+                <button name="action_rate_vendor" type="object"
+                        class="oe_stat_button" icon="fa-star-o"
+                        invisible="not can_rate_vendor"
+                        string="Rate Vendor"/>
             </xpath>
 
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="boq_id" string="BOQ Reference"
                        options="{'no_create': True}" invisible="not boq_id"/>
+                <field name="vendor_payment_released" invisible="1"/>
+                <field name="can_rate_vendor" invisible="1"/>
+                <field name="vendor_rating_id" invisible="1"/>
             </xpath>
 
             <xpath expr="//field[@name='order_line']//field[@name='name']"
                    position="attributes">
                 <attribute name="optional">show</attribute>
+            </xpath>
+
+            <!-- Vendor Rating section — visible when PO is confirmed -->
+            <xpath expr="//field[@name='order_line']/.." position="after">
+                <group string="Vendor Rating" invisible="state not in ('purchase', 'done')">
+                    <group>
+                        <div invisible="not vendor_rating_id" class="d-flex align-items-center gap-2">
+                            <span class="fw-bold">Rating:</span>
+                            <span class="badge bg-success fs-6" style="font-size:1rem !important;">
+                                <field name="vendor_rating_value" readonly="1"/> / 5
+                            </span>
+                        </div>
+                    </group>
+                    <group>
+                        <button name="action_rate_vendor" type="object"
+                                string="Rate This Vendor"
+                                class="btn btn-primary"
+                                invisible="not can_rate_vendor"
+                                icon="fa-star"/>
+                        <button name="action_view_rating" type="object"
+                                string="View Rating Details"
+                                class="btn btn-link"
+                                invisible="not vendor_rating_id"
+                                icon="fa-star"/>
+                    </group>
+                </group>
+            </xpath>
+
+            <!-- Hide Approve button — not part of BOQ workflow -->
+            <xpath expr="//button[@name='button_approve']" position="attributes">
+                <attribute name="invisible">1</attribute>
             </xpath>
 
         </field>
