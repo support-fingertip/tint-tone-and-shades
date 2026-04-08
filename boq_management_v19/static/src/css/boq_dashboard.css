@@ -656,66 +656,96 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   FORCE LIGHT THEME — override Odoo Enterprise dark-mode on all
-   Bootstrap utility classes used inside the dashboard
+   FORCE LIGHT THEME — comprehensive override of Odoo Enterprise
+   dark-mode for all Bootstrap utilities inside the dashboard.
    ═══════════════════════════════════════════════════════════════ */
 
-/* Bootstrap light/secondary color tokens */
+/* Root token reset */
 .boq_dashboard {
     --bs-light: #f8f9fa;
     --bs-light-rgb: 248, 249, 250;
+    /* Bootstrap 5.3 table tokens */
     --bs-table-color: #212529;
     --bs-table-bg: #ffffff;
+    --bs-table-border-color: #dee2e6;
     --bs-table-striped-color: #212529;
-    --bs-table-striped-bg: rgba(0, 0, 0, 0.05);
+    --bs-table-striped-bg: rgba(0,0,0,0.04);
     --bs-table-hover-color: #212529;
-    --bs-table-hover-bg: rgba(0, 0, 0, 0.075);
+    --bs-table-hover-bg: rgba(0,0,0,0.06);
+    --bs-table-active-color: #212529;
+    --bs-table-active-bg: rgba(0,0,0,0.1);
+    --bs-table-accent-bg: transparent;
 }
 
-/* bg-light used on toggle bar */
-.boq_dashboard .bg-light {
-    background-color: #f8f9fa !important;
-    color: #212529 !important;
-}
+/* bg-light / bg-white utilities */
+.boq_dashboard .bg-light  { background-color: #f8f9fa !important; color: #212529 !important; }
+.boq_dashboard .bg-white  { background-color: #ffffff !important; color: #212529 !important; }
 
-/* All tables inside dashboard — force light */
+/* Bootstrap -subtle color utilities (very dark in enterprise dark mode) */
+.boq_dashboard .bg-primary-subtle   { background-color: #cfe2ff !important; }
+.boq_dashboard .bg-success-subtle   { background-color: #d1e7dd !important; }
+.boq_dashboard .bg-warning-subtle   { background-color: #fff3cd !important; }
+.boq_dashboard .bg-info-subtle      { background-color: #cff4fc !important; }
+.boq_dashboard .bg-secondary-subtle { background-color: #e2e3e5 !important; }
+.boq_dashboard .bg-danger-subtle    { background-color: #f8d7da !important; }
+
+/* Text color utilities */
+.boq_dashboard .text-primary   { color: #0d6efd !important; }
+.boq_dashboard .text-success   { color: #198754 !important; }
+.boq_dashboard .text-warning   { color: #fd7e14 !important; }
+.boq_dashboard .text-info      { color: #0a9eba !important; }
+.boq_dashboard .text-secondary { color: #6c757d !important; }
+.boq_dashboard .text-danger    { color: #dc3545 !important; }
+.boq_dashboard .text-muted     { color: #6c757d !important; }
+.boq_dashboard .text-dark      { color: #212529 !important; }
+
+/* Badge colors */
+.boq_dashboard .badge.bg-primary   { background-color: #0d6efd !important; color: #fff !important; }
+.boq_dashboard .badge.bg-secondary { background-color: #6c757d !important; color: #fff !important; }
+.boq_dashboard .badge.bg-success   { background-color: #198754 !important; color: #fff !important; }
+.boq_dashboard .badge.bg-warning   { background-color: #ffc107 !important; color: #212529 !important; }
+.boq_dashboard .badge.bg-info      { background-color: #0dcaf0 !important; color: #212529 !important; }
+.boq_dashboard .badge.bg-danger    { background-color: #dc3545 !important; color: #fff !important; }
+.boq_dashboard .text-dark.badge    { color: #212529 !important; }
+
+/* ── TABLE — THE KEY FIX ─────────────────────────────────────────
+   Bootstrap 5 applies stripe/hover via box-shadow (not background-
+   color), so overriding background-color alone is insufficient.
+   We must clear box-shadow AND set background-color on every cell. */
 .boq_dashboard table,
-.boq_dashboard .table {
-    color: #212529 !important;
-    --bs-table-color: #212529;
-    --bs-table-bg: #ffffff;
-    background-color: #ffffff;
-}
+.boq_dashboard .table { color: #212529 !important; background-color: #ffffff; }
 
-.boq_dashboard .table thead,
-.boq_dashboard .table thead.table-light,
-.boq_dashboard thead.table-light {
-    background-color: #f0f2f5 !important;
-    color: #495057 !important;
-    --bs-table-color: #495057;
-    --bs-table-bg: #f0f2f5;
-}
-
-.boq_dashboard .table thead th {
-    color: #495057 !important;
-    background-color: #f0f2f5 !important;
-    border-bottom-color: #dee2e6 !important;
-}
-
-.boq_dashboard .table tbody tr {
+/* Every cell in every table section — clears the BS5 box-shadow trick */
+.boq_dashboard .table > :not(caption) > * > * {
     background-color: #ffffff !important;
     color: #212529 !important;
-}
-
-.boq_dashboard .table tbody tr:hover td {
-    background-color: #f8f9ff !important;
-    color: #212529 !important;
-}
-
-.boq_dashboard .table td,
-.boq_dashboard .table th {
-    color: inherit !important;
     border-color: #dee2e6 !important;
+    box-shadow: none !important;          /* ← clears hover/stripe accent */
+    --bs-table-accent-bg: transparent;
+}
+
+/* thead — light grey */
+.boq_dashboard .table > thead > * > * {
+    background-color: #f0f2f5 !important;
+    color: #495057 !important;
+    border-bottom: 2px solid #dee2e6 !important;
+    box-shadow: none !important;
+}
+
+/* tbody hover row — very subtle blue tint */
+.boq_dashboard .table > tbody > tr:hover > * {
+    background-color: #f0f4ff !important;
+    color: #212529 !important;
+    box-shadow: none !important;
+}
+
+/* tfoot total row */
+.boq_dashboard .table > tfoot > * > * {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+    font-weight: 600;
+    border-top: 2px solid #dee2e6 !important;
+    box-shadow: none !important;
 }
 
 /* table-responsive wrapper */
@@ -725,13 +755,23 @@
     border: 1px solid #dee2e6;
 }
 
-/* Total row at bottom of trade table */
-.boq_dashboard .boq_trade_table tfoot td,
-.boq_dashboard .boq_trade_table tfoot tr {
-    background-color: #f8f9fa !important;
-    color: #212529 !important;
-    font-weight: 600;
-    border-top: 2px solid #dee2e6 !important;
+/* ── TOGGLE BUTTONS ──────────────────────────────────────────────
+   Active tab: filled primary blue.
+   Inactive tab: outlined primary (blue border + text, always visible). */
+.boq_dashboard .boq_toggle_btn.btn-primary {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: #ffffff !important;
+}
+.boq_dashboard .boq_toggle_btn.btn-outline-secondary,
+.boq_dashboard .boq_toggle_btn.btn-outline-primary {
+    border-color: #0d6efd !important;
+    color: #0d6efd !important;
+    background-color: #ffffff !important;
+}
+.boq_dashboard .boq_toggle_btn.btn-outline-secondary:hover,
+.boq_dashboard .boq_toggle_btn.btn-outline-primary:hover {
+    background-color: #e8f0fe !important;
 }
 
 /* ── Responsive tweaks ───────────────────────────────────────── */

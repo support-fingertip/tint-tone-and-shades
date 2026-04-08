@@ -84,6 +84,22 @@
               sequence="30"
               groups="boq_management_v19.group_boq_manager"/>
 
+    <!-- ── Purchase app — Vendor RFQ / Supplier RFQ sub-menus ── -->
+    <!-- Adds BOQ-typed RFQ views directly into the standard Purchase application -->
+    <menuitem id="menu_purchase_boq_vendor_rfq"
+              name="Vendor RFQ"
+              parent="purchase.menu_purchase_rfq"
+              action="boq_management_v19.action_boq_rfq_list"
+              sequence="25"
+              groups="purchase.group_purchase_user"/>
+
+    <menuitem id="menu_purchase_boq_supplier_rfq"
+              name="Supplier RFQ"
+              parent="purchase.menu_purchase_rfq"
+              action="boq_management_v19.action_boq_supplier_rfq_list"
+              sequence="26"
+              groups="purchase.group_purchase_user"/>
+
     <!-- ── Configuration section ── -->
     <menuitem id="menu_boq_config"
               name="Configuration"
