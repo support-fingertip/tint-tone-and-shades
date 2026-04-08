@@ -20,7 +20,8 @@
     flex: 1 1 0 !important;
     min-height: 0 !important;
     overflow-y: auto !important;
-    background: #f8f9fa;
+    background: #f8f9fa !important;
+    color: #212529 !important;
     position: relative;
 }
 
@@ -652,6 +653,85 @@
 
 .boq_summary_table tbody tr:hover td {
     background: #f8f9ff;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FORCE LIGHT THEME — override Odoo Enterprise dark-mode on all
+   Bootstrap utility classes used inside the dashboard
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Bootstrap light/secondary color tokens */
+.boq_dashboard {
+    --bs-light: #f8f9fa;
+    --bs-light-rgb: 248, 249, 250;
+    --bs-table-color: #212529;
+    --bs-table-bg: #ffffff;
+    --bs-table-striped-color: #212529;
+    --bs-table-striped-bg: rgba(0, 0, 0, 0.05);
+    --bs-table-hover-color: #212529;
+    --bs-table-hover-bg: rgba(0, 0, 0, 0.075);
+}
+
+/* bg-light used on toggle bar */
+.boq_dashboard .bg-light {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+/* All tables inside dashboard — force light */
+.boq_dashboard table,
+.boq_dashboard .table {
+    color: #212529 !important;
+    --bs-table-color: #212529;
+    --bs-table-bg: #ffffff;
+    background-color: #ffffff;
+}
+
+.boq_dashboard .table thead,
+.boq_dashboard .table thead.table-light,
+.boq_dashboard thead.table-light {
+    background-color: #f0f2f5 !important;
+    color: #495057 !important;
+    --bs-table-color: #495057;
+    --bs-table-bg: #f0f2f5;
+}
+
+.boq_dashboard .table thead th {
+    color: #495057 !important;
+    background-color: #f0f2f5 !important;
+    border-bottom-color: #dee2e6 !important;
+}
+
+.boq_dashboard .table tbody tr {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+}
+
+.boq_dashboard .table tbody tr:hover td {
+    background-color: #f8f9ff !important;
+    color: #212529 !important;
+}
+
+.boq_dashboard .table td,
+.boq_dashboard .table th {
+    color: inherit !important;
+    border-color: #dee2e6 !important;
+}
+
+/* table-responsive wrapper */
+.boq_dashboard .table-responsive {
+    background: #ffffff !important;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+/* Total row at bottom of trade table */
+.boq_dashboard .boq_trade_table tfoot td,
+.boq_dashboard .boq_trade_table tfoot tr {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+    font-weight: 600;
+    border-top: 2px solid #dee2e6 !important;
 }
 
 /* ── Responsive tweaks ───────────────────────────────────────── */

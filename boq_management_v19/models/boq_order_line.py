@@ -210,6 +210,18 @@ class BoqOrderLine(models.Model):
                 ADD COLUMN IF NOT EXISTS approval_state VARCHAR;
         """)
 
+        # ── Clean up stale ir.rule with invalid domain on boq.vendor.rating ─
+        # Old vendor.po.rating model left an ir.rule with domain
+        # ('res_model', '=', 'res.partner') — boq.vendor.rating has no
+        # res_model field, so the domain crashes any partner form read.
+        self.env.cr.execute("""
+            DELETE FROM ir_rule
+            WHERE model_id IN (
+                SELECT id FROM ir_model WHERE model = 'boq.vendor.rating'
+            )
+            AND domain::text LIKE '%%res_model%%';
+        """)
+
         return res
 
     # ── Computes ──────────────────────────────────────────────────────────
