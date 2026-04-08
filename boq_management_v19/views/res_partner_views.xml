@@ -2,14 +2,22 @@
 <odoo>
 
     <!-- ═══════════════════════════════════════════════════════
-         RES.PARTNER — Inherit form: add BOQ smart button
+         RES.PARTNER — Inherit form
+         ─ BOQ smart button               (existing)
+         ─ Average rating stat button     (NEW TASK 4)
+         ─ partner_type field             (NEW TASK 1)
+         ─ avg_rating star display        (NEW TASK 4)
+         ─ rating_ids list                (NEW TASK 4)
     ═══════════════════════════════════════════════════════ -->
     <record id="view_res_partner_boq_v19" model="ir.ui.view">
         <field name="name">res.partner.form.boq.v19</field>
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
+
+            <!-- Smart buttons -->
             <xpath expr="//div[@name='button_box']" position="inside">
+                <!-- Existing BOQ count button -->
                 <button type="object"
                         name="action_view_boqs"
                         class="oe_stat_button"
@@ -17,7 +25,56 @@
                         invisible="boq_count == 0">
                     <field name="boq_count" widget="statinfo" string="BOQs"/>
                 </button>
+
+                <!-- NEW TASK 4 — Average rating stat button -->
+                <button type="object"
+                        name="action_view_boqs"
+                        class="oe_stat_button"
+                        icon="fa-star"
+                        invisible="rating_count == 0">
+                    <div class="o_stat_info">
+                        <span class="o_stat_value">
+                            <field name="avg_rating" widget="float" digits="[2,1]"/>
+                            / 5
+                        </span>
+                        <span class="o_stat_text">Avg Rating</span>
+                    </div>
+                </button>
             </xpath>
+
+            <!-- NEW TASK 1 — Partner Type field (after is_company / type) -->
+            <xpath expr="//field[@name='company_type']" position="after">
+                <field name="partner_type" string="Partner Type"
+                       widget="badge"
+                       decoration-primary="partner_type == 'vendor'"
+                       decoration-info="partner_type == 'supplier'"
+                       decoration-warning="partner_type == 'employee'"
+                       decoration-success="partner_type == 'customer'"/>
+            </xpath>
+
+            <!-- NEW TASK 4 — Vendor Ratings notebook tab -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Vendor Ratings" name="vendor_ratings"
+                      invisible="rating_count == 0 and not context.get('show_rating_tab')">
+                    <group>
+                        <group string="Rating Summary">
+                            <field name="avg_rating" string="Average Rating" readonly="1"
+                                   widget="float" digits="[2,1]"/>
+                            <field name="rating_count" string="Total Ratings" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="rating_ids" nolabel="1">
+                        <list string="Ratings" editable="bottom">
+                            <field name="date"/>
+                            <field name="purchase_order_id"/>
+                            <field name="rating" widget="priority"/>
+                            <field name="rating_int" column_invisible="1"/>
+                            <field name="comments"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
         </field>
     </record>
 

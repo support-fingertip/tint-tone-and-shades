@@ -5,3 +5,5 @@ access_boq_boq_user,boq.boq.user,model_boq_boq,boq_management_v19.group_boq_user
 access_boq_boq_manager,boq.boq.manager,model_boq_boq,boq_management_v19.group_boq_manager,1,1,1,1
 access_boq_order_line_user,boq.order.line.user,model_boq_order_line,boq_management_v19.group_boq_user,1,1,1,1
 access_boq_order_line_manager,boq.order.line.manager,model_boq_order_line,boq_management_v19.group_boq_manager,1,1,1,1
+access_boq_vendor_rating_user,boq.vendor.rating.user,model_boq_vendor_rating,boq_management_v19.group_boq_user,1,1,1,0
+access_boq_vendor_rating_manager,boq.vendor.rating.manager,model_boq_vendor_rating,boq_management_v19.group_boq_manager,1,1,1,1

@@ -70,6 +70,16 @@ class BoqCategory(models.Model):
              'on this Work Category form.  Disabled by default.',
     )
 
+    # ── Down Payment Flag ─────────────────────────────────────────────────
+    # BUG 1 fix: Lines in a "Down Payment" category must always report 0% margin.
+    # This Boolean is stored on the table so it can be queried from boq.order.line.
+    is_down_payment = fields.Boolean(
+        string='Down Payment Category',
+        default=False,
+        help='When enabled, all BOQ lines under this category will always show '
+             '0% margin (down-payment lines carry no margin by convention).',
+    )
+
     # ── Status ───────────────────────────────────────────────────────────
     active = fields.Boolean(default=True)
 

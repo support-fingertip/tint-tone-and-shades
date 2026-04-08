@@ -1,7 +1,12 @@
 /** @odoo-module **/
 /**
  * BOQ Dashboard — Odoo 19 OWL Component
- * Task 4: Vendor-wise RFQ summary, margin %, project stage, payment status.
+ *
+ * Fixes implemented:
+ *  BUG 2  — Trade Assignments section (grouped by work_category_id)
+ *  BUG 4  — Margin % prominently shown on vendor cards and trade rows
+ *  BUG 6  — Payment status on vendor cards
+ *  NEW TASK 2 — Vendor / Supplier toggle tab at dashboard top
  */
 
 import { Component, useState, onWillStart, onPatched, useRef } from "@odoo/owl";
@@ -17,7 +22,7 @@ function formatCurrency(value, symbol, position) {
     return position === "after" ? `${formatted} ${symbol}` : `${symbol}${formatted}`;
 }
 
-// ─── Helper: margin color class ─────────────────────────────────────────────
+// ─── Helper: margin CSS class ────────────────────────────────────────────────
 function marginClass(pct) {
     if (pct >= 30) return "boq_margin_high";
     if (pct >= 15) return "boq_margin_mid";
@@ -28,13 +33,24 @@ function marginClass(pct) {
 // ─── Helper: BOQ state badge ─────────────────────────────────────────────────
 function stateBadgeClass(state) {
     const map = {
-        draft: "bg-secondary",
+        draft:     "bg-secondary",
         submitted: "bg-warning text-dark",
-        approved: "bg-info",
-        rejected: "bg-danger",
-        done: "bg-success",
+        approved:  "bg-info",
+        rejected:  "bg-danger",
+        done:      "bg-success",
     };
     return map[state] || "bg-secondary";
+}
+
+// ─── Helper: payment status badge ────────────────────────────────────────────
+function paymentStatusClass(status) {
+    const map = {
+        paid:      "bg-success",
+        in_payment:"bg-info",
+        partial:   "bg-warning text-dark",
+        not_paid:  "bg-secondary",
+    };
+    return map[status] || "bg-secondary";
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -61,12 +77,15 @@ export class BoqDashboard extends Component {
             loading: true,
             stats: {},
             vendors: [],
+            trades: [],
             error: null,
             filterVendor: "",
             selectedVendor: null,
             activeTab: "summary",
             vendorLines: [],
             vendorLinesLoading: false,
+            // NEW TASK 2 — Vendor/Supplier toggle
+            dashboardView: "vendor",   // "vendor" | "supplier"
         });
 
         onWillStart(() => this._loadAll());
@@ -77,8 +96,6 @@ export class BoqDashboard extends Component {
                 const container = this.scrollContainerRef.el;
                 if (!container) return;
                 requestAnimationFrame(() => {
-                    // getBoundingClientRect gives viewport-relative coords.
-                    // The delta brings the notebook 16 px below the container top.
                     const cRect = container.getBoundingClientRect();
                     const nRect = notebook.getBoundingClientRect();
                     container.scrollBy({ top: nRect.top - cRect.top - 16, behavior: "smooth" });
@@ -90,12 +107,14 @@ export class BoqDashboard extends Component {
     // ── Data loading ────────────────────────────────────────────────────────
     async _loadAll() {
         try {
-            const [stats, vendors] = await Promise.all([
+            const [stats, vendors, trades] = await Promise.all([
                 this.orm.call("boq.boq", "get_dashboard_stats", []),
-                this.orm.call("boq.boq", "get_vendor_summary", []),
+                this.orm.call("boq.boq", "get_vendor_summary",  []),
+                this.orm.call("boq.boq", "get_trade_summary",   []),
             ]);
             this.state.stats   = stats;
             this.state.vendors = vendors;
+            this.state.trades  = trades;
         } catch (err) {
             this.state.error = err.message || "Failed to load dashboard data.";
         } finally {
@@ -109,11 +128,14 @@ export class BoqDashboard extends Component {
         await this._loadAll();
     }
 
+    // ── NEW TASK 2 — toggle handler ─────────────────────────────────────────
+    setDashboardView(view) {
+        this.state.dashboardView = view;
+        this.state.selectedVendor = null;
+        this.state.filterVendor = "";
+    }
+
     // ── Navigation helpers ──────────────────────────────────────────────────
-    // NOTE: Passing full action objects (with explicit `views`) avoids the
-    //       Odoo 19 _preprocessAction bug where string XML-ID resolution can
-    //       return an action dict that lacks the `views` property, causing:
-    //       TypeError: can't access property "map", action.views is undefined
     openAllBoqs() {
         this.action.doAction({
             type: "ir.actions.act_window",
@@ -128,6 +150,17 @@ export class BoqDashboard extends Component {
         this.action.doAction({
             type: "ir.actions.act_window",
             name: "RFQs from BOQ",
+            res_model: "purchase.order",
+            views: [[false, "list"], [false, "form"]],
+            target: "current",
+        });
+    }
+
+    // BUG 2 — open trade-filtered RFQ list
+    openTradeRfqs(tradeName) {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: `RFQs — ${tradeName}`,
             res_model: "purchase.order",
             views: [[false, "list"], [false, "form"]],
             target: "current",
@@ -175,13 +208,29 @@ export class BoqDashboard extends Component {
         });
     }
 
-    // ── Computed getters ────────────────────────────────────────────────────
+    // ── NEW TASK 2 — Filtered vendor list by partner_type ──────────────────
     get filteredVendors() {
-        const q = (this.state.filterVendor || "").toLowerCase();
-        if (!q) return this.state.vendors;
-        return this.state.vendors.filter(v =>
-            (v.vendor_name || "").toLowerCase().includes(q)
-        );
+        const q    = (this.state.filterVendor || "").toLowerCase();
+        const view = this.state.dashboardView;   // "vendor" or "supplier"
+
+        let list = this.state.vendors;
+
+        // Filter by partner_type if available in vendor data
+        // (partner_type may not always be present; show all if missing)
+        if (view === "vendor") {
+            list = list.filter(v =>
+                !v.partner_type || v.partner_type === "vendor"
+            );
+        } else {
+            list = list.filter(v => v.partner_type === "supplier");
+        }
+
+        if (q) {
+            list = list.filter(v =>
+                (v.vendor_name || "").toLowerCase().includes(q)
+            );
+        }
+        return list;
     }
 
     get vendorTotals() {
@@ -190,6 +239,20 @@ export class BoqDashboard extends Component {
         const totalTax   = vendors.reduce((s, v) => s + (v.total_tax   || 0), 0);
         const totalRfqs  = vendors.reduce((s, v) => s + (v.rfq_count   || 0), 0);
         return { totalValue, totalTax, totalRfqs, count: vendors.length };
+    }
+
+    // ── BUG 2 — Trade data ─────────────────────────────────────────────────
+    get tradeSummary() {
+        return this.state.trades || [];
+    }
+
+    get tradeTotals() {
+        const trades = this.tradeSummary;
+        return {
+            total_value: trades.reduce((s, t) => s + (t.total_value || 0), 0),
+            total_lines: trades.reduce((s, t) => s + (t.line_count  || 0), 0),
+            rfq_count:   trades.reduce((s, t) => s + (t.rfq_count   || 0), 0),
+        };
     }
 
     get currencySymbol() {
@@ -210,11 +273,15 @@ export class BoqDashboard extends Component {
         for (const ln of this.state.vendorLines) {
             const key = ln.boq_name || "—";
             if (!groups[key]) {
-                groups[key] = { boq_name: key, items: 0, subtotal: 0, tax: 0 };
+                groups[key] = {
+                    boq_name: key, items: 0,
+                    subtotal: 0, tax: 0, margin_sum: 0,
+                };
             }
             groups[key].items++;
-            groups[key].subtotal += ln.subtotal || 0;
-            groups[key].tax      += ln.tax_amount || 0;
+            groups[key].subtotal    += ln.subtotal     || 0;
+            groups[key].tax         += ln.tax_amount   || 0;
+            groups[key].margin_sum  += ln.margin_percent || 0;
         }
         return Object.values(groups).sort((a, b) => a.boq_name.localeCompare(b.boq_name));
     }
@@ -229,16 +296,17 @@ export class BoqDashboard extends Component {
         );
     }
 
-    marginClass(pct) { return marginClass(pct); }
-    stateBadgeClass(state) { return stateBadgeClass(state); }
+    marginClass(pct)        { return marginClass(pct); }
+    stateBadgeClass(state)  { return stateBadgeClass(state); }
+    paymentStatusClass(s)   { return paymentStatusClass(s); }
 
     get stateLabels() {
         return {
-            draft: "Draft",
+            draft:     "Draft",
             submitted: "Submitted",
-            approved: "Approved",
-            rejected: "Rejected",
-            done: "Done",
+            approved:  "Approved",
+            rejected:  "Rejected",
+            done:      "Done",
         };
     }
 

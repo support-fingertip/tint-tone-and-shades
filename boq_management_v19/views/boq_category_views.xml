@@ -15,6 +15,9 @@
                 <field name="icon" optional="show"/>
                 <field name="is_dynamic" string="Dynamic" optional="show"
                        widget="boolean_toggle"/>
+                <!-- BUG 1 — Down Payment flag column -->
+                <field name="is_down_payment" string="Down Payment" optional="show"
+                       widget="boolean_toggle"/>
                 <field name="boq_count" string="BOQs"/>
                 <field name="line_count" string="Lines"/>
                 <field name="active" column_invisible="True"/>
@@ -70,6 +73,12 @@
                             -->
                             <field name="is_dynamic" widget="boolean_toggle"
                                    string="Dynamic Category (allow sub-categories)"/>
+                            <!--
+                                BUG 1 — Down Payment category flag.
+                                Lines under this category always carry 0% margin.
+                            -->
+                            <field name="is_down_payment" widget="boolean_toggle"
+                                   string="Down Payment Category (0% margin)"/>
                         </group>
                     </group>
                     <notebook>

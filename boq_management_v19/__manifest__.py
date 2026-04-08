@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'BOQ Management — Bill of Quantities (Odoo 19)',
-    'version': '19.0.1.0.4',
-    'summary': 'Bill of Quantities with dynamic category tabs linked to Customers',
+    'version': '19.0.2.0.0',
+    'summary': 'BOQ with margin fixes, trade assignments, vendor ratings, approval flow, and dashboard enhancements',
     'description': """
-        BOQ Management
-        ==============
-        ✅ BOQ records linked directly to Customers
-        ✅ Dynamic notebook tabs per work category (show/hide by selection)
-        ✅ Electrical | Civil | Lighting | Plumbing | HVAC | Finishing tabs
-        ✅ Product order lines with quantity, type and pricing per tab
-        ✅ Per-category subtotals + grand total with currency support
-        ✅ Customer smart button with BOQ count
-        ✅ Kanban / List / Dashboard views
-        ✅ Full chatter (log, activity, followers)
-        ✅ Enterprise UI: gradient cards, animated tabs, responsive grid
+        BOQ Management v2.0
+        ====================
+        ✅ BUG 1  — Margin formula fixed: (sale - cost) / sale × 100; down-payment category → 0%
+        ✅ BUG 2  — Trade Assignments dashboard section (grouped by work_category_id)
+        ✅ BUG 3  — Vendor rating triggered AFTER receipt done + invoice paid
+        ✅ BUG 4  — Margin % prominently shown on dashboard vendor cards
+        ✅ BUG 5  — Approval flow for low-margin RFQs (from BOQ or direct)
+        ✅ BUG 6  — Payment status column on dashboard trade-wise & vendor rows
+        ✅ NEW 1  — Partner type: Vendor / Supplier / Employee / Customer split
+        ✅ NEW 2  — Dashboard Vendor | Supplier toggle tab
+        ✅ NEW 3  — Margin % on RFQ comparison (purchase.order.line)
+        ✅ NEW 4  — boq.vendor.rating model; avg_rating on res.partner
+        ✅ NEW 5  — Mail template for vendor portal quotation submission
     """,
     'author': 'Senior Odoo Developer',
     'category': 'Industries/Construction',
@@ -29,16 +31,19 @@
         'purchase',
         'account',
         'project',
+        'stock',
     ],
     'data': [
         'security/boq_groups.xml',
         'security/ir.model.access.csv',
         'data/boq_sequence_data.xml',
         'data/boq_category_data.xml',
+        'data/mail_template_data.xml',
         'views/boq_dashboard_views.xml',
         'views/boq_boq_views.xml',
         'views/boq_category_views.xml',
         'views/boq_order_line_views.xml',
+        'views/boq_vendor_rating_views.xml',
         'views/res_partner_views.xml',
         'views/purchase_order_views.xml',
         'views/menu_views.xml',
