@@ -162,21 +162,14 @@ class BoqOrderLine(models.Model):
     # ── Notes ─────────────────────────────────────────────────────────────
     notes = fields.Char(string='Remarks')
 
-    # ── _auto_init: idempotent schema bootstrap on every startup ──────────
+    # ── _auto_init: M2M table only (runs on install/upgrade) ─────────────
     def _auto_init(self):
         """
-        boq.order.line is owned by boq_management_v19, so this _auto_init()
-        is guaranteed to run on EVERY server startup (not just -u upgrades).
-
-        We use it to ensure all boq_management_v19 schema changes exist,
-        including columns on tables owned by other modules (res_partner, etc.)
-        that cannot be bootstrapped from those models' own _auto_init().
-
-        All statements use IF NOT EXISTS / DO NOTHING so repeated calls are safe.
+        Create boq_order_line_tax_rel if it does not exist.
+        _auto_init() runs during 'odoo -i' or 'odoo -u', NOT on plain restart.
+        Column additions for other tables are handled in _register_hook() below.
         """
         res = super()._auto_init()
-
-        # ── 1. M2M relation table for BOQ line taxes ──────────────────────
         self.env.cr.execute("""
             CREATE TABLE IF NOT EXISTS boq_order_line_tax_rel (
                 line_id INTEGER NOT NULL
@@ -186,10 +179,24 @@ class BoqOrderLine(models.Model):
                 PRIMARY KEY (line_id, tax_id)
             );
         """)
+        return res
 
-        # ── 2. res_partner columns for BOQ v2.0 (NEW TASK 1 + NEW TASK 4) ─
-        # _auto_init() on _inherit='res.partner' is NOT called by Odoo because
-        # res.partner is owned by 'base'. We add them here instead.
+    # ── _register_hook: runs on EVERY server startup ───────────────────────
+    def _register_hook(self):
+        """
+        Odoo calls _register_hook() for every model on every registry build
+        (i.e. every server start, with or without -u).  This is the correct
+        place to add DB columns that must exist before the first HTTP request
+        is served — unlike _auto_init() which only runs during install/upgrade.
+
+        All ALTER TABLE statements use ADD COLUMN IF NOT EXISTS so repeated
+        calls on restart are fully idempotent.
+        """
+        res = super()._register_hook()
+
+        # ── res_partner columns (BOQ v2.0 — NEW TASK 1 + NEW TASK 4) ─────
+        # Cannot use res.partner._auto_init() because res.partner is owned
+        # by 'base' and Odoo won't call _auto_init() on it for our module.
         self.env.cr.execute("""
             ALTER TABLE res_partner
                 ADD COLUMN IF NOT EXISTS partner_type VARCHAR,
@@ -197,7 +204,7 @@ class BoqOrderLine(models.Model):
                 ADD COLUMN IF NOT EXISTS rating_count INTEGER       DEFAULT 0;
         """)
 
-        # ── 3. boq_category.is_down_payment column (BUG 1) ───────────────
+        # ── boq_category.is_down_payment (BUG 1) ─────────────────────────
         self.env.cr.execute("""
             ALTER TABLE boq_category
                 ADD COLUMN IF NOT EXISTS is_down_payment BOOLEAN DEFAULT FALSE;
