@@ -23,39 +23,3 @@ class PurchasePortalPriceUpdate(portal.CustomerPortal):
 
         line.sudo().write({'price_unit': float(price_unit)})
         return {'success': True}
-
-    @http.route(['/my/purchase/<int:order_id>/submit'], type='http', auth='user', website=True)
-    def submit_purchase_order(self, order_id, **post):
-
-        order = request.env['purchase.order'].sudo().browse(order_id).exists()
-
-        # Check order exists
-        if not order:
-            return request.redirect('/my')
-
-        # Security check
-        if order.partner_id != request.env.user.partner_id:
-            raise AccessError("You are not allowed to access this document.")
-
-        # Only allow submit when RFQ is in 'sent' state
-        if order.state == 'sent':
-            # Plain text message (NO HTML)
-            body_text = (
-                f"Dear {order.company_id.name},\n\n"
-                f"The vendor {order.partner_id.name} has successfully submitted "
-                f"against the RFQ {order.name}. Please review and proceed further.\n\n"
-                f"Best regards,\n"
-                f"{order.partner_id.name}"
-            )
-
-            order.sudo().message_post(
-                subject=f"Vendor Submission: {order.name}",
-                body=body_text,
-                message_type='email',
-                subtype_xmlid='mail.mt_comment',
-            )
-
-            # Change state
-            order.action_submit()
-
-        return request.redirect('/my/purchase/%s' % order.id)
