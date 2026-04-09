@@ -117,33 +117,127 @@
                 </group>
 
                 <!-- ── VENDOR / SUPPLIER ASSIGNMENT ─────────────────── -->
+                <!--
+                    One group per active work category.  Each group shows:
+                      • Type  (Vendor / Supplier selection)
+                      • Vendors field  — visible only when Type = Vendor
+                      • Suppliers field — visible only when Type = Supplier
+                    Groups are hidden when their category is not selected above.
+                -->
                 <group string="Vendor / Supplier Assignment">
                     <div class="text-muted small mb-2" colspan="2">
-                        Rows appear automatically when Work Categories are selected above.
-                        Set <b>Type</b> — Vendor shows the <b>Vendors</b> field,
-                        Supplier shows the <b>Suppliers</b> field.
-                        Each selected partner receives a separate RFQ with <em>all</em>
-                        lines from that category.
+                        For each active work category, choose <b>Type</b> then
+                        pick the partners.  Each partner receives a separate RFQ
+                        containing <em>all</em> lines from that category.
                     </div>
-                    <field name="trade_vendor_ids" nolabel="1" colspan="2" mode="list">
-                        <list editable="bottom">
-                            <field name="category_id" string="Work Category"
-                                   options="{'no_create_edit': True}"/>
-                            <field name="partner_type" string="Type"/>
-                            <field name="vendor_ids"
-                                   widget="many2many_tags"
-                                   string="Vendors"
-                                   domain="[('partner_type', '=', 'vendor')]"
-                                   options="{'no_create_edit': True}"
-                                   invisible="partner_type != 'vendor'"/>
-                            <field name="supplier_ids"
-                                   widget="many2many_tags"
-                                   string="Suppliers"
-                                   domain="[('partner_type', '=', 'supplier')]"
-                                   options="{'no_create_edit': True}"
-                                   invisible="partner_type != 'supplier'"/>
-                        </list>
-                    </field>
+
+                    <!-- Electrical -->
+                    <group string="Electrical" colspan="2"
+                           invisible="not show_electrical">
+                        <field name="electrical_partner_type" string="Type"/>
+                        <field name="electrical_vendor_ids"
+                               widget="many2many_tags"
+                               string="Vendors"
+                               domain="[('partner_type', '=', 'vendor')]"
+                               options="{'no_create_edit': True}"
+                               invisible="electrical_partner_type != 'vendor'"/>
+                        <field name="electrical_supplier_ids"
+                               widget="many2many_tags"
+                               string="Suppliers"
+                               domain="[('partner_type', '=', 'supplier')]"
+                               options="{'no_create_edit': True}"
+                               invisible="electrical_partner_type != 'supplier'"/>
+                    </group>
+
+                    <!-- Civil -->
+                    <group string="Civil" colspan="2"
+                           invisible="not show_civil">
+                        <field name="civil_partner_type" string="Type"/>
+                        <field name="civil_vendor_ids"
+                               widget="many2many_tags"
+                               string="Vendors"
+                               domain="[('partner_type', '=', 'vendor')]"
+                               options="{'no_create_edit': True}"
+                               invisible="civil_partner_type != 'vendor'"/>
+                        <field name="civil_supplier_ids"
+                               widget="many2many_tags"
+                               string="Suppliers"
+                               domain="[('partner_type', '=', 'supplier')]"
+                               options="{'no_create_edit': True}"
+                               invisible="civil_partner_type != 'supplier'"/>
+                    </group>
+
+                    <!-- Lighting -->
+                    <group string="Lighting" colspan="2"
+                           invisible="not show_lighting">
+                        <field name="lighting_partner_type" string="Type"/>
+                        <field name="lighting_vendor_ids"
+                               widget="many2many_tags"
+                               string="Vendors"
+                               domain="[('partner_type', '=', 'vendor')]"
+                               options="{'no_create_edit': True}"
+                               invisible="lighting_partner_type != 'vendor'"/>
+                        <field name="lighting_supplier_ids"
+                               widget="many2many_tags"
+                               string="Suppliers"
+                               domain="[('partner_type', '=', 'supplier')]"
+                               options="{'no_create_edit': True}"
+                               invisible="lighting_partner_type != 'supplier'"/>
+                    </group>
+
+                    <!-- Plumbing -->
+                    <group string="Plumbing" colspan="2"
+                           invisible="not show_plumbing">
+                        <field name="plumbing_partner_type" string="Type"/>
+                        <field name="plumbing_vendor_ids"
+                               widget="many2many_tags"
+                               string="Vendors"
+                               domain="[('partner_type', '=', 'vendor')]"
+                               options="{'no_create_edit': True}"
+                               invisible="plumbing_partner_type != 'vendor'"/>
+                        <field name="plumbing_supplier_ids"
+                               widget="many2many_tags"
+                               string="Suppliers"
+                               domain="[('partner_type', '=', 'supplier')]"
+                               options="{'no_create_edit': True}"
+                               invisible="plumbing_partner_type != 'supplier'"/>
+                    </group>
+
+                    <!-- HVAC -->
+                    <group string="HVAC" colspan="2"
+                           invisible="not show_hvac">
+                        <field name="hvac_partner_type" string="Type"/>
+                        <field name="hvac_vendor_ids"
+                               widget="many2many_tags"
+                               string="Vendors"
+                               domain="[('partner_type', '=', 'vendor')]"
+                               options="{'no_create_edit': True}"
+                               invisible="hvac_partner_type != 'vendor'"/>
+                        <field name="hvac_supplier_ids"
+                               widget="many2many_tags"
+                               string="Suppliers"
+                               domain="[('partner_type', '=', 'supplier')]"
+                               options="{'no_create_edit': True}"
+                               invisible="hvac_partner_type != 'supplier'"/>
+                    </group>
+
+                    <!-- Finishing -->
+                    <group string="Finishing" colspan="2"
+                           invisible="not show_finishing">
+                        <field name="finishing_partner_type" string="Type"/>
+                        <field name="finishing_vendor_ids"
+                               widget="many2many_tags"
+                               string="Vendors"
+                               domain="[('partner_type', '=', 'vendor')]"
+                               options="{'no_create_edit': True}"
+                               invisible="finishing_partner_type != 'vendor'"/>
+                        <field name="finishing_supplier_ids"
+                               widget="many2many_tags"
+                               string="Suppliers"
+                               domain="[('partner_type', '=', 'supplier')]"
+                               options="{'no_create_edit': True}"
+                               invisible="finishing_partner_type != 'supplier'"/>
+                    </group>
                 </group>
 
                 <!-- ═══════════════════════════════════════════════════════
