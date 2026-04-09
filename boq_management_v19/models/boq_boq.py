@@ -641,6 +641,7 @@ class BoqBoq(models.Model):
                     'vendor_id': vid,
                     'vendor_name': rfq.partner_id.name,
                     'vendor_email': rfq.partner_id.email or '',
+                    'partner_type': rfq.partner_id.partner_type or 'vendor',
                     'rfq_count': 0,
                     'total_value': 0.0,
                     'total_tax': 0.0,
