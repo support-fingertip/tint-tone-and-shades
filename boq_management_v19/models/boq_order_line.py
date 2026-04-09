@@ -219,23 +219,20 @@ class BoqOrderLine(models.Model):
         # which crashes every res.partner read because boq.vendor.rating has
         # no `res_model` field.
         #
-        # The ORM search [('model_id.model', 'in', [...])] misses this rule
-        # when its model_id FK points to an already-deleted ir.model row
-        # (dangling FK → the relational filter returns 0 rows).
-        #
-        # Strategy: use raw SQL to find the rule IDs (no FK traversal),
-        # then browse+unlink via ORM so the ir.rule ormcache is invalidated.
+        # Raw SQL DELETE is used instead of ORM unlink because _register_hook
+        # runs during registry build before the ir.rule ORM cache is populated,
+        # making a direct DELETE safe and more reliable than ORM operations.
+        # The query is scoped to only the affected models to avoid removing
+        # unrelated security rules from other modules.
         try:
             self.env.cr.execute("""
-                SELECT r.id
-                  FROM ir_rule r
-             LEFT JOIN ir_model m ON r.model_id = m.id
-                 WHERE (m.model IN ('boq.vendor.rating', 'vendor.po.rating'))
-                    OR (r.domain_force ILIKE '%%res_model%%')
+                DELETE FROM ir_rule
+                 WHERE domain_force ILIKE '%%res_model%%'
+                   AND model_id IN (
+                       SELECT id FROM ir_model
+                        WHERE model IN ('boq.vendor.rating', 'vendor.po.rating')
+                   )
             """)
-            stale_ids = [row[0] for row in self.env.cr.fetchall()]
-            if stale_ids:
-                self.env['ir.rule'].sudo().browse(stale_ids).unlink()
         except Exception:
             pass  # ir_rule table may not exist yet on very first install
 
