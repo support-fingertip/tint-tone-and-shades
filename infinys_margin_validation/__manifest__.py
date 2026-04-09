@@ -7,7 +7,7 @@
     "license": "LGPL-3",
     "category": "Purchases",
     "version": "19.0.1.0.0",
-    "depends": ["purchase", "mail"],
+    "depends": ["purchase", "mail", "tk_purchase_advance_payment"],
     "data": [
         "security/ir.model.access.csv",
         "views/margin_threshold_views.xml",
