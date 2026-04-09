@@ -438,6 +438,26 @@ class BoqBoq(models.Model):
             rec.grand_total  = subtotal + tax_total
             rec.line_count   = len(lines)
 
+    # ── Auto-populate trade_vendor_ids when categories are added ─────────
+    @api.onchange('category_ids')
+    def _onchange_category_ids(self):
+        """
+        When a work category is added, automatically insert a row in the
+        Vendor / Supplier Assignment table so the user only needs to set the
+        Type and pick partners — no manual 'Add a line' needed.
+        Existing rows are preserved; rows for removed categories are left so
+        the user doesn't accidentally lose partner selections.
+        """
+        existing_cats = self.trade_vendor_ids.mapped('category_id')
+        TradeVendor = self.env['boq.trade.vendor']
+        for cat in self.category_ids:
+            if cat not in existing_cats:
+                self.trade_vendor_ids |= TradeVendor.new({
+                    'boq_id': self._origin.id or False,
+                    'category_id': cat.id,
+                    'partner_type': 'vendor',
+                })
+
     # ── Sequence / Create ─────────────────────────────────────────────────
     @api.model_create_multi
     def create(self, vals_list):
