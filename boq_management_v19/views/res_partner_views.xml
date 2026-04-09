@@ -44,12 +44,22 @@
 
             <!-- NEW TASK 1 — Partner Type field (after is_company / type) -->
             <xpath expr="//field[@name='company_type']" position="after">
-                <field name="partner_type" string="Partner Type"
-                       widget="badge"
-                       decoration-primary="partner_type == 'vendor'"
-                       decoration-info="partner_type == 'supplier'"
-                       decoration-warning="partner_type == 'employee'"
-                       decoration-success="partner_type == 'customer'"/>
+                <field name="partner_type" string="Partner Type"/>
+            </xpath>
+
+            <!-- BOQ Work Category Assignment tab -->
+            <xpath expr="//notebook" position="inside">
+                <page string="BOQ Configuration" name="boq_config">
+                    <group string="BOQ Partner Settings">
+                        <group>
+                            <field name="partner_type" string="Partner Type"
+                                   help="Vendor: material supply / trade execution. Supplier: procurement / main contractor. Employee: internal resource. Customer: BOQ client."/>
+                            <field name="work_category_ids" widget="many2many_tags"
+                                   string="Work Categories"
+                                   help="Select the trades / work categories this partner handles. Used to auto-assign partners to RFQs based on BOQ category matching."/>
+                        </group>
+                    </group>
+                </page>
             </xpath>
 
             <!-- NEW TASK 4 — Vendor Ratings notebook tab -->
