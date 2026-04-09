@@ -28,6 +28,31 @@ class PurchaseOrder(models.Model):
         compute='_compute_is_margin_approver',
     )
 
+    state = fields.Selection([
+        ('draft', 'RFQ'),
+        ('sent', 'RFQ Sent'),
+        ('submitted', 'Submitted'),  # 👈 NEW STATE
+        ('to approve', 'To Approve'),
+        ('purchase', 'Purchase Order'),
+        ('cancel', 'Cancelled')
+    ], string='Status', readonly=True, index=True, copy=False, default='draft', tracking=True)
+
+    payment_invoice_ids = fields.One2many(
+        'purchase.payment.invoice.line',
+        'order_id',
+        string="Payment Invoice"
+    )
+
+    def action_submit(self):
+        for rec in self:
+            # Only allow from RFQ Sent
+            if rec.state != 'sent':
+                return
+            # Validate all prices filled
+            if any(line.price_unit <= 0 for line in rec.order_line if not line.display_type):
+                raise UserError("Please fill Unit Price for all lines.")
+            rec.state = 'submitted'
+
     @api.depends('order_line.product_id.categ_id')
     def _compute_is_margin_approver(self):
         ThresholdConfig = self.env['margin.threshold.config']

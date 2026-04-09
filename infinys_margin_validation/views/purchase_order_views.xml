@@ -6,6 +6,19 @@
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
 
+            <xpath expr="//notebook" position="inside">
+                <page string="Payment Invoice" name="remarks_tab">
+                    <field name="payment_invoice_ids" context="{'default_order_id': id}">
+                        <list editable="bottom">
+                            <field name="bill_id"/>
+                            <field name="bill_state"/>
+                            <field name="amount"/>
+                            <field name="comment"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
             <!-- Margin (%) column on order lines -->
             <xpath expr="//field[@name='order_line']//list//field[@name='price_subtotal']" position="after">
                 <field name="margin_percentage" string="Margin (%)" widget="float" readonly="1"/>
