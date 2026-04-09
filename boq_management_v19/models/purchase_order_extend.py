@@ -128,17 +128,20 @@ class PurchaseOrderBoqExtend(models.Model):
                         (total_sell - total_cost) / total_sell * 100.0
                     )
                     continue
-            # Fallback: PO line (purchase price vs standard cost)
-            total_sell = 0.0
-            total_cost = 0.0
+            # Fallback: no BOQ — savings % vs product standard cost
+            # savings = (standard_cost - vendor_price) / standard_cost × 100
+            # Positive = vendor is cheaper than internal standard (good deal)
+            # Negative = vendor is more expensive than internal standard
+            total_std = 0.0
+            total_po = 0.0
             for line in order.order_line:
-                sell = line.price_unit * line.product_qty
-                cost = (line.product_id.standard_price or 0.0) * line.product_qty
-                total_sell += sell
-                total_cost += cost
+                std = (line.product_id.standard_price or 0.0) * line.product_qty
+                po = line.price_unit * line.product_qty
+                total_std += std
+                total_po += po
             order.margin_percent = (
-                (total_sell - total_cost) / total_sell * 100.0
-            ) if total_sell > 0 else 0.0
+                (total_std - total_po) / total_std * 100.0
+            ) if total_std > 0 else 0.0
 
     # ══════════════════════════════════════════════════════════════════════════
     # 3.  VENDOR RATING TRIGGER  (BUG 3 / NEW TASK 4)
@@ -169,16 +172,16 @@ class PurchaseOrderBoqExtend(models.Model):
         store=False,
     )
 
-    @api.depends('state', 'invoice_status', 'picking_ids', 'picking_ids.state')
+    @api.depends('state', 'picking_ids', 'picking_ids.state')
     def _compute_show_rate_vendor(self):
         for order in self:
             is_purchase = order.state == 'purchase'
-            is_invoiced = order.invoice_status == 'invoiced'
-            pickings_done = all(
-                p.state == 'done'
-                for p in order.picking_ids
-            ) if order.picking_ids else False
-            order.show_rate_vendor = is_purchase and is_invoiced and pickings_done
+            # No pickings → service item or stockless product; treat delivery as done
+            pickings_done = (
+                all(p.state == 'done' for p in order.picking_ids)
+                if order.picking_ids else True
+            )
+            order.show_rate_vendor = is_purchase and pickings_done
 
     @api.depends('partner_id')
     def _compute_vendor_rating_id(self):
@@ -197,8 +200,8 @@ class PurchaseOrderBoqExtend(models.Model):
         self.ensure_one()
         if not self.show_rate_vendor:
             raise UserError(_(
-                'Rating is available only after the receipt is done '
-                'and the invoice is fully paid.'
+                'Rating is available only after the Purchase Order is confirmed '
+                'and all deliveries are received.'
             ))
         # Dynamic title based on partner type
         pt = self.partner_id.partner_type
@@ -291,18 +294,20 @@ class PurchaseOrderLineBoqExtend(models.Model):
     _inherit = 'purchase.order.line'
 
     cost_price = fields.Float(
-        string='Cost Price',
+        string='Std Cost',
         compute='_compute_pol_cost_price',
         store=False,
         digits='Product Price',
-        help='Product standard price (cost) at the time of quoting.',
+        help='Product standard cost (internal reference price).',
     )
     margin_percent = fields.Float(
-        string='Margin %',
+        string='Savings %',
         compute='_compute_pol_margin',
         store=False,
         digits='Discount',
-        help='Margin % = ((price_unit - cost_price) / price_unit) × 100.',
+        help='Savings % = (standard_cost − vendor_price) / standard_cost × 100.\n'
+             'Positive = vendor is cheaper than our internal standard (good deal).\n'
+             'Negative = vendor is quoting above our standard cost.',
     )
 
     @api.depends('product_id')
@@ -313,9 +318,9 @@ class PurchaseOrderLineBoqExtend(models.Model):
     @api.depends('price_unit', 'cost_price')
     def _compute_pol_margin(self):
         for line in self:
-            if line.price_unit > 0:
-                line.margin_percent = (
-                    (line.price_unit - (line.cost_price or 0.0)) / line.price_unit
-                ) * 100.0
+            std = line.cost_price or 0.0
+            if std > 0:
+                # Savings %: how much cheaper is this vendor vs our standard cost
+                line.margin_percent = (std - line.price_unit) / std * 100.0
             else:
                 line.margin_percent = 0.0
