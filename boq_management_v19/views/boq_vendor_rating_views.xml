@@ -24,21 +24,20 @@
                     </div>
                     <group>
                         <group string="Rating">
-                            <field name="rating" widget="priority"/>
+                            <field name="rating" widget="radio"/>
                             <field name="date"/>
                         </group>
                         <group string="Order Details">
                             <field name="company_id" readonly="1"/>
+                            <field name="partner_type" readonly="1"/>
                         </group>
                     </group>
                     <group string="Comments">
-                        <field name="comments" placeholder="Enter comments about vendor delivery, quality, communication…" nolabel="1"/>
+                        <field name="comments"
+                               placeholder="Enter comments about vendor delivery, quality, communication…"
+                               nolabel="1"/>
                     </group>
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids"/>
-                    <field name="message_ids"/>
-                </div>
             </form>
         </field>
     </record>
@@ -54,8 +53,9 @@
                   decoration-danger="rating_int == 1">
                 <field name="date"/>
                 <field name="partner_id"/>
+                <field name="partner_type" optional="show"/>
                 <field name="purchase_order_id"/>
-                <field name="rating" widget="priority"/>
+                <field name="rating"/>
                 <field name="rating_int" column_invisible="1"/>
                 <field name="comments" optional="show"/>
                 <field name="company_id" optional="hide"/>
