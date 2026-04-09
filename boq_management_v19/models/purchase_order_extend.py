@@ -203,12 +203,7 @@ class PurchaseOrderBoqExtend(models.Model):
                 'Rating is available only after the Purchase Order is confirmed '
                 'and all deliveries are received.'
             ))
-        # Dynamic title based on partner type
-        pt = self.partner_id.partner_type
-        if pt == 'supplier':
-            title = _('Rate Supplier — %s') % self.partner_id.name
-        else:
-            title = _('Rate Vendor — %s') % self.partner_id.name
+        title = _('Rate Vendor — %s') % self.partner_id.name
 
         existing = self.vendor_rating_id
         ctx = {

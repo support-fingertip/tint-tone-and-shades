@@ -26,21 +26,14 @@
                     <field name="boq_id" widget="statinfo" string="BOQ"/>
                 </button>
 
-                <!-- Rate Vendor: visible for non-supplier partners -->
+                <!-- Rate Vendor: visible once PO is confirmed and receipt is done -->
                 <button name="action_rate_vendor" type="object"
                         class="oe_stat_button" icon="fa-star"
-                        invisible="not show_rate_vendor or partner_type == 'supplier'"
+                        invisible="not show_rate_vendor"
                         string="Rate Vendor"/>
 
-                <!-- Rate Supplier: visible for supplier-type partners -->
-                <button name="action_rate_vendor" type="object"
-                        class="oe_stat_button" icon="fa-star"
-                        invisible="not show_rate_vendor or partner_type != 'supplier'"
-                        string="Rate Supplier"/>
-
-                <!-- Load computed fields used above in invisible expressions -->
+                <!-- Load computed field used above in invisible expression -->
                 <field name="show_rate_vendor" invisible="1"/>
-                <field name="partner_type"     invisible="1"/>
 
             </xpath>
 
