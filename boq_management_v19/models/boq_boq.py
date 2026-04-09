@@ -93,13 +93,11 @@ class BoqBoq(models.Model):
     )
 
     # ── Status ────────────────────────────────────────────────────────────
+    # Approval workflow removed: Draft → Done only.
     state = fields.Selection(
         selection=[
-            ('draft',     'Draft'),
-            ('submitted', 'Submitted'),
-            ('approved',  'Approved'),
-            ('rejected',  'Rejected'),
-            ('done',      'Done'),
+            ('draft', 'Draft'),
+            ('done',  'Done'),
         ],
         string='Status',
         default='draft',
@@ -372,18 +370,6 @@ class BoqBoq(models.Model):
         return super().copy(default)
 
     # ── Workflow actions ──────────────────────────────────────────────────
-    def action_submit(self):
-        for rec in self:
-            if not rec.line_ids:
-                raise UserError(_('Cannot submit a BOQ with no lines.'))
-        self.write({'state': 'submitted'})
-
-    def action_approve(self):
-        self.write({'state': 'approved'})
-
-    def action_reject(self):
-        self.write({'state': 'rejected'})
-
     def action_done(self):
         self.write({'state': 'done'})
 
@@ -405,44 +391,86 @@ class BoqBoq(models.Model):
     # ── Create RFQ ────────────────────────────────────────────────────────
     def action_create_rfq(self):
         """
-        Group BOQ lines by vendor and create one RFQ (purchase.order)
-        per vendor. Lines with no vendor are skipped.
-        After creation, opens the resulting RFQ(s).
+        Create one RFQ (purchase.order) per partner based on trade-level
+        type assignments (boq.trade.vendor rows).
+
+        Strategy A — Trade assignments exist:
+          For each trade row pick the partners (vendor_ids when type=vendor,
+          supplier_ids when type=supplier).  All BOQ lines whose category_id
+          matches that trade are added to every partner's RFQ.
+          Multiple trades assigned to the same partner produce a single PO
+          containing lines from all those trades.
+
+        Strategy B — Fallback (no trade assignments):
+          Fall back to the Many2many vendor_ids on individual lines,
+          preserving the original behaviour.
         """
         self.ensure_one()
 
         if not self.line_ids:
             raise UserError(_('Cannot create RFQ: the BOQ has no line items.'))
 
-        # Build vendor → lines mapping
-        vendor_lines = {}
-        for line in self.line_ids:
-            for vendor in line.vendor_ids:
-                vendor_lines.setdefault(vendor.id, []).append(line)
+        # ── Build partner_id → [line, …] map ─────────────────────────────
+        partner_lines = {}   # {partner_id: [boq.order.line, …]}
 
-        if not vendor_lines:
+        if self.trade_vendor_ids:
+            # Strategy A: use trade-level assignments
+            for trade in self.trade_vendor_ids:
+                trade_lines = self.line_ids.filtered(
+                    lambda l, cat=trade.category_id: l.category_id == cat
+                )
+                if not trade_lines:
+                    continue
+                partners = (
+                    trade.vendor_ids
+                    if trade.partner_type == 'vendor'
+                    else trade.supplier_ids
+                )
+                for partner in partners:
+                    bucket = partner_lines.setdefault(partner.id, [])
+                    for line in trade_lines:
+                        if line not in bucket:
+                            bucket.append(line)
+
+        if not partner_lines:
+            # Strategy B: fallback to line-level vendor_ids
+            for line in self.line_ids:
+                for vendor in line.vendor_ids:
+                    bucket = partner_lines.setdefault(vendor.id, [])
+                    if line not in bucket:
+                        bucket.append(line)
+
+        if not partner_lines:
             raise UserError(_(
-                'No vendors mapped on any line item.\n'
-                'Please assign at least one Preferred Vendor to a line item first.'
+                'No vendors / suppliers mapped.\n\n'
+                'In the "Vendor / Supplier Assignment" section, add at least one '
+                'trade row, choose its Type (Vendor or Supplier), select the '
+                'partners, then click Create RFQ.'
             ))
 
+        # ── Create one PO per partner ─────────────────────────────────────
         PO = self.env['purchase.order']
         POLine = self.env['purchase.order.line']
         today = fields.Datetime.now()
         created_orders = PO
 
-        for vendor_id, lines in vendor_lines.items():
+        for partner_id, lines in partner_lines.items():
             po = PO.create({
-                'partner_id': vendor_id,
+                'partner_id': partner_id,
                 'origin': '%s — %s' % (self.name, self.project_name or '-'),
             })
             for line in lines:
                 POLine.create({
                     'order_id': po.id,
                     'product_id': line.product_id.id,
-                    'name': line.product_name or line.product_id.display_name,
+                    'name': line.product_name or (
+                        line.product_id.display_name if line.product_id else '/'
+                    ),
                     'product_qty': line.qty,
-                    'product_uom_id': line.uom_id.id or line.product_id.uom_po_id.id,
+                    'product_uom_id': (
+                        line.uom_id.id
+                        or (line.product_id.uom_po_id.id if line.product_id else False)
+                    ),
                     'price_unit': 0,
                     'date_planned': today,
                 })
@@ -532,9 +560,10 @@ class BoqBoq(models.Model):
             if rfq_ids:
                 rfqs = self.env['purchase.order'].browse(rfq_ids)
 
-        state_counts = {}
-        for state, _label in self._fields['state'].selection:
-            state_counts[state] = len(boqs.filtered(lambda b, s=state: b.state == s))
+        state_counts = {
+            'draft': len(boqs.filtered(lambda b: b.state == 'draft')),
+            'done':  len(boqs.filtered(lambda b: b.state == 'done')),
+        }
 
         total_value = sum(boqs.mapped('total_amount'))
         total_tax   = sum(boqs.mapped('total_tax'))

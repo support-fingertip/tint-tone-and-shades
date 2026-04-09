@@ -140,15 +140,24 @@ class PurchaseOrderBoqExtend(models.Model):
     #     • invoice_status == 'invoiced' (fully invoiced)
     #     • ALL linked stock.picking records are 'done'
     # ══════════════════════════════════════════════════════════════════════════
+    # ── Partner type relay (vendor or supplier) ───────────────────────────
+    # Stored on purchase.order so the view invisible expression can reference
+    # it without a dot-traversal that Odoo 19 may not resolve at render time.
+    partner_type = fields.Selection(
+        related='partner_id.partner_type',
+        string='Partner Type',
+        store=False,
+    )
+
     show_rate_vendor = fields.Boolean(
-        string='Show Rate Vendor',
+        string='Show Rate Button',
         compute='_compute_show_rate_vendor',
         store=False,
         help='True when PO is confirmed, fully received, and fully invoiced.',
     )
     vendor_rating_id = fields.Many2one(
         comodel_name='boq.vendor.rating',
-        string='Vendor Rating',
+        string='Partner Rating',
         compute='_compute_vendor_rating_id',
         store=False,
     )
@@ -174,16 +183,23 @@ class PurchaseOrderBoqExtend(models.Model):
 
     def action_rate_vendor(self):
         """
-        BUG 3 / NEW TASK 4 — Open the vendor rating popup form.
-        Triggered from the 'Rate Vendor' button (visible only after receipt done + paid).
+        Open the rating popup form for the PO partner (vendor or supplier).
+        Button is visible only after: receipt done + invoice fully paid.
+        Works for both partner_type = 'vendor' and 'supplier'.
         """
         self.ensure_one()
         if not self.show_rate_vendor:
             raise UserError(_(
-                'Vendor rating is available only after the receipt is done '
+                'Rating is available only after the receipt is done '
                 'and the invoice is fully paid.'
             ))
-        # If rating already exists, open it; otherwise open empty form
+        # Dynamic title based on partner type
+        pt = self.partner_id.partner_type
+        if pt == 'supplier':
+            title = _('Rate Supplier — %s') % self.partner_id.name
+        else:
+            title = _('Rate Vendor — %s') % self.partner_id.name
+
         existing = self.vendor_rating_id
         ctx = {
             'default_purchase_order_id': self.id,
@@ -191,7 +207,7 @@ class PurchaseOrderBoqExtend(models.Model):
         }
         return {
             'type': 'ir.actions.act_window',
-            'name': _('Rate Vendor — %s') % self.partner_id.name,
+            'name': title,
             'res_model': 'boq.vendor.rating',
             'view_mode': 'form',
             'res_id': existing.id if existing else False,
