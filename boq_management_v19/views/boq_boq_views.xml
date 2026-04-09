@@ -130,6 +130,46 @@
                            nolabel="1"/>
                 </group>
 
+                <!-- ── VENDOR / SUPPLIER ASSIGNMENT ─────────────────── -->
+                <group string="Vendor / Supplier Assignment">
+                    <div class="text-muted small mb-2" colspan="2">
+                        Select <b>Type</b> per trade — Vendor or Supplier field appears.
+                        Click <b>Apply to Lines</b> to push the selection onto all lines
+                        in that trade, then use <b>Create RFQ</b>.
+                    </div>
+                    <field name="trade_vendor_ids" nolabel="1" colspan="2" mode="list">
+                        <list editable="bottom">
+                            <field name="category_id" string="Trade"
+                                   options="{'no_create_edit': True}"/>
+                            <field name="partner_type" string="Type"/>
+                            <field name="vendor_ids"
+                                   widget="many2many_tags"
+                                   string="Vendors"
+                                   domain="[('supplier_rank', '&gt;', 0)]"
+                                   options="{'no_create_edit': True}"
+                                   invisible="partner_type != 'vendor'"/>
+                            <field name="supplier_ids"
+                                   widget="many2many_tags"
+                                   string="Suppliers"
+                                   domain="[('supplier_rank', '&gt;', 0), ('partner_type', '=', 'supplier')]"
+                                   options="{'no_create_edit': True}"
+                                   invisible="partner_type != 'supplier'"/>
+                            <field name="line_count" string="Lines" readonly="1"/>
+                            <button name="action_apply_to_lines" type="object"
+                                    string="Apply to Lines"
+                                    class="btn-sm btn-secondary"
+                                    title="Add selected partners to all lines in this trade"/>
+                        </list>
+                    </field>
+                    <div colspan="2" invisible="not trade_vendor_ids">
+                        <button name="action_apply_all_trade_vendors"
+                                type="object"
+                                string="Apply All to Lines"
+                                class="btn btn-primary btn-sm"
+                                confirm="This will add vendor/supplier assignments to ALL lines for every trade listed above. Proceed?"/>
+                    </div>
+                </group>
+
                 <!-- ═══════════════════════════════════════════════════════
                      NOTEBOOK — one page per work category.
                      Each page is hidden when its boolean flag is False.
@@ -353,47 +393,6 @@
                                        required="1"/>
                             </list>
                         </field>
-                    </page>
-
-                    <!-- ─────────────── VENDOR ASSIGNMENT ───────────── -->
-                    <page string="Vendor Assignment" name="tab_vendor_assignment">
-                        <p class="text-muted small mb-2">
-                            Select <b>Type</b> (Vendor or Supplier) for each trade row —
-                            the matching partner field appears automatically.
-                            Click <b>Apply to Lines</b> to push the selection onto every
-                            line in that trade.
-                        </p>
-                        <field name="trade_vendor_ids" mode="list">
-                            <list editable="bottom">
-                                <field name="category_id" string="Trade"
-                                       options="{'no_create_edit': True}"/>
-                                <field name="partner_type" string="Type"/>
-                                <field name="vendor_ids"
-                                       widget="many2many_tags"
-                                       string="Vendors"
-                                       domain="[('supplier_rank', '&gt;', 0)]"
-                                       options="{'no_create_edit': True}"
-                                       invisible="partner_type != 'vendor'"/>
-                                <field name="supplier_ids"
-                                       widget="many2many_tags"
-                                       string="Suppliers"
-                                       domain="[('supplier_rank', '&gt;', 0), ('partner_type', '=', 'supplier')]"
-                                       options="{'no_create_edit': True}"
-                                       invisible="partner_type != 'supplier'"/>
-                                <field name="line_count" string="Lines" readonly="1"/>
-                                <button name="action_apply_to_lines" type="object"
-                                        string="Apply to Lines"
-                                        class="btn-sm btn-secondary"
-                                        title="Add selected partners to all lines in this trade"/>
-                            </list>
-                        </field>
-                        <div class="mt-2" invisible="not trade_vendor_ids">
-                            <button name="action_apply_all_trade_vendors"
-                                    type="object"
-                                    string="Apply All to Lines"
-                                    class="btn btn-primary btn-sm"
-                                    confirm="This will add vendor/supplier assignments to ALL lines for every trade listed above. Proceed?"/>
-                        </div>
                     </page>
 
                     <!-- ─────────────── TERMS &amp; NOTES ─────────────── -->
