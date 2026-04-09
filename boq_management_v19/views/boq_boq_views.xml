@@ -36,7 +36,7 @@
                         class="btn-primary"
                         icon="fa-shopping-cart"
                         invisible="line_count == 0"
-                        confirm="This will create one RFQ per assigned vendor / supplier for each trade. Proceed?"/>
+                        confirm="This will create one RFQ per vendor / supplier based on the trade assignments below. Proceed?"/>
                 <field name="state"
                        widget="statusbar"
                        statusbar_visible="draft,done"/>
@@ -119,9 +119,9 @@
                 <!-- ── VENDOR / SUPPLIER ASSIGNMENT ─────────────────── -->
                 <group string="Vendor / Supplier Assignment">
                     <div class="text-muted small mb-2" colspan="2">
-                        Select <b>Type</b> per trade — Vendor or Supplier field appears.
-                        Click <b>Apply to Lines</b> to push the selection onto all lines
-                        in that trade, then use <b>Create RFQ</b>.
+                        Rows are auto-added when you select Work Categories above.
+                        Set <b>Type</b> (Vendor or Supplier) — the matching partner field appears.
+                        Select partners, then click <b>Create RFQ</b>.
                     </div>
                     <field name="trade_vendor_ids" nolabel="1" colspan="2" mode="list">
                         <list editable="bottom">
