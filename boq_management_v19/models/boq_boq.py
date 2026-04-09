@@ -273,96 +273,12 @@ class BoqBoq(models.Model):
         store=False,
     )
 
-    # ═══════════════════════════════════════════════════════════════════════
-    # PER-CATEGORY VENDOR / SUPPLIER ASSIGNMENT
-    # Each active work category gets its own partner_type toggle and a pair of
-    # Many2many fields (vendor_ids / supplier_ids).  Visibility in the form is
-    # controlled by the existing show_<code> boolean flags.
-    # No one2many child model — all data lives directly on boq.boq.
-    # ═══════════════════════════════════════════════════════════════════════
-
-    # ── Electrical ────────────────────────────────────────────────────────
-    electrical_partner_type = fields.Selection(
-        [('vendor', 'Vendor'), ('supplier', 'Supplier')],
-        string='Electrical Type', default='vendor',
-    )
-    electrical_vendor_ids = fields.Many2many(
-        'res.partner', 'boq_boq_elec_vendor_rel', 'boq_id', 'partner_id',
-        string='Electrical Vendors', domain=[('partner_type', '=', 'vendor')],
-    )
-    electrical_supplier_ids = fields.Many2many(
-        'res.partner', 'boq_boq_elec_supplier_rel', 'boq_id', 'partner_id',
-        string='Electrical Suppliers', domain=[('partner_type', '=', 'supplier')],
-    )
-
-    # ── Civil ─────────────────────────────────────────────────────────────
-    civil_partner_type = fields.Selection(
-        [('vendor', 'Vendor'), ('supplier', 'Supplier')],
-        string='Civil Type', default='vendor',
-    )
-    civil_vendor_ids = fields.Many2many(
-        'res.partner', 'boq_boq_civil_vendor_rel', 'boq_id', 'partner_id',
-        string='Civil Vendors', domain=[('partner_type', '=', 'vendor')],
-    )
-    civil_supplier_ids = fields.Many2many(
-        'res.partner', 'boq_boq_civil_supplier_rel', 'boq_id', 'partner_id',
-        string='Civil Suppliers', domain=[('partner_type', '=', 'supplier')],
-    )
-
-    # ── Lighting ──────────────────────────────────────────────────────────
-    lighting_partner_type = fields.Selection(
-        [('vendor', 'Vendor'), ('supplier', 'Supplier')],
-        string='Lighting Type', default='vendor',
-    )
-    lighting_vendor_ids = fields.Many2many(
-        'res.partner', 'boq_boq_light_vendor_rel', 'boq_id', 'partner_id',
-        string='Lighting Vendors', domain=[('partner_type', '=', 'vendor')],
-    )
-    lighting_supplier_ids = fields.Many2many(
-        'res.partner', 'boq_boq_light_supplier_rel', 'boq_id', 'partner_id',
-        string='Lighting Suppliers', domain=[('partner_type', '=', 'supplier')],
-    )
-
-    # ── Plumbing ──────────────────────────────────────────────────────────
-    plumbing_partner_type = fields.Selection(
-        [('vendor', 'Vendor'), ('supplier', 'Supplier')],
-        string='Plumbing Type', default='vendor',
-    )
-    plumbing_vendor_ids = fields.Many2many(
-        'res.partner', 'boq_boq_plumb_vendor_rel', 'boq_id', 'partner_id',
-        string='Plumbing Vendors', domain=[('partner_type', '=', 'vendor')],
-    )
-    plumbing_supplier_ids = fields.Many2many(
-        'res.partner', 'boq_boq_plumb_supplier_rel', 'boq_id', 'partner_id',
-        string='Plumbing Suppliers', domain=[('partner_type', '=', 'supplier')],
-    )
-
-    # ── HVAC ──────────────────────────────────────────────────────────────
-    hvac_partner_type = fields.Selection(
-        [('vendor', 'Vendor'), ('supplier', 'Supplier')],
-        string='HVAC Type', default='vendor',
-    )
-    hvac_vendor_ids = fields.Many2many(
-        'res.partner', 'boq_boq_hvac_vendor_rel', 'boq_id', 'partner_id',
-        string='HVAC Vendors', domain=[('partner_type', '=', 'vendor')],
-    )
-    hvac_supplier_ids = fields.Many2many(
-        'res.partner', 'boq_boq_hvac_supplier_rel', 'boq_id', 'partner_id',
-        string='HVAC Suppliers', domain=[('partner_type', '=', 'supplier')],
-    )
-
-    # ── Finishing ─────────────────────────────────────────────────────────
-    finishing_partner_type = fields.Selection(
-        [('vendor', 'Vendor'), ('supplier', 'Supplier')],
-        string='Finishing Type', default='vendor',
-    )
-    finishing_vendor_ids = fields.Many2many(
-        'res.partner', 'boq_boq_finish_vendor_rel', 'boq_id', 'partner_id',
-        string='Finishing Vendors', domain=[('partner_type', '=', 'vendor')],
-    )
-    finishing_supplier_ids = fields.Many2many(
-        'res.partner', 'boq_boq_finish_supplier_rel', 'boq_id', 'partner_id',
-        string='Finishing Suppliers', domain=[('partner_type', '=', 'supplier')],
+    # ── Trade-Level Vendor Assignments ───────────────────────────────────
+    trade_vendor_ids = fields.One2many(
+        comodel_name='boq.trade.vendor',
+        inverse_name='boq_id',
+        string='Trade Vendor Assignments',
+        copy=True,
     )
 
     # ── Linked Purchase RFQs ──────────────────────────────────────────────
@@ -493,31 +409,20 @@ class BoqBoq(models.Model):
         }
 
     # ── Create RFQ ────────────────────────────────────────────────────────
-
-    # Maps category code → (partner_type field, vendor M2M field, supplier M2M field)
-    _CAT_PARTNER_FIELDS = {
-        'electrical': ('electrical_partner_type', 'electrical_vendor_ids', 'electrical_supplier_ids'),
-        'civil':      ('civil_partner_type',      'civil_vendor_ids',      'civil_supplier_ids'),
-        'lighting':   ('lighting_partner_type',   'lighting_vendor_ids',   'lighting_supplier_ids'),
-        'plumbing':   ('plumbing_partner_type',   'plumbing_vendor_ids',   'plumbing_supplier_ids'),
-        'hvac':       ('hvac_partner_type',       'hvac_vendor_ids',       'hvac_supplier_ids'),
-        'finishing':  ('finishing_partner_type',  'finishing_vendor_ids',  'finishing_supplier_ids'),
-    }
-
     def action_create_rfq(self):
         """
         Create one RFQ (purchase.order) per partner.
 
-        Strategy A (primary) — Per-category partner assignment:
-          For each active work category, reads partner_type and the matching
-          Many2many (vendor_ids or supplier_ids) directly from the BOQ.
-          All BOQ lines in that category are sent to every matched partner.
-          Multiple categories can map to the same partner — they receive one
-          combined PO with lines from all their categories.
+        Strategy A (primary) — BOQ Trade assignments (boq.trade.vendor):
+          For each row in the "Vendor / Supplier Assignment" section, pick the
+          partners (vendor_ids when Type=Vendor, supplier_ids when Type=Supplier).
+          All BOQ lines whose category matches that trade row are added to every
+          matched partner's RFQ.  Multiple trade rows for the same partner produce
+          a single PO containing lines from all those trades.
 
         Strategy B (fallback) — Line-level vendor_ids:
-          If no per-category partners are assigned, falls back to the
-          Many2many vendor_ids on individual BOQ lines.
+          If no trade assignments exist, falls back to the Many2many vendor_ids
+          on individual BOQ lines.
         """
         self.ensure_one()
 
@@ -527,20 +432,24 @@ class BoqBoq(models.Model):
         # ── Build partner_id → [line, …] map ─────────────────────────────
         partner_lines = {}   # {partner_id: [boq.order.line, …]}
 
-        # Strategy A: per-category M2M fields on boq.boq
-        for code, (pt_field, v_field, s_field) in self._CAT_PARTNER_FIELDS.items():
-            cat_lines = self.line_ids.filtered(
-                lambda l, c=code: l.category_id and l.category_id.code == c
-            )
-            if not cat_lines:
-                continue
-            pt = getattr(self, pt_field) or 'vendor'
-            partners = getattr(self, v_field if pt == 'vendor' else s_field)
-            for partner in partners:
-                bucket = partner_lines.setdefault(partner.id, [])
-                for line in cat_lines:
-                    if line not in bucket:
-                        bucket.append(line)
+        if self.trade_vendor_ids:
+            # Strategy A: BOQ trade-level assignments
+            for trade in self.trade_vendor_ids:
+                trade_lines = self.line_ids.filtered(
+                    lambda l, cat=trade.category_id: l.category_id == cat
+                )
+                if not trade_lines:
+                    continue
+                partners = (
+                    trade.vendor_ids
+                    if trade.partner_type == 'vendor'
+                    else trade.supplier_ids
+                )
+                for partner in partners:
+                    bucket = partner_lines.setdefault(partner.id, [])
+                    for line in trade_lines:
+                        if line not in bucket:
+                            bucket.append(line)
 
         if not partner_lines:
             # Strategy B: fallback to line-level vendor_ids
@@ -554,10 +463,12 @@ class BoqBoq(models.Model):
             raise UserError(_(
                 'No vendors / suppliers mapped.\n\n'
                 'In the "Vendor / Supplier Assignment" section:\n'
-                '1. Select the Type (Vendor or Supplier) for each active work category\n'
-                '2. Pick partners in the Vendors / Suppliers field\n'
-                '3. Click Create RFQ\n\n'
-                'Only categories with lines in the BOQ are processed.'
+                '1. Select a Trade (work category)\n'
+                '2. Set Type to Vendor or Supplier\n'
+                '3. Pick the partners in the Vendors / Suppliers field\n'
+                '4. Click Create RFQ\n\n'
+                'Tip: Work Categories are auto-populated as rows when you '
+                'select them at the top of the BOQ form.'
             ))
 
         # ── Create one PO per partner ─────────────────────────────────────
