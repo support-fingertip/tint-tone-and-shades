@@ -62,23 +62,9 @@ class BoqTradeVendor(models.Model):
         help='Visible when Type = Supplier. Each supplier gets a separate RFQ '
              'with all lines from this category.',
     )
-    line_count = fields.Integer(
-        string='Lines',
-        compute='_compute_line_count',
-        store=False,
-    )
 
     # One vendor row + one supplier row allowed per trade per BOQ
     _unique_boq_category_type = models.Constraint(
         'unique(boq_id, category_id, partner_type)',
         'Each trade + type combination can only appear once per BOQ.',
     )
-
-    @api.depends('boq_id.line_ids', 'category_id')
-    def _compute_line_count(self):
-        for rec in self:
-            rec.line_count = len(
-                rec.boq_id.line_ids.filtered(
-                    lambda l: l.category_id == rec.category_id
-                )
-            )
