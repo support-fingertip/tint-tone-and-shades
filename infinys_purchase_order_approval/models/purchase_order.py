@@ -25,9 +25,10 @@ class PurchaseOrder(models.Model):
 
         # Admin users can always confirm directly
         if self.env.user.has_group('base.group_system'):
+            self._cleanup_approval_activities()
             return super(PurchaseOrder, self).button_confirm()
 
-        # If all approval lines are already approved, confirm directly
+        # If approval lines exist and all approved, final confirm
         if self.approval_line_ids and all(
             line.status == 'approved' for line in self.approval_line_ids
         ):
@@ -43,7 +44,10 @@ class PurchaseOrder(models.Model):
             )
             return self._get_refresh_action()
 
-        # Check if approval is required based on amount
+        # First, confirm the order to PO state (RFQ → Purchase Order)
+        res = super(PurchaseOrder, self).button_confirm()
+
+        # Now check if approval is required based on amount
         required_levels = self.env['purchase.approval.level'].search([
             ('minimum_amount', '<=', self.amount_total),
             '|',
@@ -52,19 +56,16 @@ class PurchaseOrder(models.Model):
         ], order='sequence asc')
 
         if required_levels:
+            # PO is created, now put it on hold for approval
             self.write({'state': 'to approve'})
             self._create_approval_lines(required_levels)
             self._check_approval_status()
             self.message_post(
-                body="This order requires approval. The approval process has been initiated."
+                body="Purchase Order created. This order requires approval before it can proceed."
             )
-        else:
-            self.message_post(
-                body="No approval required for this order. Order confirmed."
-            )
-            super(PurchaseOrder, self).button_confirm()
+            return self._get_refresh_action()
 
-        return self._get_refresh_action()
+        return res
 
     def _create_approval_lines(self, levels):
         self.approval_line_ids.unlink()
@@ -103,6 +104,22 @@ class PurchaseOrder(models.Model):
         else:
             super(PurchaseOrder, self).button_confirm()
 
+    def _cleanup_approval_activities(self):
+        """Remove pending approval activities when order is confirmed/approved by admin."""
+        todo_type = self.env.ref('mail.mail_activity_data_todo')
+        activities = self.activity_ids.filtered(
+            lambda a: a.activity_type_id == todo_type
+            and 'Approval required for Purchase Order' in (a.summary or '')
+        )
+        if activities:
+            activities.action_feedback(feedback=f"Order confirmed by {self.env.user.name} (admin bypass)")
+        # Mark any pending/current approval lines as approved
+        for line in self.approval_line_ids.filtered(lambda l: l.status in ('pending', 'current')):
+            line.write({
+                'status': 'approved',
+                'approved_by_user_id': self.env.user.id,
+            })
+
     def _get_refresh_action(self):
         return {
             'type': 'ir.actions.client',
@@ -114,6 +131,7 @@ class PurchaseOrder(models.Model):
         if self.state == 'to approve' and self.approval_line_ids:
             # Admin can bypass
             if self.env.user.has_group('base.group_system'):
+                self._cleanup_approval_activities()
                 self.write({
                     'state': 'purchase',
                     'date_approve': fields.Datetime.now(),
