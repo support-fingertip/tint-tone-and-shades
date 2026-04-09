@@ -57,6 +57,38 @@ class BoqVendorRating(models.Model):
     comments = fields.Text(string='Comments / Remarks')
     date = fields.Date(string='Rating Date', default=fields.Date.today)
 
+    # ── Compatibility shim for stale ir.rule ─────────────────────────────
+    # A legacy ir.rule on this model has domain_force [('res_model','=',
+    # 'res.partner')].  Without this field the ORM raises ValueError on every
+    # res.partner read that loads the rating_ids One2many.
+    #
+    # Adding res_model as a non-stored computed field makes the domain VALID:
+    #   • The field always returns 'res.partner' (all ratings belong to partners)
+    #   • _search_res_model maps ('res_model','=','res.partner') → [] (no filter)
+    #     so the stale rule silently becomes a no-op instead of crashing.
+    # No DB column is needed — this fix takes effect on a plain restart (no -u).
+    res_model = fields.Char(
+        string='Resource Model',
+        compute='_compute_res_model',
+        search='_search_res_model',
+        store=False,
+    )
+
+    def _compute_res_model(self):
+        for rec in self:
+            rec.res_model = 'res.partner'
+
+    def _search_res_model(self, operator, value):
+        """Make the stale ir.rule domain a no-op.
+
+        The rule says ('res_model','=','res.partner').  Since all ratings
+        belong to res.partner records, the correct answer is 'all records'
+        which in Odoo domain syntax is an empty list (no restriction).
+        """
+        if operator == '=' and value == 'res.partner':
+            return []          # no filter → all records visible
+        return [('id', '=', 0)]  # any other combination → no records
+
     # ── Partner type (vendor or supplier) ────────────────────────────────
     partner_type = fields.Selection(
         related='partner_id.partner_type',
