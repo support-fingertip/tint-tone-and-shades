@@ -66,10 +66,10 @@
                 <attribute name="optional">show</attribute>
             </xpath>
 
-            <!-- NEW TASK 3 — Margin % column on PO lines (for comparison view) -->
+            <!-- NEW TASK 3 — Savings % column on PO lines (vs product standard cost) -->
             <xpath expr="//field[@name='order_line']//field[@name='price_subtotal']"
                    position="after">
-                <field name="margin_percent" string="Margin %"
+                <field name="margin_percent" string="Savings %"
                        widget="percentage"
                        optional="show"
                        readonly="1"/>
