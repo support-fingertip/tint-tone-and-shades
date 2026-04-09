@@ -72,7 +72,7 @@
             <!-- Margin Approval Status in the status bar area -->
             <xpath expr="//field[@name='state'][@widget='statusbar']" position="before">
                 <field name="margin_approval_status" widget="statusbar"
-                       invisible="margin_approval_status == 'none'"
+                       invisible="margin_approval_status == 'none' or state in ('purchase', 'done', 'cancel')"
                        statusbar_visible="to_approve,approved"/>
             </xpath>
 
