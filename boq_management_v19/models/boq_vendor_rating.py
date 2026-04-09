@@ -57,6 +57,15 @@ class BoqVendorRating(models.Model):
     comments = fields.Text(string='Comments / Remarks')
     date = fields.Date(string='Rating Date', default=fields.Date.today)
 
+    # ── Partner type (vendor or supplier) ────────────────────────────────
+    partner_type = fields.Selection(
+        related='partner_id.partner_type',
+        string='Partner Type',
+        store=True,
+        index=True,
+        help='Mirrors the rated partner\'s type (Vendor or Supplier).',
+    )
+
     # ── Context fields (read-only, from PO) ──────────────────────────────
     company_id = fields.Many2one(
         related='purchase_order_id.company_id',
