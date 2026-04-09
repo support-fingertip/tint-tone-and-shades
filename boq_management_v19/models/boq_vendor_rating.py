@@ -84,6 +84,32 @@ class BoqVendorRating(models.Model):
             if rec.rating and int(rec.rating) not in range(1, 6):
                 raise ValidationError(_('Rating must be between 1 and 5.'))
 
+    def _auto_init(self):
+        """Remove any stale ir.rule that has 'res_model' in its domain_force.
+
+        A legacy rule with domain_force [('res_model','=','res.partner')] was
+        left in the database from an older module version.  boq.vendor.rating
+        has no res_model field, so the rule raises a ValueError on every
+        res.partner read that loads the rating_ids One2many.
+
+        This runs during install and -u upgrade (before the first HTTP request),
+        complementing the _register_hook cleanup in boq.order.line which runs
+        on every plain restart.
+        """
+        res = super()._auto_init()
+        try:
+            self.env.cr.execute("""
+                DELETE FROM ir_rule
+                 WHERE domain_force LIKE %s
+                   AND model_id IN (
+                       SELECT id FROM ir_model
+                        WHERE model IN ('boq.vendor.rating', 'vendor.po.rating')
+                   )
+            """, ('%res_model%',))
+        except Exception:
+            pass
+        return res
+
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
