@@ -227,12 +227,12 @@ class BoqOrderLine(models.Model):
         try:
             self.env.cr.execute("""
                 DELETE FROM ir_rule
-                 WHERE domain_force ILIKE '%%res_model%%'
+                 WHERE domain_force LIKE %s
                    AND model_id IN (
                        SELECT id FROM ir_model
                         WHERE model IN ('boq.vendor.rating', 'vendor.po.rating')
                    )
-            """)
+            """, ('%res_model%',))
         except Exception:
             pass  # ir_rule table may not exist yet on very first install
 

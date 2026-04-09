@@ -21,9 +21,9 @@ the former vendor.po.rating model) from the database.
 def migrate(cr, version):
     cr.execute("""
         DELETE FROM ir_rule
-         WHERE domain_force ILIKE '%res_model%'
+         WHERE domain_force LIKE %s
            AND model_id IN (
                SELECT id FROM ir_model
                 WHERE model IN ('boq.vendor.rating', 'vendor.po.rating')
            )
-    """)
+    """, ('%res_model%',))
