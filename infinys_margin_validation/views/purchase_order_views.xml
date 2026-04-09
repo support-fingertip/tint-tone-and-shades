@@ -19,6 +19,13 @@
                 </page>
             </xpath>
 
+             <!-- added here new state called Submitted-->
+            <xpath expr="//field[@name='state'][@widget='statusbar']" position="attributes">
+                <attribute name="statusbar_visible">
+                    draft,sent,submitted,purchase
+                </attribute>
+            </xpath>
+
             <!-- Margin (%) column on order lines -->
             <xpath expr="//field[@name='order_line']//list//field[@name='price_subtotal']" position="after">
                 <field name="margin_percentage" string="Margin (%)" widget="float" readonly="1"/>

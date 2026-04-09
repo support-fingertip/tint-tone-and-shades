@@ -32,7 +32,6 @@ class PurchaseOrder(models.Model):
         ('draft', 'RFQ'),
         ('sent', 'RFQ Sent'),
         ('submitted', 'Submitted'),  # 👈 NEW STATE
-        ('to approve', 'To Approve'),
         ('purchase', 'Purchase Order'),
         ('cancel', 'Cancelled')
     ], string='Status', readonly=True, index=True, copy=False, default='draft', tracking=True)
