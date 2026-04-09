@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'BOQ Management — Bill of Quantities (Odoo 19)',
-    'version': '19.0.2.3.0',
+    'version': '19.0.2.4.0',
     'summary': 'BOQ with trade-type RFQ creation, vendor+supplier ratings, no approval workflow',
     'description': """
-        BOQ Management v2.3
+        BOQ Management v2.4
         ====================
         ✅ BUG 1  — Margin formula fixed: (sale - cost) / sale × 100
         ✅ BUG 2  — Trade Assignments dashboard section (grouped by work_category_id)
@@ -21,6 +21,8 @@
         ✅ NEW 7  — Create RFQ uses trade-type assignments (all trade lines → partner RFQ)
         ✅ NEW 8  — Approval workflow removed (Draft → Done directly)
         ✅ NEW 9  — Rate Vendor / Rate Supplier button adapts to partner_type
+        ✅ NEW 10 — Partner work_category_ids: assign categories on Contact; Create RFQ
+                    auto-matches partners to BOQ lines by category + partner_type
     """,
     'author': 'Senior Odoo Developer',
     'category': 'Industries/Construction',

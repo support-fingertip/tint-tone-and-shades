@@ -27,18 +27,25 @@ class PurchaseOrderBoqExtend(models.Model):
 
     @api.depends()
     def _compute_boq_id(self):
-        if not self.ids:
+        # In Odoo 19 every record MUST be assigned by the compute method,
+        # even new unsaved ones (NewId).  Separate real DB ids from virtual
+        # ones so we can run the SQL only for persisted records.
+        real = self.filtered(lambda r: isinstance(r.id, int))
+        (self - real).update({'boq_id': False})   # new / virtual records
+
+        if not real:
             return
+
         self.env.cr.execute(
             """
             SELECT purchase_id, boq_id
               FROM boq_boq_purchase_order_rel
              WHERE purchase_id IN %s
             """,
-            (tuple(self.ids),)
+            (tuple(real.ids),)
         )
         mapping = {row[0]: row[1] for row in self.env.cr.fetchall()}
-        for order in self:
+        for order in real:
             order.boq_id = mapping.get(order.id, False)
 
     # ── BOQ description (non-stored display field) ────────────────────────

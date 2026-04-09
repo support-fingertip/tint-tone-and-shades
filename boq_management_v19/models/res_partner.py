@@ -51,6 +51,22 @@ class ResPartner(models.Model):
              '"Vendor" creates Vendor RFQs; "Supplier" creates Supplier RFQs.',
     )
 
+    # ── NEW — Work Categories (trades this partner handles) ───────────────
+    # The user assigns one or more work categories to each vendor/supplier
+    # in the contact master.  action_create_rfq() in boq.boq then matches
+    # these assignments to the BOQ's selected categories and auto-creates
+    # one RFQ per partner containing all BOQ lines from their categories.
+    work_category_ids = fields.Many2many(
+        comodel_name='boq.category',
+        relation='boq_partner_category_rel',
+        column1='partner_id',
+        column2='category_id',
+        string='Work Categories',
+        help='Trades / work categories this partner handles.\n'
+             'Used to auto-assign this partner to RFQs when Create RFQ is '
+             'clicked on a BOQ that shares the same categories.',
+    )
+
     # ── NEW TASK 4 — Vendor Rating ────────────────────────────────────────
     rating_ids = fields.One2many(
         comodel_name='boq.vendor.rating',
