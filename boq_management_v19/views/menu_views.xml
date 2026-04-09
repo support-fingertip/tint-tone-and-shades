@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- ══════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════
          BOQ MANAGEMENT — Application Menu (Odoo 19 Enterprise)
-    ══════════════════════════════════════════════════════ -->
+         NEW TASK 1: Renamed "RFQs from BOQ" → "Vendor RFQ"
+                     Added "Supplier RFQ" menu
+    ══════════════════════════════════════════════════════════ -->
 
     <!-- Root app menu -->
     <menuitem id="menu_boq_root"
@@ -12,7 +14,7 @@
               web_icon="boq_management_v19,static/src/img/boq_icon.png"
               groups="boq_management_v19.group_boq_user"/>
 
-    <!-- ── BOQ Dashboard (OWL overview) ── -->
+    <!-- Dashboard -->
     <menuitem id="menu_boq_dashboard"
               name="Dashboard"
               parent="menu_boq_root"
@@ -20,7 +22,7 @@
               sequence="5"
               groups="boq_management_v19.group_boq_user"/>
 
-    <!-- ── Main section ── -->
+    <!-- ── Main BOQ section ── -->
     <menuitem id="menu_boq_main"
               name="BOQ"
               parent="menu_boq_root"
@@ -38,25 +40,33 @@
               action="action_boq_boq"
               sequence="20"/>
 
+    <!-- ── NEW TASK 1 — RFQ section (Vendor + Supplier split) ── -->
+    <menuitem id="menu_boq_rfq"
+              name="RFQ"
+              parent="menu_boq_root"
+              sequence="30"/>
+
+    <!-- NEW TASK 1 — Vendor RFQ (renamed from "RFQs from BOQ") -->
+    <menuitem id="menu_boq_vendor_rfq"
+              name="Vendor RFQ"
+              parent="menu_boq_rfq"
+              action="action_boq_rfq_list"
+              sequence="10"
+              groups="boq_management_v19.group_boq_user"/>
+
+    <!-- NEW TASK 1 — Supplier RFQ (partner_type = supplier) -->
+    <menuitem id="menu_boq_supplier_rfq"
+              name="Supplier RFQ"
+              parent="menu_boq_rfq"
+              action="action_boq_supplier_rfq_list"
+              sequence="20"
+              groups="boq_management_v19.group_boq_user"/>
+
     <!-- ── Reporting section ── -->
     <menuitem id="menu_boq_report"
               name="Reporting"
               parent="menu_boq_root"
               sequence="50"
-              groups="boq_management_v19.group_boq_manager"/>
-
-    <menuitem id="menu_boq_vendor_dashboard"
-              name="Vendor Dashboard"
-              parent="menu_boq_report"
-              action="action_vendor_dashboard"
-              sequence="5"
-              groups="boq_management_v19.group_boq_manager"/>
-
-    <menuitem id="menu_boq_rfq_list"
-              name="RFQs from BOQ"
-              parent="menu_boq_report"
-              action="action_boq_rfq_list"
-              sequence="10"
               groups="boq_management_v19.group_boq_manager"/>
 
     <menuitem id="menu_boq_vendor_list"
@@ -66,12 +76,29 @@
               sequence="20"
               groups="boq_management_v19.group_boq_manager"/>
 
+    <!-- NEW TASK 4 — Vendor Ratings in Reporting -->
     <menuitem id="menu_boq_vendor_ratings"
               name="Vendor Ratings"
               parent="menu_boq_report"
-              action="action_vendor_po_rating"
+              action="action_boq_vendor_rating"
               sequence="30"
               groups="boq_management_v19.group_boq_manager"/>
+
+    <!-- ── Purchase app — Vendor RFQ / Supplier RFQ sub-menus ── -->
+    <!-- Adds BOQ-typed RFQ views directly into the standard Purchase application -->
+    <menuitem id="menu_purchase_boq_vendor_rfq"
+              name="Vendor RFQ"
+              parent="purchase.menu_purchase_rfq"
+              action="boq_management_v19.action_boq_rfq_list"
+              sequence="25"
+              groups="purchase.group_purchase_user"/>
+
+    <menuitem id="menu_purchase_boq_supplier_rfq"
+              name="Supplier RFQ"
+              parent="purchase.menu_purchase_rfq"
+              action="boq_management_v19.action_boq_supplier_rfq_list"
+              sequence="26"
+              groups="purchase.group_purchase_user"/>
 
     <!-- ── Configuration section ── -->
     <menuitem id="menu_boq_config"

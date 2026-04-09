@@ -93,13 +93,11 @@ class BoqBoq(models.Model):
     )
 
     # ── Status ────────────────────────────────────────────────────────────
+    # Approval workflow removed: Draft → Done only.
     state = fields.Selection(
         selection=[
-            ('draft',     'Draft'),
-            ('submitted', 'Submitted'),
-            ('approved',  'Approved'),
-            ('rejected',  'Rejected'),
-            ('done',      'Done'),
+            ('draft', 'Draft'),
+            ('done',  'Done'),
         ],
         string='Status',
         default='draft',
@@ -147,67 +145,6 @@ class BoqBoq(models.Model):
     plumbing_category_id   = fields.Many2one('boq.category', compute='_compute_category_refs')
     hvac_category_id       = fields.Many2one('boq.category', compute='_compute_category_refs')
     finishing_category_id  = fields.Many2one('boq.category', compute='_compute_category_refs')
-
-    # ═══════════════════════════════════════════════════════════════════════
-    # TRADE-LEVEL VENDOR SELECTION
-    # Vendors selected at trade/category level — ALL items in the trade go
-    # to these vendors.  Multiple vendors per trade = comparative quotes.
-    # Drives action_create_rfq (takes priority over line-level vendor_ids).
-    # ═══════════════════════════════════════════════════════════════════════
-    electrical_vendor_ids = fields.Many2many(
-        comodel_name='res.partner',
-        relation='boq_boq_electrical_vendor_rel',
-        column1='boq_id',
-        column2='vendor_id',
-        string='Electrical Vendors',
-        domain=[('supplier_rank', '>', 0)],
-        help='Vendors for ALL Electrical items. Add 2+ for comparative quotes.',
-    )
-    civil_vendor_ids = fields.Many2many(
-        comodel_name='res.partner',
-        relation='boq_boq_civil_vendor_rel',
-        column1='boq_id',
-        column2='vendor_id',
-        string='Civil Vendors',
-        domain=[('supplier_rank', '>', 0)],
-        help='Vendors for ALL Civil items. Add 2+ for comparative quotes.',
-    )
-    lighting_vendor_ids = fields.Many2many(
-        comodel_name='res.partner',
-        relation='boq_boq_lighting_vendor_rel',
-        column1='boq_id',
-        column2='vendor_id',
-        string='Lighting Vendors',
-        domain=[('supplier_rank', '>', 0)],
-        help='Vendors for ALL Lighting items. Add 2+ for comparative quotes.',
-    )
-    plumbing_vendor_ids = fields.Many2many(
-        comodel_name='res.partner',
-        relation='boq_boq_plumbing_vendor_rel',
-        column1='boq_id',
-        column2='vendor_id',
-        string='Plumbing Vendors',
-        domain=[('supplier_rank', '>', 0)],
-        help='Vendors for ALL Plumbing items. Add 2+ for comparative quotes.',
-    )
-    hvac_vendor_ids = fields.Many2many(
-        comodel_name='res.partner',
-        relation='boq_boq_hvac_vendor_rel',
-        column1='boq_id',
-        column2='vendor_id',
-        string='HVAC Vendors',
-        domain=[('supplier_rank', '>', 0)],
-        help='Vendors for ALL HVAC items. Add 2+ for comparative quotes.',
-    )
-    finishing_vendor_ids = fields.Many2many(
-        comodel_name='res.partner',
-        relation='boq_boq_finishing_vendor_rel',
-        column1='boq_id',
-        column2='vendor_id',
-        string='Finishing Vendors',
-        domain=[('supplier_rank', '>', 0)],
-        help='Vendors for ALL Finishing items. Add 2+ for comparative quotes.',
-    )
 
     @api.depends('project_name')
     def _compute_project_id(self):
@@ -336,6 +273,14 @@ class BoqBoq(models.Model):
         store=False,
     )
 
+    # ── Trade-Level Vendor Assignments ───────────────────────────────────
+    trade_vendor_ids = fields.One2many(
+        comodel_name='boq.trade.vendor',
+        inverse_name='boq_id',
+        string='Trade Vendor Assignments',
+        copy=True,
+    )
+
     # ── Linked Purchase RFQs ──────────────────────────────────────────────
     rfq_ids = fields.Many2many(
         comodel_name='purchase.order',
@@ -425,18 +370,6 @@ class BoqBoq(models.Model):
         return super().copy(default)
 
     # ── Workflow actions ──────────────────────────────────────────────────
-    def action_submit(self):
-        for rec in self:
-            if not rec.line_ids:
-                raise UserError(_('Cannot submit a BOQ with no lines.'))
-        self.write({'state': 'submitted'})
-
-    def action_approve(self):
-        self.write({'state': 'approved'})
-
-    def action_reject(self):
-        self.write({'state': 'rejected'})
-
     def action_done(self):
         self.write({'state': 'done'})
 
@@ -458,61 +391,86 @@ class BoqBoq(models.Model):
     # ── Create RFQ ────────────────────────────────────────────────────────
     def action_create_rfq(self):
         """
-        Group BOQ lines by vendor and create one RFQ (purchase.order)
-        per vendor. Lines with no vendor are skipped.
-        After creation, opens the resulting RFQ(s).
+        Create one RFQ (purchase.order) per partner based on trade-level
+        type assignments (boq.trade.vendor rows).
+
+        Strategy A — Trade assignments exist:
+          For each trade row pick the partners (vendor_ids when type=vendor,
+          supplier_ids when type=supplier).  All BOQ lines whose category_id
+          matches that trade are added to every partner's RFQ.
+          Multiple trades assigned to the same partner produce a single PO
+          containing lines from all those trades.
+
+        Strategy B — Fallback (no trade assignments):
+          Fall back to the Many2many vendor_ids on individual lines,
+          preserving the original behaviour.
         """
         self.ensure_one()
 
         if not self.line_ids:
             raise UserError(_('Cannot create RFQ: the BOQ has no line items.'))
 
-        # Trade-level vendor field map
-        _TRADE_VENDOR_FIELDS = {
-            'electrical': 'electrical_vendor_ids',
-            'civil':      'civil_vendor_ids',
-            'lighting':   'lighting_vendor_ids',
-            'plumbing':   'plumbing_vendor_ids',
-            'hvac':       'hvac_vendor_ids',
-            'finishing':  'finishing_vendor_ids',
-        }
+        # ── Build partner_id → [line, …] map ─────────────────────────────
+        partner_lines = {}   # {partner_id: [boq.order.line, …]}
 
-        # Build vendor → lines mapping
-        # Trade-level vendors take priority; fall back to line-level vendor_ids
-        vendor_lines = {}
-        for line in self.line_ids:
-            cat_code   = line.category_id.code if line.category_id else None
-            trade_fld  = _TRADE_VENDOR_FIELDS.get(cat_code) if cat_code else None
-            vendors    = getattr(self, trade_fld) if trade_fld else self.env['res.partner']
-            if not vendors:          # fallback: line-level vendor_ids
-                vendors = line.vendor_ids
-            for vendor in vendors:
-                vendor_lines.setdefault(vendor.id, []).append(line)
+        if self.trade_vendor_ids:
+            # Strategy A: use trade-level assignments
+            for trade in self.trade_vendor_ids:
+                trade_lines = self.line_ids.filtered(
+                    lambda l, cat=trade.category_id: l.category_id == cat
+                )
+                if not trade_lines:
+                    continue
+                partners = (
+                    trade.vendor_ids
+                    if trade.partner_type == 'vendor'
+                    else trade.supplier_ids
+                )
+                for partner in partners:
+                    bucket = partner_lines.setdefault(partner.id, [])
+                    for line in trade_lines:
+                        if line not in bucket:
+                            bucket.append(line)
 
-        if not vendor_lines:
+        if not partner_lines:
+            # Strategy B: fallback to line-level vendor_ids
+            for line in self.line_ids:
+                for vendor in line.vendor_ids:
+                    bucket = partner_lines.setdefault(vendor.id, [])
+                    if line not in bucket:
+                        bucket.append(line)
+
+        if not partner_lines:
             raise UserError(_(
-                'No vendors assigned to any trade.\n'
-                'Please select vendors at the trade level in each category tab.\n'
-                'Add at least 2 vendors per trade to get comparative quotes.'
+                'No vendors / suppliers mapped.\n\n'
+                'In the "Vendor / Supplier Assignment" section, add at least one '
+                'trade row, choose its Type (Vendor or Supplier), select the '
+                'partners, then click Create RFQ.'
             ))
 
+        # ── Create one PO per partner ─────────────────────────────────────
         PO = self.env['purchase.order']
         POLine = self.env['purchase.order.line']
         today = fields.Datetime.now()
         created_orders = PO
 
-        for vendor_id, lines in vendor_lines.items():
+        for partner_id, lines in partner_lines.items():
             po = PO.create({
-                'partner_id': vendor_id,
+                'partner_id': partner_id,
                 'origin': '%s — %s' % (self.name, self.project_name or '-'),
             })
             for line in lines:
                 POLine.create({
                     'order_id': po.id,
                     'product_id': line.product_id.id,
-                    'name': line.product_name or line.product_id.display_name,
+                    'name': line.product_name or (
+                        line.product_id.display_name if line.product_id else '/'
+                    ),
                     'product_qty': line.qty,
-                    'product_uom_id': line.uom_id.id or line.product_id.uom_po_id.id,
+                    'product_uom_id': (
+                        line.uom_id.id
+                        or (line.product_id.uom_po_id.id if line.product_id else False)
+                    ),
                     'price_unit': 0,
                     'date_planned': today,
                 })
@@ -539,6 +497,12 @@ class BoqBoq(models.Model):
             'domain': [('id', 'in', created_orders.ids)],
             'target': 'current',
         }
+
+    def action_apply_all_trade_vendors(self):
+        """Apply all trade-level vendor assignments to their respective lines."""
+        for rec in self:
+            rec.trade_vendor_ids.action_apply_to_lines()
+        return True
 
     def action_view_rfqs(self):
         """Open linked RFQs / Purchase Orders from the smart button."""
@@ -596,9 +560,10 @@ class BoqBoq(models.Model):
             if rfq_ids:
                 rfqs = self.env['purchase.order'].browse(rfq_ids)
 
-        state_counts = {}
-        for state, _label in self._fields['state'].selection:
-            state_counts[state] = len(boqs.filtered(lambda b, s=state: b.state == s))
+        state_counts = {
+            'draft': len(boqs.filtered(lambda b: b.state == 'draft')),
+            'done':  len(boqs.filtered(lambda b: b.state == 'done')),
+        }
 
         total_value = sum(boqs.mapped('total_amount'))
         total_tax   = sum(boqs.mapped('total_tax'))
@@ -618,73 +583,6 @@ class BoqBoq(models.Model):
             'rfq_total_tax': rfq_tax,
             'currency_symbol': self.env.company.currency_id.symbol or '$',
             'currency_position': self.env.company.currency_id.position or 'before',
-        }
-
-    @api.model
-    def get_dashboard_alerts(self):
-        """
-        Return two alert lists for the dashboard Reports section:
-          done_no_rfq — BOQs in 'done' state with zero RFQs created
-          pending_pos — BOQs that have at least one RFQ still in draft/sent
-                        (purchase order not yet confirmed)
-        """
-        company_domain = [('company_id', '=', self.env.company.id)]
-
-        # ── 1. Done BOQs with no RFQ ─────────────────────────────────────
-        done_boqs = self.search(company_domain + [('state', '=', 'done')])
-        done_no_rfq = []
-        for boq in done_boqs.filtered(lambda b: not b.rfq_ids):
-            done_no_rfq.append({
-                'id':      boq.id,
-                'name':    boq.name,
-                'partner': boq.partner_id.name if boq.partner_id else '—',
-                'project': boq.project_name or '—',
-                'date':    boq.date.strftime('%d/%m/%Y') if boq.date else '—',
-                'total':   boq.grand_total,
-            })
-
-        # ── 2. BOQs with unconfirmed POs (draft / sent) ──────────────────
-        pending_pos = []
-        all_boqs = self.search(company_domain)
-        if all_boqs.ids:
-            self.env.cr.execute(
-                "SELECT boq_id, purchase_id "
-                "FROM boq_boq_purchase_order_rel "
-                "WHERE boq_id IN %s",
-                (tuple(all_boqs.ids),)
-            )
-            rows = self.env.cr.fetchall()
-            all_po_ids = list({r[1] for r in rows})
-            if all_po_ids:
-                pending = self.env['purchase.order'].browse(all_po_ids).filtered(
-                    lambda p: p.state in ('draft', 'sent')
-                )
-                pending_set = {p.id for p in pending}
-                boq_idx = {b.id: b for b in all_boqs}
-                po_idx  = {p.id: p for p in pending}
-
-                for boq_id, po_id in rows:
-                    if po_id not in pending_set:
-                        continue
-                    boq = boq_idx.get(boq_id)
-                    po  = po_idx.get(po_id)
-                    if not boq or not po:
-                        continue
-                    pending_pos.append({
-                        'boq_id':   boq.id,
-                        'boq_name': boq.name,
-                        'project':  boq.project_name or '—',
-                        'po_id':    po.id,
-                        'po_name':  po.name,
-                        'vendor':   po.partner_id.name if po.partner_id else '—',
-                        'amount':   po.amount_total,
-                        'po_state': dict(po._fields['state'].selection).get(po.state, po.state),
-                        'date':     po.date_order.strftime('%d/%m/%Y') if po.date_order else '—',
-                    })
-
-        return {
-            'done_no_rfq': done_no_rfq,
-            'pending_pos': pending_pos,
         }
 
     @api.model
@@ -726,8 +624,6 @@ class BoqBoq(models.Model):
                     'vendor_id': vid,
                     'vendor_name': rfq.partner_id.name,
                     'vendor_email': rfq.partner_id.email or '',
-                    'vendor_rating_avg': round(rfq.partner_id.vendor_rating_avg, 2),
-                    'vendor_rating_count': rfq.partner_id.vendor_rating_count,
                     'rfq_count': 0,
                     'total_value': 0.0,
                     'total_tax': 0.0,
@@ -776,21 +672,6 @@ class BoqBoq(models.Model):
                     vendor_margins[vid]['total_sell'] += sell
                     vendor_margins[vid]['total_cost'] += cost
 
-        # Build vendor → trades mapping from trade-level vendor fields
-        _TRADE_VENDOR_FLD = {
-            'electrical': 'electrical_vendor_ids',
-            'civil':      'civil_vendor_ids',
-            'lighting':   'lighting_vendor_ids',
-            'plumbing':   'plumbing_vendor_ids',
-            'hvac':       'hvac_vendor_ids',
-            'finishing':  'finishing_vendor_ids',
-        }
-        vendor_trades = {}
-        for boq in boqs:
-            for cat_code, fld in _TRADE_VENDOR_FLD.items():
-                for vendor in getattr(boq, fld):
-                    vendor_trades.setdefault(vendor.id, set()).add(cat_code)
-
         result = []
         for vid, entry in vendor_map.items():
             margin_data = vendor_margins.get(vid, {'total_sell': 0.0, 'total_cost': 0.0})
@@ -798,100 +679,111 @@ class BoqBoq(models.Model):
             cost = margin_data['total_cost']
             entry['margin_percent'] = round(((sell - cost) / sell * 100) if sell > 0 else 0.0, 2)
             entry['project_names'] = ', '.join(entry['project_names']) or '—'
-            entry['rfq_states']    = ', '.join(entry['rfq_states']) or '—'
-            entry['boq_states']    = ', '.join(entry['states']) or '—'
-            entry['trades']        = sorted(list(vendor_trades.get(vid, set())))
+            entry['rfq_states'] = ', '.join(entry['rfq_states']) or '—'
+            entry['boq_states'] = ', '.join(entry['states']) or '—'
             result.append(entry)
+
+        # BUG 6 — Add payment_status from account.move (vendor bills) linked to each PO
+        for rfq in rfqs:
+            vid = rfq.partner_id.id
+            if vid not in vendor_map:
+                continue
+            entry = vendor_map[vid]
+            if 'payment_states' not in entry:
+                entry['payment_states'] = []
+            for inv in rfq.invoice_ids:
+                ps = inv.payment_state or 'not_paid'
+                entry['payment_states'].append(ps)
+
+        for vid, entry in vendor_map.items():
+            ps_list = entry.pop('payment_states', [])
+            if not ps_list:
+                entry['payment_status'] = 'not_paid'
+                entry['payment_status_label'] = 'Not Paid'
+            elif all(s in ('paid', 'in_payment') for s in ps_list):
+                entry['payment_status'] = 'paid'
+                entry['payment_status_label'] = 'Fully Paid'
+            elif any(s in ('paid', 'in_payment', 'partial') for s in ps_list):
+                entry['payment_status'] = 'partial'
+                entry['payment_status_label'] = 'Partially Paid'
+            else:
+                entry['payment_status'] = 'not_paid'
+                entry['payment_status_label'] = 'Not Paid'
 
         # Sort by total_value desc
         result.sort(key=lambda x: x['total_value'], reverse=True)
         return result
 
     @api.model
-    def get_vendor_ratings(self, vendor_id):
-        """
-        Return all PO ratings for the given vendor, used by the dashboard
-        Rating tab.
-        """
-        ratings = self.env['vendor.po.rating'].search([
-            ('vendor_id', '=', vendor_id),
-        ], order='rating_date desc')
-
-        result = []
-        for r in ratings:
-            result.append({
-                'po_name': r.purchase_order_id.name or '—',
-                'rating': r.rating_value,
-                'quality': int(r.quality_rating) if r.quality_rating else 0,
-                'delivery': int(r.delivery_rating) if r.delivery_rating else 0,
-                'pricing': int(r.pricing_rating) if r.pricing_rating else 0,
-                'communication': int(r.communication_rating) if r.communication_rating else 0,
-                'feedback': r.feedback or '',
-                'rated_by': r.rated_by_id.name or '—',
-                'rating_date': format_date(self.env, r.rating_date) if r.rating_date else '—',
-            })
-        return result
-
-    @api.model
     def get_trade_summary(self):
         """
-        Return trade-wise (category) value breakdown for the dashboard.
-        Each entry: code, label, color, icon, total_value, item_count,
-        vendor_count, pct (share of overall BOQ value).
+        BUG 2 — Trade Assignments for the dashboard.
+        Group BOQ lines by work_category_id (trade) and sum total_value per trade.
+        Each entry: trade_name, total BOQ value, RFQ count, vendor names.
         """
         company_domain = [('company_id', '=', self.env.company.id)]
         boqs = self.search(company_domain)
 
-        _TRADE_INFO = [
-            ('electrical', 'Electrical', '#0d6efd', 'fa-bolt'),
-            ('civil',      'Civil',      '#6f42c1', 'fa-building'),
-            ('lighting',   'Lighting',   '#f29000', 'fa-lightbulb-o'),
-            ('plumbing',   'Plumbing',   '#0dcaf0', 'fa-tint'),
-            ('hvac',       'HVAC',       '#20c997', 'fa-snowflake-o'),
-            ('finishing',  'Finishing',  '#e05929', 'fa-paint-brush'),
-        ]
-        _TRADE_VENDOR_FLD = {
-            'electrical': 'electrical_vendor_ids',
-            'civil':      'civil_vendor_ids',
-            'lighting':   'lighting_vendor_ids',
-            'plumbing':   'plumbing_vendor_ids',
-            'hvac':       'hvac_vendor_ids',
-            'finishing':  'finishing_vendor_ids',
-        }
-        _TRADE_TOTAL_FLD = {
-            'electrical': 'electrical_total',
-            'civil':      'civil_total',
-            'lighting':   'lighting_total',
-            'plumbing':   'plumbing_total',
-            'hvac':       'hvac_total',
-            'finishing':  'finishing_total',
-        }
+        # Collect rfq_boq_map for vendor→rfq count per trade
+        rfq_boq_map = {}
+        if boqs.ids:
+            self.env.cr.execute(
+                "SELECT purchase_id, boq_id FROM boq_boq_purchase_order_rel WHERE boq_id IN %s",
+                (tuple(boqs.ids),)
+            )
+            rfq_boq_map = {row[0]: row[1] for row in self.env.cr.fetchall()}
 
-        total_overall = sum(b.total_amount for b in boqs) or 1.0
+        rfqs = self.env['purchase.order'].browse(list(rfq_boq_map.keys())) if rfq_boq_map else self.env['purchase.order']
+
+        trade_map = {}
+        for boq in boqs:
+            for line in boq.line_ids:
+                if not line.category_id:
+                    continue
+                cat_id = line.category_id.id
+                if cat_id not in trade_map:
+                    trade_map[cat_id] = {
+                        'trade_id': cat_id,
+                        'trade_name': line.category_id.name,
+                        'trade_code': line.category_id.code or '',
+                        'trade_icon': line.category_id.icon or 'fa-cogs',
+                        'total_value': 0.0,
+                        'line_count': 0,
+                        'vendor_id_set': set(),
+                        'vendor_names': [],
+                        'boq_ids': set(),
+                    }
+                entry = trade_map[cat_id]
+                entry['total_value'] += line.subtotal
+                entry['line_count'] += 1
+                entry['boq_ids'].add(boq.id)
+                for vendor in line.vendor_ids:
+                    if vendor.id not in entry['vendor_id_set']:
+                        entry['vendor_id_set'].add(vendor.id)
+                        entry['vendor_names'].append(vendor.name or '—')
+
+        # Compute RFQ count per trade: count how many POs have at least one line
+        # whose partner is in the trade's vendor set
+        rfq_vendor_map = {}  # vendor_id → list of rfq.id
+        for rfq in rfqs:
+            vid = rfq.partner_id.id
+            rfq_vendor_map.setdefault(vid, []).append(rfq.id)
 
         result = []
-        for cat_code, label, color, icon in _TRADE_INFO:
-            total_value = sum(getattr(b, _TRADE_TOTAL_FLD[cat_code], 0.0) for b in boqs)
-            item_count  = sum(
-                len([l for l in b.line_ids
-                     if l.category_id and l.category_id.code == cat_code])
-                for b in boqs
-            )
-            vendor_ids = set()
-            for b in boqs:
-                for v in getattr(b, _TRADE_VENDOR_FLD[cat_code]):
-                    vendor_ids.add(v.id)
-
-            result.append({
-                'code':         cat_code,
-                'label':        label,
-                'color':        color,
-                'icon':         icon,
-                'total_value':  round(total_value, 2),
-                'item_count':   item_count,
-                'vendor_count': len(vendor_ids),
-                'pct':          round(total_value / total_overall * 100, 1),
-            })
+        for cat_id, entry in trade_map.items():
+            rfq_ids_for_trade = set()
+            for vid in entry['vendor_id_set']:
+                for rid in rfq_vendor_map.get(vid, []):
+                    rfq_ids_for_trade.add(rid)
+            entry['rfq_count'] = len(rfq_ids_for_trade)
+            entry['vendor_count'] = len(entry['vendor_id_set'])
+            entry['vendor_names_str'] = ', '.join(entry['vendor_names']) or '—'
+            entry['boq_count'] = len(entry['boq_ids'])
+            # Clean up sets (not JSON-serializable)
+            del entry['vendor_id_set']
+            del entry['vendor_names']
+            del entry['boq_ids']
+            result.append(entry)
 
         result.sort(key=lambda x: x['total_value'], reverse=True)
         return result

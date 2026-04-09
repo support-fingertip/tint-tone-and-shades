@@ -3,8 +3,6 @@
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      BOQ — MAIN FORM VIEW (Odoo 19 Standard UI)
-     Trade-wise vendor selection: vendors set per trade tab (not per line).
-     Approve/Reject removed — not part of the actual workflow.
 ═══════════════════════════════════════════════════════════════════════ -->
 <record id="view_boq_boq_form" model="ir.ui.view">
     <field name="name">boq.boq.form</field>
@@ -14,39 +12,34 @@
 
             <!-- ── HEADER ──────────────────────────────────────────────── -->
             <header>
-                <!-- DRAFT → Submit -->
-                <button name="action_submit"
-                        string="Submit"
+                <!-- Mark Done: available from Draft -->
+                <button name="action_done"
+                        string="Mark Done"
                         type="object"
                         class="btn-primary"
                         invisible="state != 'draft'"/>
-
-                <!-- SUBMITTED + no RFQ yet → Create RFQ -->
+                <!-- Reset to Draft: available from Done -->
+                <button name="action_reset_draft"
+                        string="Reset to Draft"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="state != 'done'"/>
+                <!--
+                    CREATE RFQ — visible whenever at least 1 line exists.
+                    Uses line_count (Integer) for reliable invisible evaluation
+                    in Odoo 19 form-view expressions.
+                    RFQs are created per-partner based on trade-type assignments.
+                -->
                 <button name="action_create_rfq"
                         string="Create RFQ"
                         type="object"
                         class="btn-primary"
                         icon="fa-shopping-cart"
-                        invisible="state != 'submitted' or line_count == 0 or rfq_count &gt; 0"
-                        confirm="This will generate one RFQ per vendor (per trade). Proceed?"/>
-
-                <!-- SUBMITTED + RFQ created → Mark Done -->
-                <button name="action_done"
-                        string="Mark as Done"
-                        type="object"
-                        class="btn-primary"
-                        invisible="state != 'submitted' or rfq_count == 0"/>
-
-                <!-- Always available on submitted to go back -->
-                <button name="action_reset_draft"
-                        string="Reset to Draft"
-                        type="object"
-                        class="btn-secondary"
-                        invisible="state != 'submitted'"/>
-
+                        invisible="line_count == 0"
+                        confirm="This will create one RFQ per assigned vendor / supplier for each trade. Proceed?"/>
                 <field name="state"
                        widget="statusbar"
-                       statusbar_visible="draft,submitted,done"/>
+                       statusbar_visible="draft,done"/>
             </header>
 
             <sheet>
@@ -123,28 +116,57 @@
                            nolabel="1"/>
                 </group>
 
+                <!-- ── VENDOR / SUPPLIER ASSIGNMENT ─────────────────── -->
+                <group string="Vendor / Supplier Assignment">
+                    <div class="text-muted small mb-2" colspan="2">
+                        Select <b>Type</b> per trade — Vendor or Supplier field appears.
+                        Click <b>Apply to Lines</b> to push the selection onto all lines
+                        in that trade, then use <b>Create RFQ</b>.
+                    </div>
+                    <field name="trade_vendor_ids" nolabel="1" colspan="2" mode="list">
+                        <list editable="bottom">
+                            <field name="category_id" string="Trade"
+                                   options="{'no_create_edit': True}"/>
+                            <field name="partner_type" string="Type"/>
+                            <field name="vendor_ids"
+                                   widget="many2many_tags"
+                                   string="Vendors"
+                                   domain="[('supplier_rank', '&gt;', 0)]"
+                                   options="{'no_create_edit': True}"
+                                   invisible="partner_type != 'vendor'"/>
+                            <field name="supplier_ids"
+                                   widget="many2many_tags"
+                                   string="Suppliers"
+                                   domain="[('supplier_rank', '&gt;', 0), ('partner_type', '=', 'supplier')]"
+                                   options="{'no_create_edit': True}"
+                                   invisible="partner_type != 'supplier'"/>
+                            <field name="line_count" string="Lines" readonly="1"/>
+                            <button name="action_apply_to_lines" type="object"
+                                    string="Apply to Lines"
+                                    class="btn-sm btn-secondary"
+                                    title="Add selected partners to all lines in this trade"/>
+                        </list>
+                    </field>
+                    <div colspan="2" invisible="not trade_vendor_ids">
+                        <button name="action_apply_all_trade_vendors"
+                                type="object"
+                                string="Apply All to Lines"
+                                class="btn btn-primary btn-sm"
+                                confirm="This will add vendor/supplier assignments to ALL lines for every trade listed above. Proceed?"/>
+                    </div>
+                </group>
+
                 <!-- ═══════════════════════════════════════════════════════
                      NOTEBOOK — one page per work category.
-                     Each page header now shows a TRADE-LEVEL vendor picker.
-                     All items in the trade go to the selected vendors.
-                     Add 2+ vendors per trade for comparative quotes.
+                     Each page is hidden when its boolean flag is False.
+                     vendor_ids column on every line lets you map the vendor
+                     that will receive the RFQ when "Create RFQ" is clicked.
                 ═══════════════════════════════════════════════════════ -->
                 <notebook>
 
                     <!-- ─────────────── ELECTRICAL ───────────────────── -->
                     <page string="Electrical" name="tab_electrical"
                           invisible="not show_electrical">
-                        <!-- Trade-level vendor selection -->
-                        <group string="Vendors for Electrical Trade"
-                               class="o_group_col_4">
-                            <field name="electrical_vendor_ids"
-                                   widget="many2many_tags"
-                                   domain="[('supplier_rank','>',0)]"
-                                   options="{'no_create_edit': True}"
-                                   placeholder="Select vendors for ALL Electrical items (add 2+ for comparative quotes)…"
-                                   nolabel="1"
-                                   colspan="4"/>
-                        </group>
                         <field name="electrical_line_ids"
                                context="{'default_category_id': electrical_category_id}"
                                mode="list">
@@ -182,16 +204,6 @@
                     <!-- ─────────────── CIVIL ─────────────────────────── -->
                     <page string="Civil" name="tab_civil"
                           invisible="not show_civil">
-                        <group string="Vendors for Civil Trade"
-                               class="o_group_col_4">
-                            <field name="civil_vendor_ids"
-                                   widget="many2many_tags"
-                                   domain="[('supplier_rank','>',0)]"
-                                   options="{'no_create_edit': True}"
-                                   placeholder="Select vendors for ALL Civil items (add 2+ for comparative quotes)…"
-                                   nolabel="1"
-                                   colspan="4"/>
-                        </group>
                         <field name="civil_line_ids"
                                context="{'default_category_id': civil_category_id}"
                                mode="list">
@@ -228,16 +240,6 @@
                     <!-- ─────────────── LIGHTING ──────────────────────── -->
                     <page string="Lighting" name="tab_lighting"
                           invisible="not show_lighting">
-                        <group string="Vendors for Lighting Trade"
-                               class="o_group_col_4">
-                            <field name="lighting_vendor_ids"
-                                   widget="many2many_tags"
-                                   domain="[('supplier_rank','>',0)]"
-                                   options="{'no_create_edit': True}"
-                                   placeholder="Select vendors for ALL Lighting items (add 2+ for comparative quotes)…"
-                                   nolabel="1"
-                                   colspan="4"/>
-                        </group>
                         <field name="lighting_line_ids"
                                context="{'default_category_id': lighting_category_id}"
                                mode="list">
@@ -274,16 +276,6 @@
                     <!-- ─────────────── PLUMBING ──────────────────────── -->
                     <page string="Plumbing" name="tab_plumbing"
                           invisible="not show_plumbing">
-                        <group string="Vendors for Plumbing Trade"
-                               class="o_group_col_4">
-                            <field name="plumbing_vendor_ids"
-                                   widget="many2many_tags"
-                                   domain="[('supplier_rank','>',0)]"
-                                   options="{'no_create_edit': True}"
-                                   placeholder="Select vendors for ALL Plumbing items (add 2+ for comparative quotes)…"
-                                   nolabel="1"
-                                   colspan="4"/>
-                        </group>
                         <field name="plumbing_line_ids"
                                context="{'default_category_id': plumbing_category_id}"
                                mode="list">
@@ -320,16 +312,6 @@
                     <!-- ─────────────── HVAC ───────────────────────────── -->
                     <page string="HVAC" name="tab_hvac"
                           invisible="not show_hvac">
-                        <group string="Vendors for HVAC Trade"
-                               class="o_group_col_4">
-                            <field name="hvac_vendor_ids"
-                                   widget="many2many_tags"
-                                   domain="[('supplier_rank','>',0)]"
-                                   options="{'no_create_edit': True}"
-                                   placeholder="Select vendors for ALL HVAC items (add 2+ for comparative quotes)…"
-                                   nolabel="1"
-                                   colspan="4"/>
-                        </group>
                         <field name="hvac_line_ids"
                                context="{'default_category_id': hvac_category_id}"
                                mode="list">
@@ -366,16 +348,6 @@
                     <!-- ─────────────── FINISHING ─────────────────────── -->
                     <page string="Finishing" name="tab_finishing"
                           invisible="not show_finishing">
-                        <group string="Vendors for Finishing Trade"
-                               class="o_group_col_4">
-                            <field name="finishing_vendor_ids"
-                                   widget="many2many_tags"
-                                   domain="[('supplier_rank','>',0)]"
-                                   options="{'no_create_edit': True}"
-                                   placeholder="Select vendors for ALL Finishing items (add 2+ for comparative quotes)…"
-                                   nolabel="1"
-                                   colspan="4"/>
-                        </group>
                         <field name="finishing_line_ids"
                                context="{'default_category_id': finishing_category_id}"
                                mode="list">
@@ -476,7 +448,6 @@
     <field name="arch" type="xml">
         <list string="Bills of Quantities"
               decoration-success="state == 'done'"
-              decoration-info="state == 'submitted'"
               decoration-muted="state == 'draft'">
             <field name="priority" widget="priority" nolabel="1" optional="show"/>
             <field name="name"/>
@@ -495,7 +466,6 @@
             <field name="currency_id" column_invisible="True"/>
             <field name="state" widget="badge"
                    decoration-success="state == 'done'"
-                   decoration-info="state == 'submitted'"
                    decoration-primary="state == 'draft'"/>
         </list>
     </field>
@@ -534,9 +504,8 @@
                             </div>
                             <field name="state" widget="label_selection"
                                    options="{'classes': {
-                                       'draft':     'default',
-                                       'submitted': 'warning',
-                                       'done':      'success'
+                                       'draft': 'default',
+                                       'done':  'success'
                                    }}"/>
                         </div>
                         <div class="o_kanban_record_body">
@@ -573,16 +542,15 @@
     <field name="name">Bills of Quantities</field>
     <field name="res_model">boq.boq</field>
     <field name="view_mode">list,kanban,form</field>
-    <field name="context">{'search_default_draft': 1}</field>
+    <field name="context">{}</field>
     <field name="help" type="html">
         <p class="o_view_nocontent_smiling_face">
             Create your first Bill of Quantities!
         </p>
         <p>
             Link BOQs to customers, select work categories and fill in
-            product lines per tab. Assign vendors at the trade level in each
-            category tab, then click "Create RFQ" to generate comparative
-            purchase requests per vendor automatically.
+            product lines per tab. Assign vendors on each line, then click
+            "Create RFQ" to generate purchase requests automatically.
         </p>
     </field>
 </record>

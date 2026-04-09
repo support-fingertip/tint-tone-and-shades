@@ -1,82 +1,76 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api, _
+from odoo.exceptions import UserError
 
 
 class PurchaseOrderBoqExtend(models.Model):
     """
-    Extends purchase.order with a back-link to the originating BOQ record
-    and a convenience total_tax field.
-
-    Task 3 — RFQ inside BOQ.
-
-    IMPORTANT — no stored fields on purchase.order:
-    Both boq_id and total_tax are non-stored so they never need a DB column
-    and no module upgrade / ALTER TABLE is required on purchase_order.
-
-    boq_id   — computed from the existing boq_boq_purchase_order_rel M2M table
-                that is created by boq.boq.rfq_ids (already exists after install).
-    total_tax — non-stored related alias of amount_tax (reads live, no column).
+    Extends purchase.order with:
+    ─ BOQ back-link (non-stored)
+    ─ Vendor rating trigger after receipt + invoice paid  (BUG 3)
+    ─ Margin % computed from BOQ lines                    (BUG 4 / NEW TASK 3)
+    ─ Payment status display                              (BUG 6)
+    ─ Total tax alias                                     (existing)
     """
     _inherit = 'purchase.order'
 
-    # ── BOQ Back-link (non-stored — derived from rfq_ids M2M) ────────────
+    # ══════════════════════════════════════════════════════════════════════════
+    # 1.  BOQ BACK-LINK  (non-stored — derived from rfq_ids M2M)
+    # ══════════════════════════════════════════════════════════════════════════
     boq_id = fields.Many2one(
         comodel_name='boq.boq',
         string='BOQ Reference',
         compute='_compute_boq_id',
-        store=False,          # No DB column on purchase_order table
+        store=False,
         help='BOQ that generated this RFQ (read from the BOQ ↔ RFQ M2M link).',
     )
 
     @api.depends()
     def _compute_boq_id(self):
-        """
-        Derive boq_id by querying the boq_boq_purchase_order_rel table
-        which is owned by boq.boq.rfq_ids (Many2many, already exists).
-        Must handle NewId (unsaved) records gracefully.
-        """
-        # Always assign default first — guarantees every record gets a value
-        for order in self:
-            order.boq_id = False
+        # In Odoo 19 every record MUST be assigned by the compute method,
+        # even new unsaved ones (NewId).  Separate real DB ids from virtual
+        # ones so we can run the SQL only for persisted records.
+        real = self.filtered(lambda r: isinstance(r.id, int))
+        (self - real).update({'boq_id': False})   # new / virtual records
 
-        # Only query DB for saved records with real integer IDs
-        real_ids = self.ids  # may contain NewId objects
-        int_ids = [i for i in real_ids if type(i) is int]
-        if not int_ids:
+        if not real:
             return
+
         self.env.cr.execute(
             """
             SELECT purchase_id, boq_id
               FROM boq_boq_purchase_order_rel
              WHERE purchase_id IN %s
             """,
-            (tuple(int_ids),)
+            (tuple(real.ids),)
         )
         mapping = {row[0]: row[1] for row in self.env.cr.fetchall()}
-        if mapping:
-            for order in self:
-                if order.id in mapping:
-                    order.boq_id = mapping[order.id]
+        for order in real:
+            order.boq_id = mapping.get(order.id, False)
 
-    # ── Total Tax (non-stored related — reads live from amount_tax) ───────
+    # ── BOQ description (non-stored display field) ────────────────────────
     total_tax = fields.Monetary(
         string='Total Tax',
         related='amount_tax',
-        store=False,          # No DB column on purchase_order table
+        store=False,
         currency_field='currency_id',
         help='Total tax on all order lines (alias of amount_tax).',
     )
 
-    # ── BOQ description (non-stored computed display field) ───────────────
     boq_description = fields.Text(
         string='BOQ Description',
         compute='_compute_boq_description',
         store=False,
-        help='Combines origin and BOQ details for display on RFQ forms.',
     )
 
-    @api.depends('origin', 'boq_id', 'boq_id.name', 'boq_id.project_name')
+    @api.depends('origin')
     def _compute_boq_description(self):
+        """
+        Non-stored display field — depends only on `origin` to avoid the
+        Odoo 19 warning about non-searchable intermediate computed fields.
+        `boq_id` is read live inside the method (it is also non-stored,
+        so it is always recomputed on access and never stale).
+        """
         for order in self:
             parts = []
             if order.boq_id:
@@ -86,126 +80,6 @@ class PurchaseOrderBoqExtend(models.Model):
             if order.origin:
                 parts.append(order.origin)
             order.boq_description = '\n'.join(parts) if parts else ''
-
-    # ── Vendor Rating (Task 1) ───────────────────────────────────────
-    vendor_rating_id = fields.Many2one(
-        comodel_name='vendor.po.rating',
-        string='Vendor Rating',
-        compute='_compute_vendor_rating_id',
-        store=False,
-    )
-    vendor_rating_value = fields.Integer(
-        string='Rating',
-        compute='_compute_vendor_rating_value',
-        store=False,
-    )
-    vendor_payment_released = fields.Boolean(
-        string='Payment Released',
-        compute='_compute_vendor_payment_released',
-        store=False,
-        help='True when all vendor bills for this PO are fully paid.',
-    )
-    can_rate_vendor = fields.Boolean(
-        string='Can Rate Vendor',
-        compute='_compute_can_rate_vendor',
-        store=False,
-    )
-
-    def _compute_vendor_rating_id(self):
-        for order in self:
-            order.vendor_rating_id = False
-
-        int_ids = [i for i in self.ids if type(i) is int]
-        if not int_ids:
-            return
-        ratings = self.env['vendor.po.rating'].search([
-            ('purchase_order_id', 'in', int_ids)
-        ])
-        if ratings:
-            rating_map = {r.purchase_order_id.id: r for r in ratings}
-            for order in self:
-                if order.id in rating_map:
-                    order.vendor_rating_id = rating_map[order.id]
-
-    def _compute_vendor_rating_value(self):
-        for order in self:
-            order.vendor_rating_value = (
-                order.vendor_rating_id.rating_value
-                if order.vendor_rating_id else 0
-            )
-
-    def _compute_vendor_payment_released(self):
-        """
-        Payment is considered released when:
-        - PO state is 'purchase' or 'done'
-        - All related vendor bills exist and are in 'paid' state
-        """
-        for order in self:
-            if order.state not in ('purchase', 'done'):
-                order.vendor_payment_released = False
-                continue
-            invoices = order.invoice_ids.filtered(
-                lambda inv: inv.move_type == 'in_invoice'
-            )
-            if not invoices:
-                order.vendor_payment_released = False
-                continue
-            order.vendor_payment_released = all(
-                inv.payment_state in ('paid', 'in_payment', 'reversed')
-                for inv in invoices
-            )
-
-    def _compute_can_rate_vendor(self):
-        """
-        Rating is allowed when:
-        1. PO is confirmed (purchase/done)
-        2. No rating exists yet for this PO
-        3. Current user is a BOQ Manager
-        """
-        is_manager = self.env.user.has_group('boq_management_v19.group_boq_manager')
-        for order in self:
-            order.can_rate_vendor = (
-                is_manager
-                and order.state in ('purchase', 'done')
-                and not order.vendor_rating_id
-            )
-
-    def action_rate_vendor(self):
-        """Open the vendor rating wizard for this PO."""
-        self.ensure_one()
-        if not self.can_rate_vendor:
-            from odoo.exceptions import UserError
-            raise UserError(_(
-                'Cannot rate vendor. Ensure:\n'
-                '1. Purchase Order is confirmed\n'
-                '2. No rating exists yet\n'
-                '3. You are a BOQ Manager'
-            ))
-        return {
-            'type': 'ir.actions.act_window',
-            'name': _('Rate Vendor — %s') % self.partner_id.name,
-            'res_model': 'vendor.po.rating',
-            'view_mode': 'form',
-            'target': 'new',
-            'context': {
-                'default_purchase_order_id': self.id,
-                'default_vendor_id': self.partner_id.id,
-            },
-        }
-
-    def action_view_rating(self):
-        """Open existing rating for this PO."""
-        self.ensure_one()
-        if not self.vendor_rating_id:
-            return
-        return {
-            'type': 'ir.actions.act_window',
-            'name': _('Vendor Rating — %s') % self.partner_id.name,
-            'res_model': 'vendor.po.rating',
-            'res_id': self.vendor_rating_id.id,
-            'view_mode': 'form',
-            'target': 'new',
-        }
 
     def action_open_boq(self):
         """Open the linked BOQ record in form view."""
@@ -220,3 +94,228 @@ class PurchaseOrderBoqExtend(models.Model):
             'view_mode': 'form',
             'target': 'current',
         }
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 2.  MARGIN %  (BUG 4 / NEW TASK 3)
+    #     Computed from BOQ lines when available, else from PO lines.
+    # ══════════════════════════════════════════════════════════════════════════
+    margin_percent = fields.Float(
+        string='Margin %',
+        compute='_compute_po_margin',
+        store=False,
+        digits='Discount',
+        help='Average margin % computed from BOQ lines assigned to this vendor.',
+    )
+
+    @api.depends('order_line', 'order_line.price_unit', 'order_line.product_id',
+                 'order_line.product_qty')
+    def _compute_po_margin(self):
+        for order in self:
+            # Prefer BOQ-line margin (more accurate — uses BOQ unit_price as sale price)
+            if order.boq_id:
+                total_sell = 0.0
+                total_cost = 0.0
+                for line in order.boq_id.line_ids:
+                    if order.partner_id in line.vendor_ids:
+                        sell = line.unit_price * line.qty * (
+                            1.0 - (line.discount or 0.0) / 100.0
+                        )
+                        cost = (line.cost_price or 0.0) * line.qty
+                        total_sell += sell
+                        total_cost += cost
+                if total_sell > 0:
+                    order.margin_percent = (
+                        (total_sell - total_cost) / total_sell * 100.0
+                    )
+                    continue
+            # Fallback: PO line (purchase price vs standard cost)
+            total_sell = 0.0
+            total_cost = 0.0
+            for line in order.order_line:
+                sell = line.price_unit * line.product_qty
+                cost = (line.product_id.standard_price or 0.0) * line.product_qty
+                total_sell += sell
+                total_cost += cost
+            order.margin_percent = (
+                (total_sell - total_cost) / total_sell * 100.0
+            ) if total_sell > 0 else 0.0
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 3.  VENDOR RATING TRIGGER  (BUG 3 / NEW TASK 4)
+    #     'Rate Vendor' button appears ONLY when:
+    #     • PO state == 'purchase' (confirmed)
+    #     • invoice_status == 'invoiced' (fully invoiced)
+    #     • ALL linked stock.picking records are 'done'
+    # ══════════════════════════════════════════════════════════════════════════
+    # ── Partner type relay (vendor or supplier) ───────────────────────────
+    # Stored on purchase.order so the view invisible expression can reference
+    # it without a dot-traversal that Odoo 19 may not resolve at render time.
+    partner_type = fields.Selection(
+        related='partner_id.partner_type',
+        string='Partner Type',
+        store=False,
+    )
+
+    show_rate_vendor = fields.Boolean(
+        string='Show Rate Button',
+        compute='_compute_show_rate_vendor',
+        store=False,
+        help='True when PO is confirmed, fully received, and fully invoiced.',
+    )
+    vendor_rating_id = fields.Many2one(
+        comodel_name='boq.vendor.rating',
+        string='Partner Rating',
+        compute='_compute_vendor_rating_id',
+        store=False,
+    )
+
+    @api.depends('state', 'invoice_status', 'picking_ids', 'picking_ids.state')
+    def _compute_show_rate_vendor(self):
+        for order in self:
+            is_purchase = order.state == 'purchase'
+            is_invoiced = order.invoice_status == 'invoiced'
+            pickings_done = all(
+                p.state == 'done'
+                for p in order.picking_ids
+            ) if order.picking_ids else False
+            order.show_rate_vendor = is_purchase and is_invoiced and pickings_done
+
+    @api.depends('partner_id')
+    def _compute_vendor_rating_id(self):
+        for order in self:
+            rating = self.env['boq.vendor.rating'].search(
+                [('purchase_order_id', '=', order.id)], limit=1
+            )
+            order.vendor_rating_id = rating
+
+    def action_rate_vendor(self):
+        """
+        Open the rating popup form for the PO partner (vendor or supplier).
+        Button is visible only after: receipt done + invoice fully paid.
+        Works for both partner_type = 'vendor' and 'supplier'.
+        """
+        self.ensure_one()
+        if not self.show_rate_vendor:
+            raise UserError(_(
+                'Rating is available only after the receipt is done '
+                'and the invoice is fully paid.'
+            ))
+        # Dynamic title based on partner type
+        pt = self.partner_id.partner_type
+        if pt == 'supplier':
+            title = _('Rate Supplier — %s') % self.partner_id.name
+        else:
+            title = _('Rate Vendor — %s') % self.partner_id.name
+
+        existing = self.vendor_rating_id
+        ctx = {
+            'default_purchase_order_id': self.id,
+            'default_partner_id': self.partner_id.id,
+        }
+        return {
+            'type': 'ir.actions.act_window',
+            'name': title,
+            'res_model': 'boq.vendor.rating',
+            'view_mode': 'form',
+            'res_id': existing.id if existing else False,
+            'target': 'new',
+            'context': ctx,
+        }
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 5.  PAYMENT STATUS DISPLAY  (BUG 6)
+    # ══════════════════════════════════════════════════════════════════════════
+    payment_status_display = fields.Char(
+        string='Payment Status',
+        compute='_compute_payment_status_display',
+        store=False,
+    )
+
+    @api.depends('invoice_ids', 'invoice_ids.payment_state')
+    def _compute_payment_status_display(self):
+        label_map = {
+            'not_paid':   'Not Paid',
+            'in_payment': 'In Payment',
+            'paid':       'Fully Paid',
+            'partial':    'Partially Paid',
+            'reversed':   'Reversed',
+            'invoicing_legacy': 'Legacy',
+        }
+        for order in self:
+            states = order.invoice_ids.mapped('payment_state')
+            if not states:
+                order.payment_status_display = 'Not Paid'
+            elif all(s in ('paid', 'in_payment') for s in states):
+                order.payment_status_display = 'Fully Paid'
+            elif any(s in ('paid', 'in_payment', 'partial') for s in states):
+                order.payment_status_display = 'Partially Paid'
+            else:
+                order.payment_status_display = label_map.get(states[0], 'Not Paid')
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 6.  PORTAL QUOTATION SUBMIT  (NEW TASK 5)
+    # ══════════════════════════════════════════════════════════════════════════
+    def action_submit_quotation_portal(self):
+        """
+        NEW TASK 5 — Triggered when vendor clicks 'Submit' on the portal RFQ.
+        Sends notification mail and posts to chatter.
+        """
+        self.ensure_one()
+        template = self.env.ref(
+            'boq_management_v19.mail_template_vendor_portal_submit',
+            raise_if_not_found=False,
+        )
+        if template:
+            template.send_mail(self.id, force_send=True)
+        else:
+            # Fallback: post to chatter
+            self.message_post(
+                body=_(
+                    'The vendor <b>%(vendor)s</b> has submitted the quotation '
+                    'successfully against RFQ <b>%(rfq)s</b>. '
+                    'Please review and proceed further.'
+                ) % {'vendor': self.partner_id.name, 'rfq': self.name},
+                subtype_xmlid='mail.mt_comment',
+            )
+        return True
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# purchase.order.line EXTENSION  (NEW TASK 3 — margin on comparison view)
+# ═════════════════════════════════════════════════════════════════════════════
+class PurchaseOrderLineBoqExtend(models.Model):
+    """
+    NEW TASK 3 — Extend purchase.order.line with cost_price and margin_percent
+    so the 'Compare Product Lines' view can display margin side-by-side.
+    """
+    _inherit = 'purchase.order.line'
+
+    cost_price = fields.Float(
+        string='Cost Price',
+        compute='_compute_pol_cost_price',
+        store=False,
+        digits='Product Price',
+        help='Product standard price (cost) at the time of quoting.',
+    )
+    margin_percent = fields.Float(
+        string='Margin %',
+        compute='_compute_pol_margin',
+        store=False,
+        digits='Discount',
+        help='Margin % = ((price_unit - cost_price) / price_unit) × 100.',
+    )
+
+    @api.depends('product_id')
+    def _compute_pol_cost_price(self):
+        for line in self:
+            line.cost_price = line.product_id.standard_price if line.product_id else 0.0
+
+    @api.depends('price_unit', 'cost_price')
+    def _compute_pol_margin(self):
+        for line in self:
+            if line.price_unit > 0:
+                line.margin_percent = (
+                    (line.price_unit - (line.cost_price or 0.0)) / line.price_unit
+                ) * 100.0
+            else:
+                line.margin_percent = 0.0

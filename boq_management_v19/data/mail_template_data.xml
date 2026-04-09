@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        NEW TASK 5 — Mail template: vendor submits quotation from portal.
+        Sent to the vendor manager (followers of the PO) when a vendor
+        clicks "Submit" on the portal RFQ form.
+        Stored in the chatter of the PO for audit trail.
+    -->
+    <record id="mail_template_vendor_portal_submit" model="mail.template">
+        <field name="name">BOQ: Vendor Portal Quotation Submitted</field>
+        <field name="model_id" ref="purchase.model_purchase_order"/>
+        <field name="subject">Quotation Submitted — RFQ {{ object.name }}</field>
+        <field name="email_from">{{ (object.company_id.email or user.email) }}</field>
+        <field name="email_to">{{ object.user_id.email }}</field>
+        <field name="body_html" type="html">
+            <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+                <p>Dear <strong>{{ object.user_id.name or 'Vendor Manager' }}</strong>,</p>
+                <p>
+                    The vendor <strong>{{ object.partner_id.name }}</strong> has submitted
+                    the quotation successfully against RFQ
+                    <strong>{{ object.name }}</strong>.
+                    Please review and proceed further.
+                </p>
+                <table style="border-collapse:collapse; width:100%; margin-top:12px;">
+                    <tr>
+                        <td style="padding:6px 12px; background:#f5f5f5; font-weight:bold; border:1px solid #ddd; width:160px;">RFQ Reference</td>
+                        <td style="padding:6px 12px; border:1px solid #ddd;">{{ object.name }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:6px 12px; background:#f5f5f5; font-weight:bold; border:1px solid #ddd;">Vendor</td>
+                        <td style="padding:6px 12px; border:1px solid #ddd;">{{ object.partner_id.name }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:6px 12px; background:#f5f5f5; font-weight:bold; border:1px solid #ddd;">Order Date</td>
+                        <td style="padding:6px 12px; border:1px solid #ddd;">{{ object.date_order }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:6px 12px; background:#f5f5f5; font-weight:bold; border:1px solid #ddd;">Total Amount</td>
+                        <td style="padding:6px 12px; border:1px solid #ddd;">{{ object.currency_id.symbol }} {{ '{:,.2f}'.format(object.amount_total) }}</td>
+                    </tr>
+                </table>
+                <p style="margin-top:16px;">
+                    <a href="{{ object.get_base_url() }}/odoo/purchase/{{ object.id }}"
+                       style="background:#875a7b; color:#fff; padding:8px 18px; text-decoration:none; border-radius:4px;">
+                        View RFQ in Odoo
+                    </a>
+                </p>
+                <p style="margin-top:20px; font-size:12px; color:#888;">
+                    This is an automated notification from the BOQ Management system.
+                </p>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+        <field name="lang">{{ object.partner_id.lang }}</field>
+    </record>
+</odoo>

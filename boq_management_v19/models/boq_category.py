@@ -24,8 +24,14 @@ class BoqCategory(models.Model):
         required=True,
         help='Short lowercase code with no spaces. Used internally to link tab fields.',
     )
-    sequence = fields.Integer(string='Sequence', default=10)
-    description = fields.Text(string='Description', translate=True)
+    sequence = fields.Integer(
+        string='Sequence',
+        default=10,
+    )
+    description = fields.Text(
+        string='Description',
+        translate=True,
+    )
 
     # ── Visual ───────────────────────────────────────────────────────────
     color = fields.Integer(string='Color', default=0)
@@ -44,14 +50,18 @@ class BoqCategory(models.Model):
     active = fields.Boolean(default=True)
 
     # ── Statistics ───────────────────────────────────────────────────────
-    boq_count = fields.Integer(string='BOQs', compute='_compute_boq_count')
-    line_count = fields.Integer(string='Total Lines', compute='_compute_boq_count')
+    boq_count = fields.Integer(
+        string='BOQs',
+        compute='_compute_boq_count',
+    )
+    line_count = fields.Integer(
+        string='Total Lines',
+        compute='_compute_boq_count',
+    )
 
     # ── Constraints ──────────────────────────────────────────────────────
-    _sql_constraints = [
-        ('name_uniq', 'unique(name)', 'Category name must be unique.'),
-        ('code_uniq', 'unique(code)', 'Category code must be unique.'),
-    ]
+    _name_uniq = models.Constraint('unique(name)', 'Category name must be unique.')
+    _code_uniq = models.Constraint('unique(code)', 'Category code must be unique.')
 
     # ── Computes ─────────────────────────────────────────────────────────
     @api.depends('color')
@@ -70,7 +80,9 @@ class BoqCategory(models.Model):
     def _compute_boq_count(self):
         Line = self.env['boq.order.line']
         for rec in self:
-            rec.boq_count = self.env['boq.boq'].search_count(
+            boqs = self.env['boq.boq'].search_count(
                 [('category_ids', 'in', rec.id)]
             )
-            rec.line_count = Line.search_count([('category_id', '=', rec.id)])
+            lines = Line.search_count([('category_id', '=', rec.id)])
+            rec.boq_count = boqs
+            rec.line_count = lines
