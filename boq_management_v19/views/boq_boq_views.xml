@@ -119,41 +119,32 @@
                 <!-- ── VENDOR / SUPPLIER ASSIGNMENT ─────────────────── -->
                 <group string="Vendor / Supplier Assignment">
                     <div class="text-muted small mb-2" colspan="2">
-                        Rows are auto-added when you select Work Categories above.
-                        Set <b>Type</b> (Vendor or Supplier) — the matching partner field appears.
-                        Select partners, then click <b>Create RFQ</b>.
+                        Rows appear automatically when Work Categories are selected above.
+                        Set <b>Type</b> — Vendor shows the <b>Vendors</b> field,
+                        Supplier shows the <b>Suppliers</b> field.
+                        Each selected partner receives a separate RFQ with <em>all</em>
+                        lines from that category.
                     </div>
                     <field name="trade_vendor_ids" nolabel="1" colspan="2" mode="list">
                         <list editable="bottom">
-                            <field name="category_id" string="Trade"
+                            <field name="category_id" string="Work Category"
                                    options="{'no_create_edit': True}"/>
                             <field name="partner_type" string="Type"/>
                             <field name="vendor_ids"
                                    widget="many2many_tags"
                                    string="Vendors"
-                                   domain="[('supplier_rank', '&gt;', 0)]"
+                                   domain="[('partner_type', '=', 'vendor')]"
                                    options="{'no_create_edit': True}"
                                    invisible="partner_type != 'vendor'"/>
                             <field name="supplier_ids"
                                    widget="many2many_tags"
                                    string="Suppliers"
-                                   domain="[('supplier_rank', '&gt;', 0), ('partner_type', '=', 'supplier')]"
+                                   domain="[('partner_type', '=', 'supplier')]"
                                    options="{'no_create_edit': True}"
                                    invisible="partner_type != 'supplier'"/>
                             <field name="line_count" string="Lines" readonly="1"/>
-                            <button name="action_apply_to_lines" type="object"
-                                    string="Apply to Lines"
-                                    class="btn-sm btn-secondary"
-                                    title="Add selected partners to all lines in this trade"/>
                         </list>
                     </field>
-                    <div colspan="2" invisible="not trade_vendor_ids">
-                        <button name="action_apply_all_trade_vendors"
-                                type="object"
-                                string="Apply All to Lines"
-                                class="btn btn-primary btn-sm"
-                                confirm="This will add vendor/supplier assignments to ALL lines for every trade listed above. Proceed?"/>
-                    </div>
                 </group>
 
                 <!-- ═══════════════════════════════════════════════════════

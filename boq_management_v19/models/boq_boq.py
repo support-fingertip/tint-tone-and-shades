@@ -358,22 +358,21 @@ class BoqBoq(models.Model):
     @api.onchange('category_ids')
     def _onchange_category_ids(self):
         """
-        When a work category is added to the BOQ, automatically create a
-        placeholder row in trade_vendor_ids so the user only needs to choose
-        the Type and partners — no manual 'Add a line' required.
-        Rows for categories that were removed are left as-is so the user
-        doesn't lose data accidentally.
+        When a work category is added, automatically insert a row in the
+        Vendor / Supplier Assignment table so the user only needs to set the
+        Type and pick partners — no manual 'Add a line' needed.
+        Existing rows are preserved; rows for removed categories are left so
+        the user doesn't accidentally lose partner selections.
         """
         existing_cats = self.trade_vendor_ids.mapped('category_id')
-        new_commands = []
+        TradeVendor = self.env['boq.trade.vendor']
         for cat in self.category_ids:
             if cat not in existing_cats:
-                new_commands.append((0, 0, {
+                self.trade_vendor_ids |= TradeVendor.new({
+                    'boq_id': self._origin.id or False,
                     'category_id': cat.id,
                     'partner_type': 'vendor',
-                }))
-        if new_commands:
-            self.trade_vendor_ids = [(4, r.id) for r in self.trade_vendor_ids] + new_commands
+                })
 
     # ── Sequence / Create ─────────────────────────────────────────────────
     @api.model_create_multi
@@ -521,12 +520,6 @@ class BoqBoq(models.Model):
             'domain': [('id', 'in', created_orders.ids)],
             'target': 'current',
         }
-
-    def action_apply_all_trade_vendors(self):
-        """Apply all trade-level vendor assignments to their respective lines."""
-        for rec in self:
-            rec.trade_vendor_ids.action_apply_to_lines()
-        return True
 
     def action_view_rfqs(self):
         """Open linked RFQs / Purchase Orders from the smart button."""
