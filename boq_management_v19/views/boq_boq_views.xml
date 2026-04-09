@@ -142,6 +142,7 @@
                                    domain="[('partner_type', '=', 'supplier')]"
                                    options="{'no_create_edit': True}"
                                    invisible="partner_type != 'supplier'"/>
+                            <field name="line_count" string="Lines" readonly="1"/>
                         </list>
                     </field>
                 </group>
