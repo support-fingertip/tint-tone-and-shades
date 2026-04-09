@@ -354,6 +354,26 @@ class BoqBoq(models.Model):
             rec.grand_total  = subtotal + tax_total
             rec.line_count   = len(lines)
 
+    # ── Auto-populate trade_vendor_ids when categories are added ─────────
+    @api.onchange('category_ids')
+    def _onchange_category_ids(self):
+        """
+        When a work category is added, automatically insert a row in the
+        Vendor / Supplier Assignment table so the user only needs to set the
+        Type and pick partners — no manual 'Add a line' needed.
+        Existing rows are preserved; rows for removed categories are left so
+        the user doesn't accidentally lose partner selections.
+        """
+        existing_cats = self.trade_vendor_ids.mapped('category_id')
+        TradeVendor = self.env['boq.trade.vendor']
+        for cat in self.category_ids:
+            if cat not in existing_cats:
+                self.trade_vendor_ids |= TradeVendor.new({
+                    'boq_id': self._origin.id or False,
+                    'category_id': cat.id,
+                    'partner_type': 'vendor',
+                })
+
     # ── Sequence / Create ─────────────────────────────────────────────────
     @api.model_create_multi
     def create(self, vals_list):
@@ -393,18 +413,16 @@ class BoqBoq(models.Model):
         """
         Create one RFQ (purchase.order) per partner.
 
-        Strategy A (primary) — Partner work_category_ids matching:
-          For each BOQ work category, find all res.partner records whose
-          work_category_ids includes that category (set on the Contact form).
-          All BOQ lines from that category are added to each matched partner's
-          RFQ.  This is the recommended flow: set partner_type + work categories
-          on the contact, then click Create RFQ on any BOQ.
+        Strategy A (primary) — BOQ Trade assignments (boq.trade.vendor):
+          For each row in the "Vendor / Supplier Assignment" section, pick the
+          partners (vendor_ids when Type=Vendor, supplier_ids when Type=Supplier).
+          All BOQ lines whose category matches that trade row are added to every
+          matched partner's RFQ.  Multiple trade rows for the same partner produce
+          a single PO containing lines from all those trades.
 
-        Strategy B — Trade-level boq.trade.vendor assignments:
-          Falls back to the per-trade vendor/supplier assignments on this BOQ.
-
-        Strategy C — Line-level vendor_ids:
-          Last resort: uses the Many2many vendor_ids on individual BOQ lines.
+        Strategy B (fallback) — Line-level vendor_ids:
+          If no trade assignments exist, falls back to the Many2many vendor_ids
+          on individual BOQ lines.
         """
         self.ensure_one()
 
@@ -414,28 +432,8 @@ class BoqBoq(models.Model):
         # ── Build partner_id → [line, …] map ─────────────────────────────
         partner_lines = {}   # {partner_id: [boq.order.line, …]}
 
-        # Strategy A: partner work_category_ids matching
-        boq_categories = self.category_ids
-        if boq_categories:
-            # Find all partners (vendor or supplier) who handle any of these categories
-            matching_partners = self.env['res.partner'].search([
-                ('work_category_ids', 'in', boq_categories.ids),
-                ('partner_type', 'in', ['vendor', 'supplier']),
-            ])
-            for partner in matching_partners:
-                # Collect lines whose category is in this partner's work_category_ids
-                partner_cats = partner.work_category_ids
-                lines_for_partner = self.line_ids.filtered(
-                    lambda l, pcats=partner_cats: l.category_id and l.category_id in pcats
-                )
-                if lines_for_partner:
-                    bucket = partner_lines.setdefault(partner.id, [])
-                    for line in lines_for_partner:
-                        if line not in bucket:
-                            bucket.append(line)
-
-        if not partner_lines and self.trade_vendor_ids:
-            # Strategy B: trade-level boq.trade.vendor assignments
+        if self.trade_vendor_ids:
+            # Strategy A: BOQ trade-level assignments
             for trade in self.trade_vendor_ids:
                 trade_lines = self.line_ids.filtered(
                     lambda l, cat=trade.category_id: l.category_id == cat
@@ -454,7 +452,7 @@ class BoqBoq(models.Model):
                             bucket.append(line)
 
         if not partner_lines:
-            # Strategy C: fallback to line-level vendor_ids
+            # Strategy B: fallback to line-level vendor_ids
             for line in self.line_ids:
                 for vendor in line.vendor_ids:
                     bucket = partner_lines.setdefault(vendor.id, [])
@@ -464,12 +462,13 @@ class BoqBoq(models.Model):
         if not partner_lines:
             raise UserError(_(
                 'No vendors / suppliers mapped.\n\n'
-                'Option 1 (recommended): Open each vendor/supplier Contact, set '
-                '"Partner Type" (Vendor or Supplier) and select "Work Categories". '
-                'Then click Create RFQ — partners are matched automatically.\n\n'
-                'Option 2: In the "Vendor / Supplier Assignment" tab on this BOQ, '
-                'add trade rows with Type and partners, then click Create RFQ.\n\n'
-                'Option 3: On individual BOQ lines, set the Vendors field.'
+                'In the "Vendor / Supplier Assignment" section:\n'
+                '1. Select a Trade (work category)\n'
+                '2. Set Type to Vendor or Supplier\n'
+                '3. Pick the partners in the Vendors / Suppliers field\n'
+                '4. Click Create RFQ\n\n'
+                'Tip: Work Categories are auto-populated as rows when you '
+                'select them at the top of the BOQ form.'
             ))
 
         # ── Create one PO per partner ─────────────────────────────────────
@@ -521,12 +520,6 @@ class BoqBoq(models.Model):
             'domain': [('id', 'in', created_orders.ids)],
             'target': 'current',
         }
-
-    def action_apply_all_trade_vendors(self):
-        """Apply all trade-level vendor assignments to their respective lines."""
-        for rec in self:
-            rec.trade_vendor_ids.action_apply_to_lines()
-        return True
 
     def action_view_rfqs(self):
         """Open linked RFQs / Purchase Orders from the smart button."""

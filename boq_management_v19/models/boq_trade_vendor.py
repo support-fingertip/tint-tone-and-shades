@@ -6,13 +6,15 @@ class BoqTradeVendor(models.Model):
     """
     Trade-level vendor/supplier assignment for a BOQ.
 
-    One row per (BOQ, trade, type) triple.  The user picks the Type first
-    (Vendor or Supplier), then the matching partner field becomes visible.
-    Clicking 'Apply to Lines' writes that selection onto vendor_ids of every
-    boq.order.line in that trade.
+    One row per (BOQ, trade, type) triple.
+    • partner_type = 'vendor'   → vendor_ids  M2M is shown; supplier_ids hidden
+    • partner_type = 'supplier' → supplier_ids M2M is shown; vendor_ids hidden
+
+    Create RFQ on the parent BOQ reads these rows and creates one PO per
+    partner, containing ALL lines from that category.
     """
     _name = 'boq.trade.vendor'
-    _description = 'Trade-Level Vendor Assignment'
+    _description = 'Trade-Level Vendor/Supplier Assignment'
     _order = 'category_id, partner_type'
     _rec_name = 'category_id'
 
@@ -25,7 +27,7 @@ class BoqTradeVendor(models.Model):
     )
     category_id = fields.Many2one(
         comodel_name='boq.category',
-        string='Trade',
+        string='Work Category',
         required=True,
         ondelete='restrict',
     )
@@ -37,7 +39,8 @@ class BoqTradeVendor(models.Model):
         string='Type',
         required=True,
         default='vendor',
-        help='Vendor = standard partner; Supplier = partner_type set to "supplier".',
+        help='Controls which partner field is visible and which partners '
+             'receive RFQs for this category.',
     )
     vendor_ids = fields.Many2many(
         comodel_name='res.partner',
@@ -45,8 +48,9 @@ class BoqTradeVendor(models.Model):
         column1='trade_vendor_id',
         column2='partner_id',
         string='Vendors',
-        domain=[('supplier_rank', '>', 0)],
-        help='Visible when Type = Vendor.',
+        domain=[('partner_type', '=', 'vendor')],
+        help='Visible when Type = Vendor. Each vendor gets a separate RFQ '
+             'with all lines from this category.',
     )
     supplier_ids = fields.Many2many(
         comodel_name='res.partner',
@@ -54,8 +58,9 @@ class BoqTradeVendor(models.Model):
         column1='trade_vendor_id',
         column2='partner_id',
         string='Suppliers',
-        domain=[('supplier_rank', '>', 0), ('partner_type', '=', 'supplier')],
-        help='Visible when Type = Supplier.',
+        domain=[('partner_type', '=', 'supplier')],
+        help='Visible when Type = Supplier. Each supplier gets a separate RFQ '
+             'with all lines from this category.',
     )
     line_count = fields.Integer(
         string='Lines',
@@ -77,13 +82,3 @@ class BoqTradeVendor(models.Model):
                     lambda l: l.category_id == rec.category_id
                 )
             )
-
-    def action_apply_to_lines(self):
-        """Write the selected partners onto vendor_ids of all matching lines."""
-        for rec in self:
-            partners = rec.vendor_ids if rec.partner_type == 'vendor' else rec.supplier_ids
-            lines = rec.boq_id.line_ids.filtered(
-                lambda l: l.category_id == rec.category_id
-            )
-            lines.write({'vendor_ids': [(4, p.id) for p in partners]})
-        return True
