@@ -1115,9 +1115,17 @@ class BoqBoq(models.Model):
                 continue
 
             # Build approval lines list
+            # Guard: approval_line_ids only exists when infinys_purchase_order_approval
+            # is installed.  Use _fields check so the dashboard works even if that
+            # module is absent (approval section simply shows empty progress).
             approval_lines = []
             has_current_approver = False
-            for al in po.approval_line_ids.sorted('sequence'):
+            approval_line_recs = (
+                po.approval_line_ids.sorted('sequence')
+                if 'approval_line_ids' in po._fields
+                else []
+            )
+            for al in approval_line_recs:
                 approver_names = ', '.join(al.user_ids.mapped('name')) or '—'
                 is_current = al.status == 'current'
                 if is_current and current_user in al.user_ids:
@@ -1159,7 +1167,8 @@ class BoqBoq(models.Model):
         if not partner.exists():
             return []
 
-        company_domain = [('company_id', '=', self.env.company.id)]
+        company_ids = self._get_allowed_company_ids()
+        company_domain = [('company_id', 'in', company_ids)]
         boqs = self.search(company_domain)
 
         rows = []

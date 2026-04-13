@@ -316,25 +316,8 @@
     color: #495057;
     margin-bottom: 4px;
 }
-
-.boq_totals_chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    background: #f0f2f5;
-    color: #495057;
-    font-size: 0.8rem;
-    border: 1px solid #e2e6ea;
-}
-
-.boq_totals_value {
-    background: #e8f0fe;
-    color: #0d6efd;
-    border-color: #c8d8fb;
-    font-weight: 500;
-}
+/* .boq_totals_chip and .boq_totals_value are defined once in the
+   Task 2 tree section below (canonical definitions). */
 
 /* ── Vendor filter widget ────────────────────────────────────── */
 .boq_vendor_filter_wrap {
