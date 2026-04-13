@@ -378,31 +378,65 @@ class BoqBoq(models.Model):
     @api.onchange('category_ids')
     def _onchange_category_ids(self):
         """
-        When a work category is added, automatically insert a row in the
-        Vendor / Supplier Assignment table so the user only needs to pick
-        partners — no manual 'Add a line' needed.
+        Rebuild trade_vendor_ids so there is exactly one row per unique
+        category in category_ids.  Rows for removed categories are kept
+        (so the user doesn't lose vendor selections by accident).
 
-        The auto-created row inherits partner_type from boq_type so that:
-          • Vendor BOQs  → rows default to partner_type = 'vendor'
-          • Supplier BOQs → rows default to partner_type = 'supplier'
+        ROOT-CAUSE FIX for the duplication bug (Task 3):
+        ─────────────────────────────────────────────────
+        The previous implementation used  self.trade_vendor_ids |= new_row
+        (append).  When the many2many_tags widget fires the onchange more
+        than once before the client applies the first response (e.g. adding
+        tags in rapid succession), each call sees trade_vendor_ids = [] and
+        independently creates the same row.  Both deltas reach the client
+        and both get applied → duplicate rows.
 
-        This ensures the correct dashboard picks them up.
+        The fix: build the complete, deduplicated result set and ASSIGN it
+        (self.trade_vendor_ids = result) rather than appending.  This turns
+        the onchange into an idempotent operation — running it any number of
+        times with the same category_ids always produces the same single row
+        per category, so race-condition duplicates are impossible.
 
-        BUG 3 FIX: Compare by category ID (integer set) instead of recordset
-        membership to avoid false misses on virtual/new records, and guard
-        IDs added within the same call to prevent double-insertion.
+        partner_type inherits from boq_type so Supplier BOQs automatically
+        produce supplier-typed rows that appear on the Procurement Dashboard.
         """
         default_type = self.boq_type or 'vendor'
-        existing_cat_ids = set(self.trade_vendor_ids.mapped('category_id').ids)
+
+        # Index existing rows by category_id (first occurrence wins if
+        # there are already any duplicates from a previous save).
+        existing_by_cat = {}
+        for row in self.trade_vendor_ids:
+            cid = row.category_id.id
+            if cid and cid not in existing_by_cat:
+                existing_by_cat[cid] = row
+
         TradeVendor = self.env['boq.trade.vendor']
+        result = TradeVendor
+        assigned_cats = set()
+
+        # One row per category currently selected — deduplicated
         for cat in self.category_ids:
-            if cat.id not in existing_cat_ids:
-                existing_cat_ids.add(cat.id)   # guard against same-call duplicates
-                self.trade_vendor_ids |= TradeVendor.new({
-                    'boq_id': self._origin.id or False,
-                    'category_id': cat.id,
+            if cat.id in assigned_cats:
+                continue                        # skip if category_ids has dupes
+            assigned_cats.add(cat.id)
+            if cat.id in existing_by_cat:
+                result |= existing_by_cat[cat.id]   # reuse existing (keeps vendors)
+            else:
+                result |= TradeVendor.new({
+                    'boq_id':       self._origin.id or False,
+                    'category_id':  cat.id,
                     'partner_type': default_type,
                 })
+
+        # Preserve rows whose category was removed so vendor selections
+        # survive an accidental deselect + re-select.
+        for cid, row in existing_by_cat.items():
+            if cid not in assigned_cats:
+                result |= row
+
+        # REPLACE — not append — so the returned command set is always the
+        # complete correct state.  This is the key to idempotency.
+        self.trade_vendor_ids = result
 
     @api.onchange('boq_type')
     def _onchange_boq_type(self):
