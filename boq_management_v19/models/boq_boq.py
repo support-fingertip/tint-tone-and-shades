@@ -313,8 +313,14 @@ class BoqBoq(models.Model):
 
     @api.depends('rfq_ids')
     def _compute_rfq_count(self):
+        user_partner = self.env.user.partner_id
+        ptype = user_partner.partner_type
+        allowed_companies = self.env.companies.ids  # multi-company support
         for rec in self:
-            rec.rfq_count = len(rec.rfq_ids)
+            rfqs = rec.rfq_ids.filtered(lambda r: r.company_id.id in allowed_companies)
+            if ptype in ('vendor', 'supplier'):
+                rfqs = rfqs.filtered(lambda r: r.partner_id.partner_type == ptype)
+            rec.rfq_count = len(rfqs)
 
     # ── _compute_totals ────────────────────────────────────────────────────
     # IMPORTANT: Only depend on stored `line_ids.*` fields.
@@ -543,26 +549,32 @@ class BoqBoq(models.Model):
         }
 
     def action_view_rfqs(self):
-        """Open linked RFQs / Purchase Orders from the smart button."""
         self.ensure_one()
-        if not self.rfq_count:
-            return
-        if self.rfq_count == 1:
+        user_partner = self.env.user.partner_id
+        ptype = user_partner.partner_type
+        allowed_companies = self.env.companies.ids
+        domain = [
+            ('id', 'in', self.rfq_ids.ids),
+            ('company_id', 'in', allowed_companies),
+        ]
+
+        if ptype in ('vendor', 'supplier'):
+            domain.append(('partner_id.partner_type', '=', ptype))
+        rfqs = self.env['purchase.order'].search(domain)
+        if len(rfqs) == 1:
             return {
                 'type': 'ir.actions.act_window',
-                'name': _('RFQ'),
                 'res_model': 'purchase.order',
-                'res_id': self.rfq_ids.id,
+                'res_id': rfqs.id,
                 'view_mode': 'form',
-                'target': 'current',
             }
+
         return {
             'type': 'ir.actions.act_window',
             'name': _('RFQs — %s') % self.name,
             'res_model': 'purchase.order',
             'view_mode': 'list,form',
-            'domain': [('id', 'in', self.rfq_ids.ids)],
-            'target': 'current',
+            'domain': domain,
         }
 
     # ── Model helper ──────────────────────────────────────────────────────
