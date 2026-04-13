@@ -308,7 +308,6 @@ class BoqBoq(models.Model):
     rfq_count = fields.Integer(
         string='RFQs',
         compute='_compute_rfq_count',
-        store=True,
     )
 
     @api.depends('rfq_ids')
