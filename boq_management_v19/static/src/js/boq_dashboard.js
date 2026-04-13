@@ -86,7 +86,7 @@ class BoqManagerDashboardBase extends Component {
             filterText:       "",
         });
 
-        onWillStart(() => this._loadAll());
+        onWillStart(async () => { await this._loadAll(); });
     }
 
     // ── Dashboard identity ────────────────────────────────────────────────
