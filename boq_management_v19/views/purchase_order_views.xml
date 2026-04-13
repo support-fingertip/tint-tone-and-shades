@@ -100,6 +100,60 @@
         </field>
     </record>
 
+    <record id="action_vendor_purchase_report" model="ir.actions.act_window">
+        <field name="name">Purchase</field>
+        <field name="res_model">purchase.report</field>
+        <field name="view_mode">graph,pivot</field>
+        <field name="domain">[('partner_id.partner_type', '=', 'vendor')]</field>
+    </record>
+
+    <record id="action_supplier_purchase_report" model="ir.actions.act_window">
+        <field name="name">Purchase</field>
+        <field name="res_model">purchase.report</field>
+        <field name="view_mode">graph,pivot</field>
+        <field name="domain">[('partner_id.partner_type', '=', 'supplier')]</field>
+    </record>
+
+    <record id="action_vendor_my_approvals" model="ir.actions.act_window">
+        <field name="name">My Approvals</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[
+            '|',
+            '&amp;',
+            '&amp;',
+            ('state', '=', 'to approve'),
+            ('approval_line_ids.status', '=', 'current'),
+            ('approval_line_ids.user_ids', 'in', [uid]),
+            '|',
+            ('approval_line_ids.approved_by_user_id', '=', uid),
+            ('approval_line_ids.rejected_by_user_id', '=', uid)
+            ]
+        </field>
+        <field name="context">{'create': False, 'search_default_my_pending_approvals': 1}</field>
+    </record>
+
+    <record id="action_supplier_my_approvals" model="ir.actions.act_window">
+        <field name="name">My Approvals</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[
+            '|',
+            '&amp;',
+            '&amp;',
+            ('state', '=', 'to approve'),
+            ('approval_line_ids.status', '=', 'current'),
+            ('approval_line_ids.user_ids', 'in', [uid]),
+            '|',
+            ('approval_line_ids.approved_by_user_id', '=', uid),
+            ('approval_line_ids.rejected_by_user_id', '=', uid)
+            ]
+        </field>
+        <field name="context">{'create': False, 'search_default_my_pending_approvals': 1}</field>
+    </record>
+
+
+
     <!-- Vendors list (existing, unchanged) -->
     <record id="action_boq_vendor_list" model="ir.actions.act_window">
         <field name="name">Vendors</field>
@@ -112,5 +166,58 @@
             <p>Vendors are suppliers assigned on BOQ lines when creating RFQs.</p>
         </field>
     </record>
+
+
+     <!-- Vendor Contacts Action -->
+    <record id="action_vendor_contacts" model="ir.actions.act_window">
+        <field name="name">Vendor Contacts</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form,kanban</field>
+        <field name="domain">[('partner_type', '=', 'vendor')]</field>
+    </record>
+
+    <!-- Supplier Contacts Action -->
+    <record id="action_supplier_contacts" model="ir.actions.act_window">
+        <field name="name">Supplier Contacts</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form,kanban</field>
+        <field name="domain">[('partner_type', '=', 'supplier')]</field>
+    </record>
+
+    <!-- Vendor Contacts App -->
+    <menuitem
+            id="menu_vendor_contacts_app"
+            name="Vendor Contacts"
+            sequence="20"
+            web_icon="boq_management_v19,static/src/img/vendor_contact.png"
+            groups="boq_management_v19.group_vendor"
+    />
+
+    <!-- Supplier Contacts App -->
+    <menuitem
+            id="menu_supplier_contacts_app"
+            name="Supplier Contacts"
+            sequence="30"
+            web_icon="boq_management_v19,static/src/img/supplier_contact.png"
+            groups="boq_management_v19.group_supplier"
+    />
+
+    <!-- Vendor Contacts Menu -->
+    <menuitem
+            id="menu_vendor_contacts_root"
+            name="Contacts"
+            parent="menu_vendor_contacts_app"
+            action="action_vendor_contacts"
+            sequence="1"
+    />
+
+    <!-- Supplier Contacts Menu -->
+    <menuitem
+            id="menu_supplier_contacts_root"
+            name="Contacts"
+            parent="menu_supplier_contacts_app"
+            action="action_supplier_contacts"
+            sequence="1"
+    />
 
 </odoo>
