@@ -379,59 +379,76 @@ class BoqBoq(models.Model):
 
         ROOT-CAUSE FIX for the duplication bug (Task 3):
         ─────────────────────────────────────────────────
-        The previous implementation used  self.trade_vendor_ids |= new_row
-        (append).  When the many2many_tags widget fires the onchange more
-        than once before the client applies the first response (e.g. adding
-        tags in rapid succession), each call sees trade_vendor_ids = [] and
-        independently creates the same row.  Both deltas reach the client
-        and both get applied → duplicate rows.
+        Recordset assignment (self.trade_vendor_ids = recordset) only sends
+        a diff to the client — it does NOT emit the (5, 0, 0) clear-all
+        command.  When the many2many_tags widget fires onchange multiple
+        times before the client applies the first response (race condition),
+        each call sees trade_vendor_ids = [] on the virtual record and
+        independently creates the same rows.  Both deltas reach the client
+        and are both applied → duplicate rows.
 
-        The fix: build the complete, deduplicated result set and ASSIGN it
-        (self.trade_vendor_ids = result) rather than appending.  This turns
-        the onchange into an idempotent operation — running it any number of
-        times with the same category_ids always produces the same single row
-        per category, so race-condition duplicates are impossible.
+        The definitive fix uses explicit ORM commands starting with (5,0,0),
+        which forces the client to clear ALL rows before applying the new
+        list.  This makes the onchange fully idempotent: running it N times
+        with the same input always yields exactly one row per category.
 
         partner_type inherits from boq_type so Supplier BOQs automatically
         produce supplier-typed rows that appear on the Procurement Dashboard.
         """
         default_type = self.boq_type or 'vendor'
 
-        # Index existing rows by category_id (first occurrence wins if
-        # there are already any duplicates from a previous save).
-        existing_by_cat = {}
+        # Snapshot existing rows: preserve vendor/supplier selections and
+        # partner_type overrides so they survive the clear-and-rebuild.
+        # First occurrence wins if there are already duplicates from a
+        # previous save (this handles legacy data gracefully).
+        existing = {}
         for row in self.trade_vendor_ids:
             cid = row.category_id.id
-            if cid and cid not in existing_by_cat:
-                existing_by_cat[cid] = row
+            if cid and cid not in existing:
+                existing[cid] = {
+                    'partner_type': row.partner_type or default_type,
+                    'vendor_ids':   [(4, v.id) for v in (row.vendor_ids   or [])],
+                    'supplier_ids': [(4, s.id) for s in (row.supplier_ids or [])],
+                }
 
-        TradeVendor = self.env['boq.trade.vendor']
-        result = TradeVendor
-        assigned_cats = set()
+        # (5, 0, 0) — clear all rows on the client before adding new ones.
+        # This is the critical command that prevents duplication.
+        commands = [(5, 0, 0)]
+        seen = set()
 
-        # One row per category currently selected — deduplicated
+        # One (0,0,vals) command per unique selected category
         for cat in self.category_ids:
-            if cat.id in assigned_cats:
-                continue                        # skip if category_ids has dupes
-            assigned_cats.add(cat.id)
-            if cat.id in existing_by_cat:
-                result |= existing_by_cat[cat.id]   # reuse existing (keeps vendors)
-            else:
-                result |= TradeVendor.new({
+            if cat.id in seen:
+                continue
+            seen.add(cat.id)
+            d = existing.get(cat.id, {})
+            vals = {
+                'boq_id':       self._origin.id or False,
+                'category_id':  cat.id,
+                'partner_type': d.get('partner_type', default_type),
+            }
+            if d.get('vendor_ids'):
+                vals['vendor_ids'] = d['vendor_ids']
+            if d.get('supplier_ids'):
+                vals['supplier_ids'] = d['supplier_ids']
+            commands.append((0, 0, vals))
+
+        # Re-append rows for removed categories so the user doesn't lose
+        # their vendor selections by accidentally deselecting a category.
+        for cid, d in existing.items():
+            if cid not in seen:
+                vals = {
                     'boq_id':       self._origin.id or False,
-                    'category_id':  cat.id,
-                    'partner_type': default_type,
-                })
+                    'category_id':  cid,
+                    'partner_type': d.get('partner_type', default_type),
+                }
+                if d.get('vendor_ids'):
+                    vals['vendor_ids'] = d['vendor_ids']
+                if d.get('supplier_ids'):
+                    vals['supplier_ids'] = d['supplier_ids']
+                commands.append((0, 0, vals))
 
-        # Preserve rows whose category was removed so vendor selections
-        # survive an accidental deselect + re-select.
-        for cid, row in existing_by_cat.items():
-            if cid not in assigned_cats:
-                result |= row
-
-        # REPLACE — not append — so the returned command set is always the
-        # complete correct state.  This is the key to idempotency.
-        self.trade_vendor_ids = result
+        self.trade_vendor_ids = commands
 
     @api.onchange('boq_type')
     def _onchange_boq_type(self):
