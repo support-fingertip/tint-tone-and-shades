@@ -1062,6 +1062,93 @@ class BoqBoq(models.Model):
         tree.sort(key=lambda t: t['trade_name'])
         return tree
 
+    # ── NEW Task 1.6 — Approval-pending PO section ────────────────────────
+    @api.model
+    def get_approval_pending_pos(self, dashboard_type='vendor'):
+        """
+        Task 1.6 — Return purchase.order records in 'to approve' state that
+        are linked to BOQs of the given type (vendor / supplier).
+
+        Each entry includes:
+          - po_id, po_name, partner_name, amount_total, currency_symbol
+          - approval_lines: list of {level_name, status, approvers}
+          - has_current_approver: True when the current user is the next approver
+          - date_order
+
+        Used by both Vendor Manager Dashboard and Procurement Manager Dashboard
+        to display their respective "Pending Approvals" sections.
+        """
+        company_ids = self._get_allowed_company_ids()
+        company_domain = [
+            ('company_id', 'in', company_ids),
+            ('boq_type',   '=',  dashboard_type),
+        ]
+        boqs = self.search(company_domain)
+        if not boqs:
+            return []
+
+        # Collect all linked RFQ IDs
+        rfq_ids = []
+        if boqs.ids:
+            self.env.cr.execute(
+                "SELECT purchase_id FROM boq_boq_purchase_order_rel WHERE boq_id IN %s",
+                (tuple(boqs.ids),)
+            )
+            rfq_ids = [r[0] for r in self.env.cr.fetchall()]
+
+        if not rfq_ids:
+            return []
+
+        # Filter to 'to approve' state (approval workflow state)
+        pending_pos = self.env['purchase.order'].browse(rfq_ids).filtered(
+            lambda p: p.state == 'to approve'
+        )
+
+        current_user = self.env.user
+        result = []
+        for po in pending_pos:
+            # Filter by partner_type matching dashboard_type
+            vtype = po.partner_id.partner_type or 'vendor'
+            if dashboard_type == 'supplier' and vtype != 'supplier':
+                continue
+            if dashboard_type == 'vendor' and vtype == 'supplier':
+                continue
+
+            # Build approval lines list
+            approval_lines = []
+            has_current_approver = False
+            for al in po.approval_line_ids.sorted('sequence'):
+                approver_names = ', '.join(al.user_ids.mapped('name')) or '—'
+                is_current = al.status == 'current'
+                if is_current and current_user in al.user_ids:
+                    has_current_approver = True
+                approval_lines.append({
+                    'level_name':    al.level_id.name or '—',
+                    'status':        al.status,
+                    'status_label':  dict(al._fields['status'].selection).get(al.status, al.status),
+                    'approvers':     approver_names,
+                    'is_current':    is_current,
+                    'is_mine':       is_current and current_user in al.user_ids,
+                })
+
+            result.append({
+                'po_id':               po.id,
+                'po_name':             po.name,
+                'partner_name':        po.partner_id.name or '—',
+                'amount_total':        po.amount_total,
+                'amount_untaxed':      po.amount_untaxed,
+                'currency_symbol':     po.currency_id.symbol or '$',
+                'date_order':          po.date_order.strftime('%d %b %Y') if po.date_order else '',
+                'approval_lines':      approval_lines,
+                'has_current_approver': has_current_approver,
+                'approval_count':      len(approval_lines),
+                'approved_count':      len([a for a in approval_lines if a['status'] == 'approved']),
+            })
+
+        # Sort: POs where current user is next approver first, then by amount
+        result.sort(key=lambda x: (-x['has_current_approver'], -x['amount_total']))
+        return result
+
     @api.model
     def get_vendor_boq_lines(self, vendor_id):
         """

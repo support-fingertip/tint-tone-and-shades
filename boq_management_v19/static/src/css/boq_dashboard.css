@@ -998,3 +998,108 @@
     color: #0d6efd;
     border-color: #0d6efd;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   TASK 1 — Header icon blocks for the two dashboards
+   ══════════════════════════════════════════════════════════════ */
+
+.boq_dash_header_icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+.boq_hdr_vendor   { background: rgba(13,110,253,.15); color: #0d6efd; }
+.boq_hdr_supplier { background: rgba(25,135,84,.15);  color: #198754; }
+
+/* Search bar in header */
+.boq_header_search {
+    width: 220px;
+}
+.boq_header_search .form-control {
+    background: #fff;
+    color: #212529;
+    border-color: #ced4da;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TASK 1.6 — Pending Approvals Section
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Section header ─────────────────────────────────────────── */
+.boq_approval_section_header {
+    padding-top: 4px;
+}
+
+/* ── Approval table container ───────────────────────────────── */
+.boq_approval_table {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* ── Header row ─────────────────────────────────────────────── */
+.boq_approval_thead {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #6c757d;
+    gap: 12px;
+}
+
+/* ── Data row ───────────────────────────────────────────────── */
+.boq_approval_row {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 12px;
+    border-bottom: 1px solid #f0f2f5;
+    transition: background 0.12s;
+}
+.boq_approval_row:last-child { border-bottom: none; }
+.boq_approval_row:hover      { background: #f8f9fa; }
+
+/* Highlight rows where it's the current user's turn */
+.boq_approval_row_mine {
+    background: #fff8e1 !important;
+    border-left: 3px solid #ffc107;
+}
+.boq_approval_row_mine:hover { background: #fff3cd !important; }
+
+/* ── Column widths ──────────────────────────────────────────── */
+.boq_approval_col_ref      { flex: 0 0 180px; min-width: 0; }
+.boq_approval_col_partner  { flex: 0 0 150px; min-width: 0;
+                              white-space: nowrap; overflow: hidden;
+                              text-overflow: ellipsis; font-size: .87rem; }
+.boq_approval_col_amount   { flex: 0 0 130px; text-align: right;
+                              font-size: .87rem; }
+.boq_approval_col_progress { flex: 1; min-width: 0; }
+.boq_approval_col_action   { flex: 0 0 130px; text-align: right;
+                              display: flex; align-items: center;
+                              justify-content: flex-end; gap: 6px; }
+
+/* ── Approval level pill ────────────────────────────────────── */
+.boq_approval_pill {
+    font-size: 0.74rem;
+    padding: 3px 8px;
+}
+
+/* Pulse on pills that are the current user's turn */
+.boq_approval_pill_mine {
+    animation: boq_pulse 1.8s ease-in-out infinite;
+    outline: 2px solid #ffc107;
+    outline-offset: 1px;
+}
+
+/* Approval stat card accent */
+.boq_stat_card_approval {
+    border-left: 3px solid #dc3545 !important;
+}

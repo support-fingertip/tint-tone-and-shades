@@ -1,60 +1,67 @@
 /** @odoo-module **/
 /**
- * BOQ Manager Dashboard — Odoo 19 OWL Component
+ * BOQ Manager Dashboards — Odoo 19 OWL Components
+ * =================================================
  *
- * Task 1  — Two separate dashboards: Vendor Manager & Procurement Manager
- * Task 2  — Expandable Trade → Vendor → RFQ tree structure
- * Task 4  — Renamed labels, removed "lines", payment status visibility,
- *            Draft → "Quote Requested" label
- * Task 5  — Multi-company: passes allowed_company_ids in RPC context
+ * Architecture: ONE shared base class, TWO registered subclasses.
+ * Each subclass gets its own ir.actions.client tag and its own menu
+ * item → truly separate pages, not a toggle.
  *
- * One component class (BoqManagerDashboard) is registered under TWO action
- * tags.  The dashboard_type ('vendor' | 'supplier') is read from the
- * ir.actions.client context so each menu page gets its own data scope.
+ *  VendorManagerDashboard          → tag: boq_management_v19.vendor_manager_dashboard_action
+ *  ProcurementManagerDashboard     → tag: boq_management_v19.procurement_manager_dashboard_action
+ *
+ * Task 1  — Two fully separate menu pages (different component + tag)
+ * Task 1.6— Approval-pending PO section per dashboard
+ * Task 2  — Expandable Trade → Vendor → RFQ tree (3 levels)
+ * Task 4  — Renamed labels, no "lines", payment badge on vendor row,
+ *            Draft → "Quote Requested"
+ * Task 5  — Multi-company: orm service auto-includes allowed_company_ids
  */
 
 import { Component, useState, onWillStart } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Shared helpers ──────────────────────────────────────────────────────────
 
 function formatCurrency(value, symbol, position) {
-    const formatted = Number(value || 0).toLocaleString(undefined, {
+    const n = Number(value || 0).toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     });
-    return position === "after" ? `${formatted} ${symbol}` : `${symbol}${formatted}`;
+    return position === "after" ? `${n} ${symbol}` : `${symbol}${n}`;
 }
 
-function paymentStatusClass(status) {
-    const map = {
-        paid:       "bg-success",
-        in_payment: "bg-info",
-        partial:    "bg-warning text-dark",
-        not_paid:   "bg-secondary",
-    };
-    return map[status] || "bg-secondary";
+function paymentStatusClass(s) {
+    return { paid: "bg-success", in_payment: "bg-info",
+             partial: "bg-warning text-dark", not_paid: "bg-secondary" }[s]
+        || "bg-secondary";
 }
 
-function rfqStateClass(state) {
-    const map = {
-        draft:        "bg-secondary",
-        sent:         "bg-primary",
-        submitted:    "bg-warning text-dark",
-        "to approve": "bg-info",
-        purchase:     "bg-success",
-        done:         "bg-success",
-        cancel:       "bg-danger",
-    };
-    return map[state] || "bg-secondary";
+function rfqStateClass(s) {
+    return { draft: "bg-secondary", sent: "bg-primary",
+             submitted: "bg-warning text-dark", "to approve": "bg-info",
+             purchase: "bg-success", done: "bg-success",
+             cancel: "bg-danger" }[s]
+        || "bg-secondary";
+}
+
+function approvalStatusClass(s) {
+    return { pending: "bg-secondary", current: "bg-warning text-dark",
+             approved: "bg-success", rejected: "bg-danger" }[s]
+        || "bg-secondary";
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// BoqManagerDashboard — single class, two registrations
+//  BASE CLASS — all logic lives here
 // ═══════════════════════════════════════════════════════════════════════════════
-export class BoqManagerDashboard extends Component {
-    static template = "boq_management_v19.BoqManagerDashboard";
+class BoqManagerDashboardBase extends Component {
+    /**
+     * Subclasses MUST define:
+     *   static DASHBOARD_TYPE = "vendor" | "supplier";
+     *   static template       = "boq_management_v19.VendorManagerDashboard"
+     *                         | "boq_management_v19.ProcurementManagerDashboard";
+     */
     static props = {
         action:            { type: Object,   optional: true },
         actionId:          { optional: true },
@@ -68,63 +75,55 @@ export class BoqManagerDashboard extends Component {
         this.actionSvc    = useService("action");
         this.notification = useService("notification");
 
-        // Determine dashboard type from action context (set in ir.actions.client)
-        const ctx = this.props.action?.context || {};
-        this.dashboardType = ctx.dashboard_type || "vendor";
-
         this.state = useState({
-            loading:       true,
-            error:         null,
-            stats:         {},
-            tree:          [],          // hierarchical trade→vendor→rfq data
-            expandedTrades: {},          // {trade_id: bool}
-            expandedVendors: {},         // {vendor_id: bool}
-            filterText:    "",
+            loading:          true,
+            error:            null,
+            stats:            {},
+            tree:             [],   // Level 1: trades → Level 2: vendors → Level 3: rfqs
+            approvalPOs:      [],   // Task 1.6 — POs awaiting approval
+            expandedTrades:   {},   // { trade_id: bool }
+            expandedVendors:  {},   // { vendor_id: bool }
+            filterText:       "",
         });
 
         onWillStart(() => this._loadAll());
     }
 
-    // ── Labels based on dashboard type ──────────────────────────────────
+    // ── Dashboard identity ────────────────────────────────────────────────
+    get dashboardType()     { return this.constructor.DASHBOARD_TYPE; }
+    get isVendorDashboard() { return this.dashboardType === "vendor"; }
+
     get dashboardTitle() {
-        return this.dashboardType === "vendor"
+        return this.isVendorDashboard
             ? "Vendor Manager Dashboard"
             : "Procurement Manager Dashboard";
     }
 
     get dashboardSubtitle() {
-        return this.dashboardType === "vendor"
+        return this.isVendorDashboard
             ? "Trade-wise Vendor RFQ summary — Installation & Services"
             : "Trade-wise Supplier RFQ summary — Supply & Procurement";
     }
 
-    get partnerLabel() {
-        return this.dashboardType === "vendor" ? "Vendor" : "Supplier";
-    }
+    get dashboardIcon()  { return this.isVendorDashboard ? "fa-industry" : "fa-truck"; }
+    get partnerLabel()   { return this.isVendorDashboard ? "Vendor" : "Supplier"; }
+    get dashboardColor() { return this.isVendorDashboard ? "text-primary" : "text-success"; }
 
-    get dashboardIcon() {
-        return this.dashboardType === "vendor" ? "fa-industry" : "fa-truck";
-    }
-
-    // ── Data loading ─────────────────────────────────────────────────────
-    // Task 5 — Multi-company: Odoo's orm service automatically includes
-    // allowed_company_ids in the RPC context from the company switcher, so
-    // self.env.context.get('allowed_company_ids') on the Python side is
-    // populated correctly without any extra work here.
+    // ── Data loading ──────────────────────────────────────────────────────
+    // Task 5: Odoo's orm service automatically includes allowed_company_ids
+    // in every RPC context (populated by the company switcher), so
+    // self.env.context.get('allowed_company_ids') in Python is always correct.
     async _loadAll() {
         try {
-            const [stats, tree] = await Promise.all([
-                this.orm.call(
-                    "boq.boq", "get_dashboard_stats",
-                    [], { dashboard_type: this.dashboardType }
-                ),
-                this.orm.call(
-                    "boq.boq", "get_dashboard_tree_data",
-                    [], { dashboard_type: this.dashboardType }
-                ),
+            const dt = this.dashboardType;
+            const [stats, tree, approvalPOs] = await Promise.all([
+                this.orm.call("boq.boq", "get_dashboard_stats",       [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_dashboard_tree_data",   [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_approval_pending_pos",  [], { dashboard_type: dt }),
             ]);
-            this.state.stats = stats;
-            this.state.tree  = tree;
+            this.state.stats       = stats;
+            this.state.tree        = tree;
+            this.state.approvalPOs = approvalPOs;
         } catch (err) {
             this.state.error = err.message || "Failed to load dashboard data.";
         } finally {
@@ -133,14 +132,14 @@ export class BoqManagerDashboard extends Component {
     }
 
     async refresh() {
-        this.state.loading = true;
-        this.state.error   = null;
+        this.state.loading         = true;
+        this.state.error           = null;
         this.state.expandedTrades  = {};
         this.state.expandedVendors = {};
         await this._loadAll();
     }
 
-    // ── Tree expand/collapse ─────────────────────────────────────────────
+    // ── Tree expand / collapse ────────────────────────────────────────────
     toggleTrade(tradeId) {
         this.state.expandedTrades = {
             ...this.state.expandedTrades,
@@ -155,46 +154,55 @@ export class BoqManagerDashboard extends Component {
         };
     }
 
-    isTradeExpanded(tradeId)   { return !!this.state.expandedTrades[tradeId]; }
-    isVendorExpanded(vendorId) { return !!this.state.expandedVendors[vendorId]; }
+    isTradeExpanded(id)  { return !!this.state.expandedTrades[id];  }
+    isVendorExpanded(id) { return !!this.state.expandedVendors[id]; }
 
-    // ── Filtered tree ────────────────────────────────────────────────────
+    // ── Computed: filtered tree ───────────────────────────────────────────
     get filteredTree() {
         const q = (this.state.filterText || "").toLowerCase().trim();
         if (!q) return this.state.tree;
-        return this.state.tree.filter(trade => {
-            if ((trade.trade_name || "").toLowerCase().includes(q)) return true;
-            return (trade.vendors || []).some(v =>
+        return this.state.tree.filter(trade =>
+            (trade.trade_name || "").toLowerCase().includes(q) ||
+            (trade.vendors || []).some(v =>
                 (v.vendor_name || "").toLowerCase().includes(q)
-            );
-        });
+            )
+        );
     }
 
-    // ── Summary totals ───────────────────────────────────────────────────
+    // ── Computed: summary totals ──────────────────────────────────────────
     get treeTotals() {
-        const tree = this.filteredTree;
+        const t = this.filteredTree;
         return {
-            trades:    tree.length,
-            rfqs:      tree.reduce((s, t) => s + (t.rfq_count     || 0), 0),
-            pending:   tree.reduce((s, t) => s + (t.pending_count  || 0), 0),
-            submitted: tree.reduce((s, t) => s + (t.submitted_count|| 0), 0),
-            value:     tree.reduce((s, t) => s + (t.total_value    || 0), 0),
-            vendors:   tree.reduce((s, t) => s + (t.vendor_count   || 0), 0),
+            trades:    t.length,
+            vendors:   t.reduce((s, r) => s + (r.vendor_count    || 0), 0),
+            rfqs:      t.reduce((s, r) => s + (r.rfq_count       || 0), 0),
+            pending:   t.reduce((s, r) => s + (r.pending_count   || 0), 0),
+            submitted: t.reduce((s, r) => s + (r.submitted_count || 0), 0),
+            value:     t.reduce((s, r) => s + (r.total_value     || 0), 0),
         };
     }
 
-    // ── Currency helpers ─────────────────────────────────────────────────
-    get currencySymbol()   { return this.state.stats.currency_symbol   || "$"; }
-    get currencyPosition() { return this.state.stats.currency_position || "before"; }
-    fmtCurrency(val) {
-        return formatCurrency(val, this.currencySymbol, this.currencyPosition);
+    // ── Computed: approval totals ─────────────────────────────────────────
+    get approvalTotals() {
+        const pos = this.state.approvalPOs || [];
+        return {
+            count:   pos.length,
+            value:   pos.reduce((s, p) => s + (p.amount_total || 0), 0),
+            current: pos.filter(p => p.has_current_approver).length,
+        };
     }
 
-    // ── CSS class helpers ────────────────────────────────────────────────
-    paymentStatusClass(s)  { return paymentStatusClass(s); }
-    rfqStateClass(s)        { return rfqStateClass(s); }
+    // ── Currency helpers ──────────────────────────────────────────────────
+    get currencySymbol()   { return this.state.stats.currency_symbol   || "$"; }
+    get currencyPosition() { return this.state.stats.currency_position || "before"; }
+    fmtCurrency(val) { return formatCurrency(val, this.currencySymbol, this.currencyPosition); }
 
-    // ── Navigation ───────────────────────────────────────────────────────
+    // ── CSS helpers ───────────────────────────────────────────────────────
+    paymentStatusClass(s)  { return paymentStatusClass(s);  }
+    rfqStateClass(s)       { return rfqStateClass(s);       }
+    approvalStatusClass(s) { return approvalStatusClass(s); }
+
+    // ── Navigation ────────────────────────────────────────────────────────
     openAllBoqs() {
         this.actionSvc.doAction({
             type:      "ir.actions.act_window",
@@ -209,7 +217,7 @@ export class BoqManagerDashboard extends Component {
     openRfqs() {
         this.actionSvc.doAction({
             type:      "ir.actions.act_window",
-            name:      this.dashboardType === "vendor" ? "Vendor RFQs" : "Supplier RFQs",
+            name:      this.isVendorDashboard ? "Vendor RFQs" : "Supplier RFQs",
             res_model: "purchase.order",
             views:     [[false, "list"], [false, "form"]],
             target:    "current",
@@ -227,20 +235,10 @@ export class BoqManagerDashboard extends Component {
         });
     }
 
-    openTradeRfqs(tradeCode, tradeName) {
-        this.actionSvc.doAction({
-            type:      "ir.actions.act_window",
-            name:      `RFQs — ${tradeName}`,
-            res_model: "purchase.order",
-            views:     [[false, "list"], [false, "form"]],
-            target:    "current",
-        });
-    }
-
     openRfq(rfqId) {
         this.actionSvc.doAction({
             type:      "ir.actions.act_window",
-            name:      "RFQ",
+            name:      "Purchase Order",
             res_model: "purchase.order",
             res_id:    rfqId,
             views:     [[false, "form"]],
@@ -248,11 +246,42 @@ export class BoqManagerDashboard extends Component {
         });
     }
 
+    openApprovalPos() {
+        this.actionSvc.doAction({
+            type:      "ir.actions.act_window",
+            name:      "POs Awaiting Approval",
+            res_model: "purchase.order",
+            views:     [[false, "list"], [false, "form"]],
+            domain:    [["state", "=", "to approve"]],
+            target:    "current",
+        });
+    }
+
     clearFilter() { this.state.filterText = ""; }
 }
 
-// Register under TWO action tags — each menu item points to its own tag
+// ═══════════════════════════════════════════════════════════════════════════════
+//  VENDOR MANAGER DASHBOARD — separate component, separate action tag
+// ═══════════════════════════════════════════════════════════════════════════════
+export class VendorManagerDashboard extends BoqManagerDashboardBase {
+    static DASHBOARD_TYPE = "vendor";
+    static template       = "boq_management_v19.VendorManagerDashboard";
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  PROCUREMENT MANAGER DASHBOARD — separate component, separate action tag
+// ═══════════════════════════════════════════════════════════════════════════════
+export class ProcurementManagerDashboard extends BoqManagerDashboardBase {
+    static DASHBOARD_TYPE = "supplier";
+    static template       = "boq_management_v19.ProcurementManagerDashboard";
+}
+
+// ── Register each under its OWN tag ─────────────────────────────────────────
 registry.category("actions").add(
-    "boq_management_v19.manager_dashboard_action",
-    BoqManagerDashboard
+    "boq_management_v19.vendor_manager_dashboard_action",
+    VendorManagerDashboard
+);
+registry.category("actions").add(
+    "boq_management_v19.procurement_manager_dashboard_action",
+    ProcurementManagerDashboard
 );
