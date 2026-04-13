@@ -379,16 +379,20 @@ class BoqBoq(models.Model):
     def _onchange_category_ids(self):
         """
         When a work category is added, automatically insert a row in the
-        Vendor / Supplier Assignment table so the user only needs to set the
-        Type and pick partners — no manual 'Add a line' needed.
-        Existing rows are preserved; rows for removed categories are left so
-        the user doesn't accidentally lose partner selections.
+        Vendor / Supplier Assignment table so the user only needs to pick
+        partners — no manual 'Add a line' needed.
+
+        The auto-created row inherits partner_type from boq_type so that:
+          • Vendor BOQs  → rows default to partner_type = 'vendor'
+          • Supplier BOQs → rows default to partner_type = 'supplier'
+
+        This ensures the correct dashboard picks them up.
 
         BUG 3 FIX: Compare by category ID (integer set) instead of recordset
-        membership to avoid false misses on virtual/new records, and track
-        IDs added within the same call to prevent double-insertion when
-        onchange fires more than once for a multi-select widget event.
+        membership to avoid false misses on virtual/new records, and guard
+        IDs added within the same call to prevent double-insertion.
         """
+        default_type = self.boq_type or 'vendor'
         existing_cat_ids = set(self.trade_vendor_ids.mapped('category_id').ids)
         TradeVendor = self.env['boq.trade.vendor']
         for cat in self.category_ids:
@@ -397,8 +401,28 @@ class BoqBoq(models.Model):
                 self.trade_vendor_ids |= TradeVendor.new({
                     'boq_id': self._origin.id or False,
                     'category_id': cat.id,
-                    'partner_type': 'vendor',
+                    'partner_type': default_type,
                 })
+
+    @api.onchange('boq_type')
+    def _onchange_boq_type(self):
+        """
+        When the user changes BOQ type (Vendor ↔ Supplier), update all
+        trade assignment rows that still carry the OLD default partner_type
+        so the right dashboard picks them up.
+
+        Only rows where partner_type was never manually changed by the user
+        (i.e. still matches the previous boq_type default) are updated.
+        Rows that were explicitly set to the opposite type are left alone.
+        """
+        if not self.boq_type:
+            return
+        for row in self.trade_vendor_ids:
+            # Update rows that carry a boq-level default (vendor or supplier)
+            # but DON'T touch rows explicitly set to the other type, in case
+            # the user intentionally mixed types on a single BOQ.
+            if row.partner_type != self.boq_type:
+                row.partner_type = self.boq_type
 
     # ── Sequence / Create ─────────────────────────────────────────────────
     @api.model_create_multi
