@@ -203,6 +203,117 @@
 
             </div><!-- /stat cards -->
 
+            <!-- ╔════════════════════════════════════════════════════╗
+                 ║  VENDOR SUMMARY CARDS                              ║
+                 ║  One card per vendor/supplier — flat overview of   ║
+                 ║  RFQ count, total value, margin %, payment status  ║
+                 ╚════════════════════════════════════════════════════╝ -->
+            <t t-if="state.vendorSummary.length > 0">
+                <div class="px-4 pb-2">
+
+                    <div class="boq_section_header d-flex align-items-center
+                                justify-content-between mb-3">
+                        <h5 class="mb-0 fw-bold boq_section_title">
+                            <i t-attf-class="fa #{ dashboardIcon } me-2 text-primary"/>
+                            <t t-esc="partnerLabel"/> Summary
+                            <span class="badge bg-primary rounded-pill ms-2 small">
+                                <t t-esc="state.vendorSummary.length"/>
+                            </span>
+                        </h5>
+                    </div>
+
+                    <!-- Horizontally scrollable vendor cards row -->
+                    <div class="boq_vendor_cards_scroll">
+                        <div class="boq_vendor_cards_row">
+
+                            <t t-foreach="state.vendorSummary" t-as="vs" t-key="vs.vendor_id">
+                                <div class="boq_vendor_card"
+                                     t-on-click="() => this.openVendorRfqs(vs.vendor_id, vs.vendor_name)"
+                                     style="cursor:pointer;">
+
+                                    <!-- Avatar + name + email -->
+                                    <div class="boq_vc_header d-flex align-items-center gap-2 mb-3">
+                                        <div class="boq_vendor_avatar">
+                                            <t t-esc="(vs.vendor_name || '?').charAt(0).toUpperCase()"/>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="fw-semibold text-truncate boq_vc_name"
+                                                 t-esc="vs.vendor_name"/>
+                                            <div t-if="vs.vendor_email"
+                                                 class="text-muted small text-truncate"
+                                                 t-esc="vs.vendor_email"/>
+                                        </div>
+                                    </div>
+
+                                    <!-- Key metrics -->
+                                    <div class="boq_vc_metrics d-flex flex-wrap gap-2 mb-3">
+
+                                        <!-- RFQ count -->
+                                        <div class="boq_vc_metric">
+                                            <div class="boq_vc_metric_value text-primary">
+                                                <t t-esc="vs.rfq_count"/>
+                                            </div>
+                                            <div class="boq_vc_metric_label">RFQs</div>
+                                        </div>
+
+                                        <!-- Total value -->
+                                        <div class="boq_vc_metric">
+                                            <div class="boq_vc_metric_value small">
+                                                <t t-esc="fmtCurrency(vs.total_value)"/>
+                                            </div>
+                                            <div class="boq_vc_metric_label">Total Value</div>
+                                        </div>
+
+                                        <!-- Margin % -->
+                                        <t t-if="vs.margin_percent != null">
+                                            <div class="boq_vc_metric">
+                                                <div t-attf-class="boq_vc_metric_value #{ vs.margin_percent >= 20 ? 'text-success' : vs.margin_percent >= 10 ? 'text-warning' : 'text-danger' }">
+                                                    <t t-esc="vs.margin_percent.toFixed(1)"/>%
+                                                </div>
+                                                <div class="boq_vc_metric_label">Margin</div>
+                                            </div>
+                                        </t>
+
+                                    </div>
+
+                                    <!-- Footer: payment badge + RFQ states + open link -->
+                                    <div class="boq_vc_footer d-flex align-items-center
+                                                justify-content-between flex-wrap gap-1">
+
+                                        <span t-attf-class="badge #{ paymentStatusClass(vs.payment_status) } rounded-pill">
+                                            <t t-esc="vs.payment_status_label"/>
+                                        </span>
+
+                                        <span t-if="vs.rfq_states and vs.rfq_states !== '—'"
+                                              class="badge bg-light text-dark border rounded-pill small">
+                                            <t t-esc="vs.rfq_states"/>
+                                        </span>
+
+                                        <span class="boq_vc_open ms-auto"
+                                              t-on-click.stop="() => this.openVendorContact(vs.vendor_id)"
+                                              title="Open contact">
+                                            <i class="fa fa-user text-muted"/>
+                                        </span>
+
+                                    </div>
+
+                                    <!-- Projects (if any) -->
+                                    <t t-if="vs.project_names and vs.project_names !== '—'">
+                                        <div class="boq_vc_projects text-muted small mt-2 text-truncate">
+                                            <i class="fa fa-briefcase me-1"/>
+                                            <t t-esc="vs.project_names"/>
+                                        </div>
+                                    </t>
+
+                                </div><!-- /vendor card -->
+                            </t>
+
+                        </div><!-- /cards row -->
+                    </div><!-- /scroll wrapper -->
+
+                </div><!-- /vendor summary px-4 -->
+            </t><!-- /vendor summary -->
+
             <!-- ── SUMMARY CHIPS BAR ─────────────────────── -->
             <div class="boq_tree_summary_bar d-flex flex-wrap gap-2 px-4 pb-3">
                 <span class="boq_totals_chip">

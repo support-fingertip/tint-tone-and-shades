@@ -110,6 +110,105 @@
     margin-top: 4px;
 }
 
+/* ── Vendor Summary Cards ────────────────────────────────────── */
+/* Horizontal scroll row so all cards stay on one line           */
+.boq_vendor_cards_scroll {
+    overflow-x: auto;
+    padding-bottom: 8px;
+}
+
+.boq_vendor_cards_row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: nowrap;
+    min-width: max-content;
+}
+
+.boq_vendor_card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 14px;
+    padding: 18px 20px;
+    width: 240px;
+    flex-shrink: 0;
+    transition: box-shadow 0.18s, transform 0.18s;
+    cursor: pointer;
+}
+
+.boq_vendor_card:hover {
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.boq_vendor_avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.boq_vc_name {
+    font-size: 0.92rem;
+    max-width: 160px;
+}
+
+.boq_vc_metrics {
+    border-top: 1px solid #f0f2f5;
+    padding-top: 10px;
+}
+
+.boq_vc_metric {
+    text-align: center;
+    min-width: 60px;
+}
+
+.boq_vc_metric_value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.boq_vc_metric_label {
+    font-size: 0.72rem;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.boq_vc_footer {
+    border-top: 1px solid #f0f2f5;
+    padding-top: 10px;
+}
+
+.boq_vc_open {
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.boq_vc_open:hover {
+    background: #f0f2f5;
+}
+
+.boq_vc_projects {
+    font-size: 0.75rem;
+    border-top: 1px solid #f0f2f5;
+    padding-top: 6px;
+}
+
+/* Section title shared style */
+.boq_section_title {
+    font-size: 1rem;
+    color: #212529;
+}
+
 /* ── Vendor Grid ─────────────────────────────────────────────── */
 .boq_vendor_grid {
     display: grid;
