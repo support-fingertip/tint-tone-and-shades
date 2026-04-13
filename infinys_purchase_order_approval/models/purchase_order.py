@@ -10,6 +10,11 @@ class PurchaseOrder(models.Model):
         string='Approval Lines', readonly=True,
     )
 
+    state = fields.Selection(
+        selection_add=[('to approve', 'To Approve')],
+        ondelete={'to approve': 'set default'},
+    )
+
     is_admin = fields.Boolean(
         string='Is Admin', compute='_compute_is_admin',
     )
@@ -22,11 +27,6 @@ class PurchaseOrder(models.Model):
 
     def button_confirm(self):
         self.ensure_one()
-
-        # Admin users can always confirm directly
-        if self.env.user.has_group('base.group_system'):
-            self._cleanup_approval_activities()
-            return super(PurchaseOrder, self).button_confirm()
 
         # If approval lines exist and all approved, final confirm
         if self.approval_line_ids and all(
@@ -49,6 +49,7 @@ class PurchaseOrder(models.Model):
 
         # Now check if approval is required based on amount
         required_levels = self.env['purchase.approval.level'].search([
+            ('company_id', '=', self.company_id.id),
             ('minimum_amount', '<=', self.amount_total),
             '|',
             ('maximum_amount', '>=', self.amount_total),
@@ -129,18 +130,6 @@ class PurchaseOrder(models.Model):
     def button_approve(self, force=False):
         self.ensure_one()
         if self.state == 'to approve' and self.approval_line_ids:
-            # Admin can bypass
-            if self.env.user.has_group('base.group_system'):
-                self._cleanup_approval_activities()
-                self.write({
-                    'state': 'purchase',
-                    'date_approve': fields.Datetime.now(),
-                })
-                self.filtered(
-                    lambda p: p.lock_confirmed_po == 'lock'
-                ).write({'locked': True})
-                return {}
-
             all_approved = all(
                 line.status == 'approved' for line in self.approval_line_ids
             )

@@ -15,10 +15,11 @@
     "license": "LGPL-3",
     "category": "Purchases",
     "version": "19.0.1.0.0",
-    "depends": ["base", "purchase", "mail"],
+    "depends": ["base", "purchase", "mail", "infinys_margin_validation"],
     # always loaded
     "data": [
         "security/ir.model.access.csv",
+        "security/ir_rule.xml",
         "views/purchase_approval_level_views.xml",
         "views/purchase_order_views.xml",
         "views/purchase_reporting_views.xml",
