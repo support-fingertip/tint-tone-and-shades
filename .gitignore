@@ -1,0 +1,18 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Odoo compiled assets
+/static/description/index.html
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
