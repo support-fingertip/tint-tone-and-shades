@@ -3,8 +3,11 @@
 
     <!-- ══════════════════════════════════════════════════════════
          BOQ MANAGEMENT — Application Menu (Odoo 19 Enterprise)
-         NEW TASK 1: Renamed "RFQs from BOQ" → "Vendor RFQ"
-                     Added "Supplier RFQ" menu
+         ========================================================
+         Task 1: Replaced single "Dashboard" menu with two separate pages:
+           - "Vendor Manager Dashboard"      (seq 5)
+           - "Procurement Manager Dashboard" (seq 6)
+         Task 1: Vendor RFQ / Supplier RFQ split menus retained.
     ══════════════════════════════════════════════════════════ -->
 
     <!-- Root app menu -->
@@ -14,12 +17,19 @@
               web_icon="boq_management_v19,static/src/img/boq_icon.png"
               groups="boq_management_v19.group_boq_user"/>
 
-    <!-- Dashboard -->
-    <menuitem id="menu_boq_dashboard"
-              name="Dashboard"
+    <!-- ── Task 1: TWO separate dashboard menu items ── -->
+    <menuitem id="menu_vendor_manager_dashboard"
+              name="Vendor Manager Dashboard"
               parent="menu_boq_root"
-              action="action_boq_dashboard"
+              action="action_vendor_manager_dashboard"
               sequence="5"
+              groups="boq_management_v19.group_boq_user"/>
+
+    <menuitem id="menu_procurement_manager_dashboard"
+              name="Procurement Manager Dashboard"
+              parent="menu_boq_root"
+              action="action_procurement_manager_dashboard"
+              sequence="6"
               groups="boq_management_v19.group_boq_user"/>
 
     <!-- ── Main BOQ section ── -->
@@ -40,13 +50,12 @@
               action="action_boq_boq"
               sequence="20"/>
 
-    <!-- ── NEW TASK 1 — RFQ section (Vendor + Supplier split) ── -->
+    <!-- ── RFQ section (Vendor + Supplier split) ── -->
     <menuitem id="menu_boq_rfq"
               name="RFQ"
               parent="menu_boq_root"
               sequence="30"/>
 
-    <!-- NEW TASK 1 — Vendor RFQ (renamed from "RFQs from BOQ") -->
     <menuitem id="menu_boq_vendor_rfq"
               name="Vendor RFQ"
               parent="menu_boq_rfq"
@@ -54,7 +63,6 @@
               sequence="10"
               groups="boq_management_v19.group_boq_user"/>
 
-    <!-- NEW TASK 1 — Supplier RFQ (partner_type = supplier) -->
     <menuitem id="menu_boq_supplier_rfq"
               name="Supplier RFQ"
               parent="menu_boq_rfq"
@@ -76,7 +84,6 @@
               sequence="20"
               groups="boq_management_v19.group_boq_manager"/>
 
-    <!-- NEW TASK 4 — Vendor Ratings in Reporting -->
     <menuitem id="menu_boq_vendor_ratings"
               name="Vendor Ratings"
               parent="menu_boq_report"
@@ -85,7 +92,6 @@
               groups="boq_management_v19.group_boq_manager"/>
 
     <!-- ── Purchase app — Vendor RFQ / Supplier RFQ sub-menus ── -->
-    <!-- Adds BOQ-typed RFQ views directly into the standard Purchase application -->
     <menuitem id="menu_purchase_boq_vendor_rfq"
               name="Vendor RFQ"
               parent="purchase.menu_purchase_rfq"

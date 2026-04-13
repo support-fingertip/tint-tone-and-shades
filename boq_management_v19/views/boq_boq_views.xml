@@ -104,6 +104,12 @@
                         <field name="company_id"
                                options="{'no_create': True}"
                                groups="base.group_multi_company"/>
+                        <!--
+                            Task 4.4 — BOQ Type toggle.
+                            Vendor   → Vendor Manager Dashboard
+                            Supplier → Procurement Manager Dashboard
+                        -->
+                        <field name="boq_type" widget="radio"/>
                     </group>
                 </group>
 

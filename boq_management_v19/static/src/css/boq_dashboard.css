@@ -789,3 +789,212 @@
         width: 100%;
     }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   TASK 2 — 3-Level Expandable Tree: Trade → Vendor → RFQ
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Tree container ─────────────────────────────────────────── */
+.boq_tree_table {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* ── Generic tree row ───────────────────────────────────────── */
+.boq_tree_row {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    min-height: 46px;
+    border-bottom: 1px solid #f0f2f5;
+    transition: background 0.12s;
+    gap: 8px;
+    user-select: none;
+}
+.boq_tree_row:last-child {
+    border-bottom: none;
+}
+
+/* ── Level 1 — Trade row ────────────────────────────────────── */
+.boq_trade_row {
+    background: #f8f9fa;
+    cursor: pointer;
+    font-size: 0.92rem;
+    padding-left: 16px;
+}
+.boq_trade_row:hover {
+    background: #e8f0fe !important;
+}
+.boq_trade_row_open {
+    background: #e8f0fe !important;
+    border-left: 3px solid #0d6efd;
+}
+
+/* ── Level 2 — Vendor row ───────────────────────────────────── */
+.boq_vendor_row {
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.88rem;
+    padding-left: 32px;
+    border-left: 3px solid transparent;
+}
+.boq_vendor_row:hover {
+    background: #f0f4ff !important;
+}
+.boq_vendor_row_open {
+    background: #f0f4ff !important;
+    border-left-color: #6ea8fe;
+}
+
+/* ── Level 3 — RFQ row ──────────────────────────────────────── */
+.boq_rfq_row {
+    background: #fff;
+    font-size: 0.84rem;
+    padding-left: 68px;
+    border-left: 3px solid transparent;
+    color: #495057;
+}
+.boq_rfq_row:hover {
+    background: #f8f9fa !important;
+}
+/* Highlight recently submitted RFQs (Task 2.6) */
+.boq_rfq_row_new {
+    background: #fff8e1 !important;
+    border-left-color: #ffc107;
+}
+.boq_rfq_row_new:hover {
+    background: #fff3cd !important;
+}
+
+/* ── Empty / informational rows ─────────────────────────────── */
+.boq_empty_row {
+    cursor: default !important;
+    min-height: 36px;
+    background: #fafafa !important;
+}
+.boq_empty_row:hover {
+    background: #fafafa !important;
+}
+
+/* ── Expand chevron icon ────────────────────────────────────── */
+.boq_tree_expand_icon {
+    width: 18px;
+    flex-shrink: 0;
+    color: #6c757d;
+    font-size: 0.75rem;
+    transition: transform 0.15s;
+}
+
+/* ── Tree label (main text cell) ────────────────────────────── */
+.boq_tree_label {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Chips / badges area ────────────────────────────────────── */
+.boq_tree_chips {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* ── Value column ───────────────────────────────────────────── */
+.boq_tree_value {
+    font-size: 0.875rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 110px;
+    text-align: right;
+}
+
+/* ── Action icon (external link) ────────────────────────────── */
+.boq_tree_action {
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+    cursor: pointer;
+}
+.boq_tree_row:hover .boq_tree_action {
+    opacity: 1;
+}
+
+/* ── Indent spacers ─────────────────────────────────────────── */
+.boq_tree_indent {
+    width: 20px;
+    flex-shrink: 0;
+    display: inline-block;
+}
+
+/* ── Vendor avatar (small, inside tree) ─────────────────────── */
+.boq_vendor_avatar_sm {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0d6efd, #6610f2);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+/* ── "New / Recently Submitted" badge (notification style) ──── */
+.boq_badge_new {
+    background: linear-gradient(135deg, #ff9800, #f44336) !important;
+    color: #fff !important;
+    animation: boq_pulse 2s ease-in-out infinite;
+}
+@keyframes boq_pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); }
+    50%       { box-shadow: 0 0 0 6px rgba(255, 152, 0, 0); }
+}
+
+/* ── Tree summary bar ───────────────────────────────────────── */
+.boq_tree_summary_bar {
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    border-bottom: 1px solid #e9ecef;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-size: 0.85rem;
+}
+
+.boq_totals_chip {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    padding: 4px 12px;
+    color: #495057;
+    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.boq_chip_warning {
+    border-color: #ffc107;
+    color: #856404;
+    background: #fff8e1;
+}
+
+.boq_chip_success {
+    border-color: #198754;
+    color: #0f5132;
+    background: #d1e7dd;
+}
+
+.boq_totals_value {
+    font-weight: 700;
+    color: #0d6efd;
+    border-color: #0d6efd;
+}

@@ -2,19 +2,34 @@
 <odoo>
 
     <!--
-        Task 4 — BOQ Dashboard
-        Client action that loads the OWL BoqDashboard component.
-        Menu placed BEFORE the BOQ list menu (sequence=5 vs BOQ menu sequence=10).
+        Task 1 — Two Separate Dashboard Pages
+        ======================================
+        Replaced single "BOQ Dashboard" action with two fully separate
+        client actions:
+          1. Vendor Manager Dashboard  (dashboard_type = vendor)
+          2. Procurement Manager Dashboard (dashboard_type = supplier)
+        Each maps to the same OWL component tag but with a different
+        context so the component knows which data to load.
     -->
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         BOQ DASHBOARD — ir.actions.client
+         VENDOR MANAGER DASHBOARD — ir.actions.client
     ═══════════════════════════════════════════════════════════════════════ -->
-    <record id="action_boq_dashboard" model="ir.actions.client">
-        <field name="name">BOQ Dashboard</field>
-        <field name="tag">boq_management_v19.boq_dashboard_action</field>
+    <record id="action_vendor_manager_dashboard" model="ir.actions.client">
+        <field name="name">Vendor Manager Dashboard</field>
+        <field name="tag">boq_management_v19.manager_dashboard_action</field>
         <field name="target">current</field>
-        <field name="context">{}</field>
+        <field name="context">{"dashboard_type": "vendor"}</field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         PROCUREMENT MANAGER DASHBOARD — ir.actions.client
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <record id="action_procurement_manager_dashboard" model="ir.actions.client">
+        <field name="name">Procurement Manager Dashboard</field>
+        <field name="tag">boq_management_v19.manager_dashboard_action</field>
+        <field name="target">current</field>
+        <field name="context">{"dashboard_type": "supplier"}</field>
     </record>
 
 </odoo>

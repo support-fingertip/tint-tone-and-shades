@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from datetime import timedelta
+
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 from odoo.tools import format_date
@@ -109,6 +111,19 @@ class BoqBoq(models.Model):
         selection=[('0', 'Normal'), ('1', 'Urgent')],
         string='Priority',
         default='0',
+    )
+    # ── BOQ Type: controls which dashboard this BOQ flows into ───────────
+    boq_type = fields.Selection(
+        selection=[
+            ('vendor',   'Vendor (Installation / Services)'),
+            ('supplier', 'Supplier (Supply Only)'),
+        ],
+        string='BOQ Type',
+        required=True,
+        default='vendor',
+        tracking=True,
+        help='Vendor BOQs appear on the Vendor Manager Dashboard. '
+             'Supplier BOQs appear on the Procurement Manager Dashboard.',
     )
     notes = fields.Html(
         string='Terms & Notes',
@@ -363,11 +378,17 @@ class BoqBoq(models.Model):
         Type and pick partners — no manual 'Add a line' needed.
         Existing rows are preserved; rows for removed categories are left so
         the user doesn't accidentally lose partner selections.
+
+        BUG 3 FIX: Compare by category ID (integer set) instead of recordset
+        membership to avoid false misses on virtual/new records, and track
+        IDs added within the same call to prevent double-insertion when
+        onchange fires more than once for a multi-select widget event.
         """
-        existing_cats = self.trade_vendor_ids.mapped('category_id')
+        existing_cat_ids = set(self.trade_vendor_ids.mapped('category_id').ids)
         TradeVendor = self.env['boq.trade.vendor']
         for cat in self.category_ids:
-            if cat not in existing_cats:
+            if cat.id not in existing_cat_ids:
+                existing_cat_ids.add(cat.id)   # guard against same-call duplicates
                 self.trade_vendor_ids |= TradeVendor.new({
                     'boq_id': self._origin.id or False,
                     'category_id': cat.id,
@@ -554,16 +575,50 @@ class BoqBoq(models.Model):
         return cat.id if cat else False
 
     # ═══════════════════════════════════════════════════════════════════════
-    # DASHBOARD DATA METHODS  (Task 4)
-    # Called via RPC from the BoqDashboard OWL component.
+    # DASHBOARD DATA METHODS  (Tasks 1, 2, 4, 5)
+    # Called via RPC from OWL dashboard components.
     # ═══════════════════════════════════════════════════════════════════════
 
+    def _get_allowed_company_ids(self):
+        """
+        Task 5 — Multi-company support.
+        Returns list of company IDs the user is allowed to see.
+        Uses allowed_company_ids from context (set by Odoo company switcher).
+        Falls back to the current company.
+        """
+        ctx_ids = self.env.context.get('allowed_company_ids')
+        if ctx_ids:
+            return list(ctx_ids)
+        return [self.env.company.id]
+
+    @staticmethod
+    def _vendor_payment_status(rfqs):
+        """
+        Compute a single payment status string for a list of purchase.order records.
+        Returns: 'paid' | 'partial' | 'in_payment' | 'not_paid'
+        """
+        all_states = []
+        for rfq in rfqs:
+            for inv in rfq.invoice_ids:
+                if inv.payment_state:
+                    all_states.append(inv.payment_state)
+        if not all_states:
+            return 'not_paid'
+        if all(s in ('paid', 'in_payment') for s in all_states):
+            return 'paid'
+        if any(s in ('paid', 'in_payment', 'partial') for s in all_states):
+            return 'partial'
+        return 'not_paid'
+
     @api.model
-    def get_dashboard_stats(self):
+    def get_dashboard_stats(self, dashboard_type='vendor'):
         """
         Return top-level aggregate stats for the BOQ dashboard header cards.
+        Task 5: uses allowed_company_ids for multi-company support.
+        dashboard_type: 'vendor' | 'supplier'
         """
-        company_domain = [('company_id', '=', self.env.company.id)]
+        company_ids = self._get_allowed_company_ids()
+        company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
         boqs = self.search(company_domain)
 
         # boq_id on purchase.order is non-stored — query M2M table directly
@@ -603,13 +658,14 @@ class BoqBoq(models.Model):
         }
 
     @api.model
-    def get_vendor_summary(self):
+    def get_vendor_summary(self, dashboard_type='vendor'):
         """
         Return vendor-wise RFQ summary for dashboard kanban cards.
-        Each entry: vendor name, rfq count, total value, avg margin, project stages,
-        payment status.
+        Task 5: uses allowed_company_ids for multi-company support.
+        dashboard_type: 'vendor' | 'supplier'
         """
-        company_domain = [('company_id', '=', self.env.company.id)]
+        company_ids = self._get_allowed_company_ids()
+        company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
         boqs = self.search(company_domain)
 
         # boq_id on purchase.order is non-stored — query M2M table directly
@@ -733,13 +789,15 @@ class BoqBoq(models.Model):
         return result
 
     @api.model
-    def get_trade_summary(self):
+    def get_trade_summary(self, dashboard_type='vendor'):
         """
-        BUG 2 — Trade Assignments for the dashboard.
+        Trade Assignments for the dashboard.
         Group BOQ lines by work_category_id (trade) and sum total_value per trade.
-        Each entry: trade_name, total BOQ value, RFQ count, vendor names.
+        Task 5: uses allowed_company_ids for multi-company support.
+        dashboard_type: 'vendor' | 'supplier'
         """
-        company_domain = [('company_id', '=', self.env.company.id)]
+        company_ids = self._get_allowed_company_ids()
+        company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
         boqs = self.search(company_domain)
 
         # Collect rfq_boq_map for vendor→rfq count per trade
@@ -805,6 +863,204 @@ class BoqBoq(models.Model):
 
         result.sort(key=lambda x: x['total_value'], reverse=True)
         return result
+
+    # ── NEW Task 2 — Hierarchical Tree Data ───────────────────────────────
+    @api.model
+    def get_dashboard_tree_data(self, dashboard_type='vendor'):
+        """
+        Task 2 — Returns a 3-level hierarchical structure:
+          Level 1: Trades (Electrical, Civil, Plumbing, …)
+          Level 2: Vendors/Suppliers per trade
+          Level 3: RFQs per vendor with state breakdown
+
+        Task 5: multi-company using allowed_company_ids.
+        dashboard_type: 'vendor' | 'supplier'
+
+        State labels (Task 4.6):
+          draft      → 'Quote Requested'  (more meaningful than 'Draft')
+          sent       → 'Sent to Vendor'
+          submitted  → 'Submitted'
+          to approve → 'Awaiting Approval'
+          purchase   → 'Approved'
+          done       → 'Done'
+          cancel     → 'Cancelled'
+        """
+        RFQ_STATE_LABELS = {
+            'draft':      'Quote Requested',
+            'sent':       'Sent to Vendor',
+            'submitted':  'Submitted',
+            'to approve': 'Awaiting Approval',
+            'purchase':   'Approved',
+            'done':       'Done',
+            'cancel':     'Cancelled',
+        }
+        PENDING_STATES = {'draft', 'sent'}
+        recently_cutoff = fields.Datetime.now() - timedelta(days=7)
+
+        company_ids = self._get_allowed_company_ids()
+        company_domain = [
+            ('company_id', 'in', company_ids),
+            ('boq_type',   '=',  dashboard_type),
+        ]
+        boqs = self.search(company_domain)
+        if not boqs:
+            return []
+
+        # ── Fetch all RFQs linked to these BOQs ──────────────────────────
+        rfq_boq_map = {}   # {rfq_id: boq_id}
+        if boqs.ids:
+            self.env.cr.execute(
+                "SELECT purchase_id, boq_id "
+                "FROM boq_boq_purchase_order_rel WHERE boq_id IN %s",
+                (tuple(boqs.ids),)
+            )
+            for row in self.env.cr.fetchall():
+                rfq_boq_map[row[0]] = row[1]
+
+        all_rfqs = (
+            self.env['purchase.order'].browse(list(rfq_boq_map.keys()))
+            if rfq_boq_map else self.env['purchase.order']
+        )
+
+        # ── Filter RFQs by partner_type matching dashboard_type ──────────
+        # 'vendor' dashboard → exclude pure suppliers (partner_type == 'supplier')
+        # 'supplier' dashboard → include only partners with type == 'supplier'
+        if dashboard_type == 'supplier':
+            filtered_rfqs = all_rfqs.filtered(
+                lambda r: r.partner_id.partner_type == 'supplier'
+            )
+        else:
+            filtered_rfqs = all_rfqs.filtered(
+                lambda r: r.partner_id.partner_type != 'supplier'
+            )
+
+        # Build: partner_id → [rfq, …]
+        partner_rfq_map = {}
+        for rfq in filtered_rfqs:
+            partner_rfq_map.setdefault(rfq.partner_id.id, []).append(rfq)
+
+        # ── Build trade → vendor assignments ─────────────────────────────
+        # Primary: from boq.trade.vendor rows
+        trade_data = {}   # {cat_id: {'category': rec, 'vendors': {vid: partner}}}
+        trade_rows = self.env['boq.trade.vendor'].search([
+            ('boq_id',       'in', boqs.ids),
+            ('partner_type', '=',  dashboard_type),
+        ])
+        for row in trade_rows:
+            cat_id = row.category_id.id
+            entry = trade_data.setdefault(cat_id, {
+                'category': row.category_id,
+                'vendors':  {},
+            })
+            partners = (
+                row.vendor_ids if dashboard_type == 'vendor' else row.supplier_ids
+            )
+            for p in partners:
+                entry['vendors'][p.id] = p
+
+        # Secondary: from line-level vendor_ids (fallback / supplement)
+        for boq in boqs:
+            for line in boq.line_ids:
+                if not line.category_id:
+                    continue
+                cat_id = line.category_id.id
+                entry = trade_data.setdefault(cat_id, {
+                    'category': line.category_id,
+                    'vendors':  {},
+                })
+                for vendor in line.vendor_ids:
+                    vtype = vendor.partner_type or 'vendor'
+                    if dashboard_type == 'supplier':
+                        if vtype == 'supplier':
+                            entry['vendors'][vendor.id] = vendor
+                    else:
+                        if vtype != 'supplier':
+                            entry['vendors'][vendor.id] = vendor
+
+        # ── Assemble tree ────────────────────────────────────────────────
+        tree = []
+        for cat_id, cat_data in trade_data.items():
+            category = cat_data['category']
+            vendors_dict = cat_data['vendors']
+
+            trade_node = {
+                'trade_id':       cat_id,
+                'trade_name':     category.name,
+                'trade_icon':     category.icon or 'fa-cogs',
+                'trade_code':     category.code or '',
+                'rfq_count':      0,
+                'pending_count':  0,
+                'submitted_count': 0,
+                'total_value':    0.0,
+                'vendor_count':   len(vendors_dict),
+                'vendors':        [],
+            }
+
+            for vid, partner in vendors_dict.items():
+                rfqs_for_v = partner_rfq_map.get(vid, [])
+
+                pending_rfqs   = [r for r in rfqs_for_v if r.state in PENDING_STATES]
+                submitted_rfqs = [
+                    r for r in rfqs_for_v
+                    if r.state == 'submitted'
+                    and r.write_date and r.write_date >= recently_cutoff
+                ]
+
+                # RFQ list — Task 2.4: NO payment info inside vendor-expanded section
+                rfq_list = []
+                for rfq in rfqs_for_v:
+                    rfq_list.append({
+                        'rfq_id':     rfq.id,
+                        'rfq_name':   rfq.name,
+                        'state':      rfq.state,
+                        'state_label': RFQ_STATE_LABELS.get(rfq.state, rfq.state),
+                        'amount_untaxed': rfq.amount_untaxed,
+                        'amount_total':   rfq.amount_total,
+                        'is_pending':     rfq.state in PENDING_STATES,
+                        'is_recently_submitted': rfq in submitted_rfqs,
+                        'date_order': (
+                            rfq.date_order.strftime('%d %b %Y')
+                            if rfq.date_order else ''
+                        ),
+                    })
+
+                # Payment status badge at vendor-row level (Task 4.5)
+                pay_status = self._vendor_payment_status(rfqs_for_v)
+                pay_label  = {
+                    'paid':      'Fully Paid',
+                    'partial':   'Partially Paid',
+                    'in_payment':'In Payment',
+                    'not_paid':  'Not Paid',
+                }.get(pay_status, 'Not Paid')
+
+                vendor_node = {
+                    'vendor_id':      vid,
+                    'vendor_name':    partner.name,
+                    'vendor_email':   partner.email or '',
+                    'rfq_count':      len(rfqs_for_v),
+                    'pending_count':  len(pending_rfqs),
+                    'recently_submitted_count': len(submitted_rfqs),
+                    'total_value':    sum(r.amount_total for r in rfqs_for_v),
+                    'payment_status': pay_status,
+                    'payment_status_label': pay_label,
+                    'rfqs':           rfq_list,
+                }
+
+                trade_node['vendors'].append(vendor_node)
+                trade_node['rfq_count']      += vendor_node['rfq_count']
+                trade_node['pending_count']  += vendor_node['pending_count']
+                trade_node['submitted_count'] += vendor_node['recently_submitted_count']
+                trade_node['total_value']    += vendor_node['total_value']
+
+            # Sort vendors: recently-submitted first, then by name
+            trade_node['vendors'].sort(
+                key=lambda v: (-v['recently_submitted_count'], v['vendor_name'])
+            )
+            tree.append(trade_node)
+
+        # Sort trades by name
+        tree.sort(key=lambda t: t['trade_name'])
+        return tree
 
     @api.model
     def get_vendor_boq_lines(self, vendor_id):
