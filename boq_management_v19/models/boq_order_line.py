@@ -204,6 +204,16 @@ class BoqOrderLine(models.Model):
                 DROP CONSTRAINT IF EXISTS boq_trade_vendor_boq_id_category_id_key;
         """)
 
+        # ── boq_boq: add boq_type column (added in v3.0) ─────────────────
+        # Ensures the column exists even on a plain restart (no -u required).
+        # Existing rows get default 'vendor' so the Vendor Manager Dashboard
+        # still shows all legacy BOQs.
+        self.env.cr.execute("""
+            ALTER TABLE boq_boq
+                ADD COLUMN IF NOT EXISTS boq_type VARCHAR DEFAULT 'vendor';
+            UPDATE boq_boq SET boq_type = 'vendor' WHERE boq_type IS NULL;
+        """)
+
         # ── res_partner columns (BOQ v2.0 — NEW TASK 1 + NEW TASK 4) ─────
         # Cannot use res.partner._auto_init() because res.partner is owned
         # by 'base' and Odoo won't call _auto_init() on it for our module.
