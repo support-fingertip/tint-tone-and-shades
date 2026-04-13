@@ -72,8 +72,8 @@
 
             <!-- Title block -->
             <div class="d-flex align-items-center gap-3">
-                <div t-attf-class="boq_dash_header_icon {{ isVendorDashboard ? 'boq_hdr_vendor' : 'boq_hdr_supplier' }}">
-                    <i t-attf-class="fa {{ dashboardIcon }} fa-lg"/>
+                <div t-attf-class="boq_dash_header_icon #{ isVendorDashboard ? 'boq_hdr_vendor' : 'boq_hdr_supplier' }">
+                    <i t-attf-class="fa #{ dashboardIcon } fa-lg"/>
                 </div>
                 <div>
                     <h4 class="mb-0 fw-bold" t-esc="dashboardTitle"/>
@@ -90,7 +90,7 @@
                     <input type="text" class="form-control border-start-0 ps-0"
                            placeholder="Filter trade / partner…"
                            t-model="state.filterText"/>
-                    <button t-attf-class="btn btn-outline-secondary border-start-0 {{ state.filterText ? '' : 'd-none' }}"
+                    <button t-attf-class="btn btn-outline-secondary border-start-0 #{ state.filterText ? '' : 'd-none' }"
                             t-on-click="clearFilter">
                         <i class="fa fa-times"/>
                     </button>
@@ -116,7 +116,7 @@
             <div class="boq_dash_stat_row d-flex flex-wrap gap-3 p-4">
 
                 <div class="boq_stat_card flex-fill" t-on-click="openAllBoqs" style="cursor:pointer;">
-                    <div t-attf-class="boq_stat_icon {{ isVendorDashboard ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success' }}">
+                    <div t-attf-class="boq_stat_icon #{ isVendorDashboard ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success' }">
                         <i class="fa fa-calculator fa-2x"/>
                     </div>
                     <div class="boq_stat_body">
@@ -211,7 +211,7 @@
                     Trade<t t-if="treeTotals.trades !== 1">s</t>
                 </span>
                 <span class="boq_totals_chip">
-                    <i t-attf-class="fa {{ dashboardIcon }} me-1"/>
+                    <i t-attf-class="fa #{ dashboardIcon } me-1"/>
                     <strong><t t-esc="treeTotals.vendors"/></strong>
                     <t t-esc="partnerLabel"/><t t-if="treeTotals.vendors !== 1">s</t>
                 </span>
@@ -271,21 +271,21 @@
 
                         <!-- Trade header row -->
                         <div t-attf-class="boq_tree_row boq_trade_row
-                                           {{ isTradeExpanded(trade.trade_id) ? 'boq_trade_row_open' : '' }}"
+                                           #{ isTradeExpanded(trade.trade_id) ? 'boq_trade_row_open' : '' }"
                              t-on-click="() => this.toggleTrade(trade.trade_id)">
 
                             <span class="boq_tree_expand_icon">
-                                <i t-attf-class="fa {{ isTradeExpanded(trade.trade_id) ? 'fa-chevron-down' : 'fa-chevron-right' }}"/>
+                                <i t-attf-class="fa #{ isTradeExpanded(trade.trade_id) ? 'fa-chevron-down' : 'fa-chevron-right' }"/>
                             </span>
 
                             <span class="boq_tree_label">
-                                <i t-attf-class="fa {{ trade.trade_icon || 'fa-cogs' }} me-2 text-primary"/>
+                                <i t-attf-class="fa #{ trade.trade_icon || 'fa-cogs' } me-2 text-primary"/>
                                 <strong><t t-esc="trade.trade_name"/></strong>
                             </span>
 
                             <span class="boq_tree_chips">
                                 <span class="badge bg-info rounded-pill" title="Partners assigned">
-                                    <i t-attf-class="fa {{ dashboardIcon }} me-1"/>
+                                    <i t-attf-class="fa #{ dashboardIcon } me-1"/>
                                     <t t-esc="trade.vendor_count"/>
                                 </span>
                                 <span class="badge bg-primary rounded-pill ms-1" title="RFQs">
@@ -331,13 +331,13 @@
 
                                 <!-- Vendor row -->
                                 <div t-attf-class="boq_tree_row boq_vendor_row
-                                                   {{ isVendorExpanded(vendor.vendor_id) ? 'boq_vendor_row_open' : '' }}"
+                                                   #{ isVendorExpanded(vendor.vendor_id) ? 'boq_vendor_row_open' : '' }"
                                      t-on-click="() => this.toggleVendor(vendor.vendor_id)">
 
                                     <span class="boq_tree_indent"/>
 
                                     <span class="boq_tree_expand_icon">
-                                        <i t-attf-class="fa {{ isVendorExpanded(vendor.vendor_id) ? 'fa-chevron-down' : 'fa-chevron-right' }}"/>
+                                        <i t-attf-class="fa #{ isVendorExpanded(vendor.vendor_id) ? 'fa-chevron-down' : 'fa-chevron-right' }"/>
                                     </span>
 
                                     <span class="boq_vendor_avatar_sm">
@@ -383,7 +383,7 @@
                                         <!-- Payment status badge (Task 4.5)
                                              Shown at vendor-row level ONLY.
                                              NOT inside the expanded RFQ list (Task 2.4). -->
-                                        <span t-attf-class="badge {{ paymentStatusClass(vendor.payment_status) }} rounded-pill ms-1">
+                                        <span t-attf-class="badge #{ paymentStatusClass(vendor.payment_status) } rounded-pill ms-1">
                                             <t t-esc="vendor.payment_status_label"/>
                                         </span>
                                     </span>
@@ -418,7 +418,7 @@
                                     <t t-foreach="vendor.rfqs" t-as="rfq"
                                        t-key="rfq.rfq_id">
                                         <div t-attf-class="boq_tree_row boq_rfq_row
-                                                           {{ rfq.is_recently_submitted ? 'boq_rfq_row_new' : '' }}"
+                                                           #{ rfq.is_recently_submitted ? 'boq_rfq_row_new' : '' }"
                                              t-on-click.stop="() => this.openRfq(rfq.rfq_id)"
                                              style="cursor:pointer;">
 
@@ -439,7 +439,7 @@
 
                                             <span class="boq_tree_chips">
                                                 <!-- State (Task 4.6: draft → "Quote Requested") -->
-                                                <span t-attf-class="badge {{ rfqStateClass(rfq.state) }} rounded-pill">
+                                                <span t-attf-class="badge #{ rfqStateClass(rfq.state) } rounded-pill">
                                                     <t t-esc="rfq.state_label"/>
                                                 </span>
 
@@ -525,7 +525,7 @@
                         <!-- PO rows -->
                         <t t-foreach="state.approvalPOs" t-as="po" t-key="po.po_id">
                             <div t-attf-class="boq_approval_row
-                                               {{ po.has_current_approver ? 'boq_approval_row_mine' : '' }}"
+                                               #{ po.has_current_approver ? 'boq_approval_row_mine' : '' }"
                                  t-on-click="() => this.openRfq(po.po_id)"
                                  style="cursor:pointer;">
 
@@ -561,8 +561,8 @@
                                     <div class="d-flex flex-wrap gap-1 align-items-center">
                                         <t t-foreach="po.approval_lines" t-as="al"
                                            t-key="al.level_name">
-                                            <span t-attf-class="badge {{ approvalStatusClass(al.status) }} rounded-pill boq_approval_pill
-                                                                 {{ al.is_mine ? 'boq_approval_pill_mine' : '' }}"
+                                            <span t-attf-class="badge #{ approvalStatusClass(al.status) } rounded-pill boq_approval_pill
+                                                                 #{ al.is_mine ? 'boq_approval_pill_mine' : '' }"
                                                   t-att-title="al.approvers">
                                                 <t t-if="al.is_mine">
                                                     <i class="fa fa-user me-1"/>
