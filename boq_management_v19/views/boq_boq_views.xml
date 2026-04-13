@@ -8,7 +8,7 @@
     <field name="name">boq.boq.form</field>
     <field name="model">boq.boq</field>
     <field name="arch" type="xml">
-        <form string="Bill of Quantities">
+        <form string="Bill of Quantities" js_class="boq_form">
 
             <!-- ── HEADER ──────────────────────────────────────────────── -->
             <header>

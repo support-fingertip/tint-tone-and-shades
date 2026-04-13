@@ -92,19 +92,19 @@
               groups="boq_management_v19.group_boq_manager"/>
 
     <!-- ── Purchase app — Vendor RFQ / Supplier RFQ sub-menus ── -->
-<!--    <menuitem id="menu_purchase_boq_vendor_rfq"-->
-<!--              name="Vendor RFQ"-->
-<!--              parent="purchase.menu_purchase_rfq"-->
-<!--              action="boq_management_v19.action_boq_rfq_list"-->
-<!--              sequence="25"-->
-<!--              groups="purchase.group_purchase_user"/>-->
+    <menuitem id="menu_purchase_boq_vendor_rfq"
+              name="Vendor RFQ"
+              parent="purchase.menu_purchase_rfq"
+              action="boq_management_v19.action_boq_rfq_list"
+              sequence="25"
+              groups="purchase.group_purchase_user"/>
 
-<!--    <menuitem id="menu_purchase_boq_supplier_rfq"-->
-<!--              name="Supplier RFQ"-->
-<!--              parent="purchase.menu_purchase_rfq"-->
-<!--              action="boq_management_v19.action_boq_supplier_rfq_list"-->
-<!--              sequence="26"-->
-<!--              groups="purchase.group_purchase_user"/>-->
+    <menuitem id="menu_purchase_boq_supplier_rfq"
+              name="Supplier RFQ"
+              parent="purchase.menu_purchase_rfq"
+              action="boq_management_v19.action_boq_supplier_rfq_list"
+              sequence="26"
+              groups="purchase.group_purchase_user"/>
 
     <!-- ── Configuration section ── -->
     <menuitem id="menu_boq_config"
@@ -118,134 +118,5 @@
               parent="menu_boq_config"
               action="action_boq_category"
               sequence="10"/>
-
-     <!-- ══════════════════════════════════════════════════════════════════════
-     Separate Root Menus for Vendor & Supplier Purchase
-    ══════════════════════════════════════════════════════════════════════════ -->
-
-    <!-- ── Root: Vendor ─────────────────────────────────────── -->
-    <menuitem
-            id="menu_vendor_purchase_root"
-            name="Vendor"
-            sequence="90"
-            web_icon="boq_management_v19,static/src/img/vendor.png"
-            groups="boq_management_v19.group_vendor"
-    />
-
-    <menuitem
-            id="menu_vendor_orders"
-            name="Orders"
-            parent="menu_vendor_purchase_root"
-            sequence="5"
-            groups="boq_management_v19.group_vendor"
-    />
-
-    <menuitem
-            id="menu_vendor_rfq_orders"
-            name="Requests for Quotation"
-            parent="menu_vendor_orders"
-            action="action_boq_rfq_list"
-            sequence="1"
-            groups="boq_management_v19.group_vendor"
-    />
-
-    <menuitem
-            id="menu_vendor_po"
-            name="Purchase Orders"
-            parent="menu_vendor_orders"
-            action="purchase.purchase_form_action"
-            sequence="2"
-            groups="boq_management_v19.group_vendor"
-    />
-
-    <menuitem
-            id="menu_vendor_reporting"
-            name="Reporting"
-            parent="menu_vendor_purchase_root"
-            sequence="10"
-            groups="boq_management_v19.group_vendor"
-    />
-
-    <!-- Vendor Reporting -->
-    <menuitem
-            id="menu_vendor_reporting_purchase"
-            name="Purchase"
-            parent="menu_vendor_reporting"
-            action="action_vendor_purchase_report"
-            sequence="1"
-            groups="boq_management_v19.group_vendor"
-    />
-
-    <menuitem
-            id="menu_vendor_my_approvals"
-            name="My Approvals"
-            parent="menu_vendor_reporting"
-            action="action_vendor_my_approvals"
-            sequence="2"
-            groups="boq_management_v19.group_vendor"
-    />
-
-
-    <!-- ── Root: Procurement (Supplier) ─────────────────────── -->
-    <menuitem
-            id="menu_supplier_purchase_root"
-            name="Procurement"
-            sequence="100"
-            web_icon="boq_management_v19,static/src/img/supplier.png"
-            groups="boq_management_v19.group_supplier"
-    />
-
-    <menuitem
-            id="menu_supplier_orders"
-            name="Orders"
-            parent="menu_supplier_purchase_root"
-            sequence="5"
-            groups="boq_management_v19.group_supplier"
-    />
-
-    <menuitem
-            id="menu_supplier_rfq_orders"
-            name="Requests for Quotation"
-            parent="menu_supplier_orders"
-            action="action_boq_supplier_rfq_list"
-            sequence="1"
-            groups="boq_management_v19.group_supplier"
-    />
-
-    <menuitem
-            id="menu_supplier_po"
-            name="Purchase Orders"
-            parent="menu_supplier_orders"
-            action="purchase.purchase_form_action"
-            sequence="2"
-            groups="boq_management_v19.group_supplier"
-    />
-
-    <menuitem
-            id="menu_supplier_reporting"
-            name="Reporting"
-            parent="menu_supplier_purchase_root"
-            sequence="10"
-            groups="boq_management_v19.group_supplier"
-    />
-
-    <!-- Supplier Reporting -->
-    <menuitem
-            id="menu_supplier_reporting_purchase"
-            name="Purchase"
-            parent="menu_supplier_reporting"
-            action="action_supplier_purchase_report"
-            sequence="1"
-            groups="boq_management_v19.group_supplier"
-    />
-
-    <menuitem
-            id="menu_supplier_my_approvals"
-            name="My Approvals"
-            parent="menu_supplier_reporting"
-            action="action_supplier_my_approvals"
-            sequence="2"
-            groups="boq_management_v19.group_supplier"
-    />
 
 </odoo>

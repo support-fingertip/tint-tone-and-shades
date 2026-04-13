@@ -308,18 +308,13 @@ class BoqBoq(models.Model):
     rfq_count = fields.Integer(
         string='RFQs',
         compute='_compute_rfq_count',
+        store=True,
     )
 
     @api.depends('rfq_ids')
     def _compute_rfq_count(self):
-        user_partner = self.env.user.partner_id
-        ptype = user_partner.partner_type
-        allowed_companies = self.env.companies.ids  # multi-company support
         for rec in self:
-            rfqs = rec.rfq_ids.filtered(lambda r: r.company_id.id in allowed_companies)
-            if ptype in ('vendor', 'supplier'):
-                rfqs = rfqs.filtered(lambda r: r.partner_id.partner_type == ptype)
-            rec.rfq_count = len(rfqs)
+            rec.rfq_count = len(rec.rfq_ids)
 
     # ── _compute_totals ────────────────────────────────────────────────────
     # IMPORTANT: Only depend on stored `line_ids.*` fields.
@@ -475,7 +470,7 @@ class BoqBoq(models.Model):
             if row.partner_type != self.boq_type:
                 row.partner_type = self.boq_type
 
-    # ── Sequence / Create ─────────────────────────────────────────────────
+    # ── Sequence / Create / Write ─────────────────────────────────────────
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -483,7 +478,54 @@ class BoqBoq(models.Model):
                 vals['name'] = (
                     self.env['ir.sequence'].next_by_code('boq.boq') or 'New'
                 )
+            # Deduplicate trade_vendor_ids CREATE commands before saving.
+            # Concurrent onchange calls (many2many_tags race condition) can
+            # produce multiple (0,0,{category_id:X}) commands for the same
+            # category.  Filter them here so the DB is always clean.
+            if 'trade_vendor_ids' in vals:
+                vals['trade_vendor_ids'] = self._dedup_trade_vendor_cmds(
+                    vals['trade_vendor_ids']
+                )
         return super().create(vals_list)
+
+    def write(self, vals):
+        if 'trade_vendor_ids' in vals:
+            vals = dict(vals)
+            vals['trade_vendor_ids'] = self._dedup_trade_vendor_cmds(
+                vals['trade_vendor_ids']
+            )
+        return super().write(vals)
+
+    @api.model
+    def _dedup_trade_vendor_cmds(self, commands):
+        """
+        Remove duplicate CREATE commands for the same category_id.
+
+        When the many2many_tags widget fires @api.onchange('category_ids')
+        multiple times before the first RPC response is applied (race
+        condition), the form accumulates one CREATE command per call for the
+        same category.  This filter keeps only the FIRST create per category
+        so the database always has exactly one row per category regardless of
+        how many concurrent onchanges fired.
+        """
+        seen = set()
+        result = []
+        for cmd in (commands or []):
+            op = cmd[0] if isinstance(cmd, (list, tuple)) else None
+            if op == 5:
+                seen = set()          # CLEAR resets the dedup window
+                result.append(cmd)
+            elif op == 0:
+                # CREATE — skip if we already queued a create for this category
+                cat_id = cmd[2].get('category_id') if isinstance(cmd[2], dict) else None
+                if cat_id is None or cat_id not in seen:
+                    if cat_id is not None:
+                        seen.add(cat_id)
+                    result.append(cmd)
+                # else: duplicate CREATE — silently drop it
+            else:
+                result.append(cmd)   # UPDATE, DELETE, LINK, SET — keep as-is
+        return result
 
     def copy(self, default=None):
         default = dict(default or {})
@@ -623,32 +665,26 @@ class BoqBoq(models.Model):
         }
 
     def action_view_rfqs(self):
+        """Open linked RFQs / Purchase Orders from the smart button."""
         self.ensure_one()
-        user_partner = self.env.user.partner_id
-        ptype = user_partner.partner_type
-        allowed_companies = self.env.companies.ids
-        domain = [
-            ('id', 'in', self.rfq_ids.ids),
-            ('company_id', 'in', allowed_companies),
-        ]
-
-        if ptype in ('vendor', 'supplier'):
-            domain.append(('partner_id.partner_type', '=', ptype))
-        rfqs = self.env['purchase.order'].search(domain)
-        if len(rfqs) == 1:
+        if not self.rfq_count:
+            return
+        if self.rfq_count == 1:
             return {
                 'type': 'ir.actions.act_window',
+                'name': _('RFQ'),
                 'res_model': 'purchase.order',
-                'res_id': rfqs.id,
+                'res_id': self.rfq_ids.id,
                 'view_mode': 'form',
+                'target': 'current',
             }
-
         return {
             'type': 'ir.actions.act_window',
             'name': _('RFQs — %s') % self.name,
             'res_model': 'purchase.order',
             'view_mode': 'list,form',
-            'domain': domain,
+            'domain': [('id', 'in', self.rfq_ids.ids)],
+            'target': 'current',
         }
 
     # ── Model helper ──────────────────────────────────────────────────────
