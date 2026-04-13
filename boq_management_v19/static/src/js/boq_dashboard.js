@@ -80,6 +80,7 @@ class BoqManagerDashboardBase extends Component {
             error:            null,
             stats:            {},
             tree:             [],   // Level 1: trades → Level 2: vendors → Level 3: rfqs
+            vendorSummary:    [],   // Flat vendor cards: name, rfq_count, value, margin, payment
             approvalPOs:      [],   // Task 1.6 — POs awaiting approval
             expandedTrades:   {},   // { trade_id: bool }
             expandedVendors:  {},   // { vendor_id: bool }
@@ -116,14 +117,16 @@ class BoqManagerDashboardBase extends Component {
     async _loadAll() {
         try {
             const dt = this.dashboardType;
-            const [stats, tree, approvalPOs] = await Promise.all([
-                this.orm.call("boq.boq", "get_dashboard_stats",       [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_dashboard_tree_data",   [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_approval_pending_pos",  [], { dashboard_type: dt }),
+            const [stats, tree, vendorSummary, approvalPOs] = await Promise.all([
+                this.orm.call("boq.boq", "get_dashboard_stats",      [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_dashboard_tree_data",  [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_vendor_summary",       [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_approval_pending_pos", [], { dashboard_type: dt }),
             ]);
-            this.state.stats       = stats;
-            this.state.tree        = tree;
-            this.state.approvalPOs = approvalPOs;
+            this.state.stats          = stats;
+            this.state.tree           = tree;
+            this.state.vendorSummary  = vendorSummary;
+            this.state.approvalPOs    = approvalPOs;
         } catch (err) {
             this.state.error = err.message || "Failed to load dashboard data.";
         } finally {
@@ -134,6 +137,7 @@ class BoqManagerDashboardBase extends Component {
     async refresh() {
         this.state.loading         = true;
         this.state.error           = null;
+        this.state.vendorSummary   = [];
         this.state.expandedTrades  = {};
         this.state.expandedVendors = {};
         await this._loadAll();
@@ -258,6 +262,17 @@ class BoqManagerDashboardBase extends Component {
     }
 
     clearFilter() { this.state.filterText = ""; }
+
+    openVendorContact(vendorId) {
+        this.actionSvc.doAction({
+            type:      "ir.actions.act_window",
+            name:      "Partner",
+            res_model: "res.partner",
+            res_id:    vendorId,
+            views:     [[false, "form"]],
+            target:    "current",
+        });
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
