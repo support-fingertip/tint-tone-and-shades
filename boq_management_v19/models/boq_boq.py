@@ -644,6 +644,7 @@ class BoqBoq(models.Model):
                     ),
                     'price_unit': 0,
                     'date_planned': today,
+                    'customer_price': line.price_unit,
                 })
             created_orders |= po
 

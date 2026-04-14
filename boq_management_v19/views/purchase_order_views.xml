@@ -62,6 +62,7 @@
             <!-- NEW TASK 3 — Savings % column on PO lines (vs product standard cost) -->
             <xpath expr="//field[@name='order_line']//field[@name='price_subtotal']"
                    position="after">
+                <field name="customer_price" readonly="1"/>
                 <field name="margin_percent" string="Savings %"
                        widget="percentage"
                        optional="show"

@@ -304,16 +304,17 @@ class PurchaseOrderLineBoqExtend(models.Model):
              'Positive = vendor is cheaper than our internal standard (good deal).\n'
              'Negative = vendor is quoting above our standard cost.',
     )
+    customer_price = fields.Float("Customer Price")
 
     @api.depends('product_id')
     def _compute_pol_cost_price(self):
         for line in self:
             line.cost_price = line.product_id.standard_price if line.product_id else 0.0
 
-    @api.depends('price_unit', 'cost_price')
+    @api.depends('price_unit', 'customer_price')
     def _compute_pol_margin(self):
         for line in self:
-            std = line.cost_price or 0.0
+            std = line.customer_price or 0.0
             if std > 0:
                 # Savings %: how much cheaper is this vendor vs our standard cost
                 line.margin_percent = (std - line.price_unit) / std * 100.0
