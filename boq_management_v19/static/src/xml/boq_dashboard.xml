@@ -276,16 +276,12 @@
 
                                     </div>
 
-                                    <!-- Footer: payment badge + RFQ states + open link -->
+                                    <!-- Footer: RFQ states + open link -->
                                     <div class="boq_vc_footer d-flex align-items-center
                                                 justify-content-between flex-wrap gap-1">
 
-                                        <span t-attf-class="badge #{ paymentStatusClass(vs.payment_status) } rounded-pill">
-                                            <t t-esc="vs.payment_status_label"/>
-                                        </span>
-
                                         <span t-if="vs.rfq_states and vs.rfq_states !== '—'"
-                                              class="badge bg-light text-dark border rounded-pill small">
+                                              class="badge boq_badge_neutral rounded-pill small">
                                             <t t-esc="vs.rfq_states"/>
                                         </span>
 
@@ -326,10 +322,10 @@
                         <h5 class="mb-0 fw-bold boq_section_title">
                             <i class="fa fa-clock-o me-2 text-warning"/>
                             Awaiting Quotation
-                            <span class="badge bg-warning text-dark rounded-pill ms-2 small">
+                            <span class="badge boq_badge_neutral rounded-pill ms-2 small">
                                 <t t-esc="pendingRfqTotals.rfqs"/> RFQ<t t-if="pendingRfqTotals.rfqs !== 1">s</t>
                             </span>
-                            <span class="badge bg-secondary rounded-pill ms-1 small">
+                            <span class="badge boq_badge_neutral rounded-pill ms-1 small">
                                 <t t-esc="pendingRfqTotals.vendors"/>
                                 <t t-esc="partnerLabel"/><t t-if="pendingRfqTotals.vendors !== 1">s</t>
                             </span>
@@ -358,7 +354,7 @@
                         <!-- Vendor + RFQ rows -->
                         <t t-foreach="state.pendingVendors" t-as="pv" t-key="pv.vendor_id">
                             <t t-foreach="pv.rfqs" t-as="prfq" t-key="prfq.rfq_id">
-                                <div t-attf-class="boq_pending_row #{ prfq.days_pending > 7 ? 'boq_pending_row_urgent' : '' }"
+                                <div class="boq_pending_row"
                                      t-on-click="() => this.openRfq(prfq.rfq_id)"
                                      style="cursor:pointer;">
 
@@ -372,7 +368,7 @@
                                                 <t t-esc="pv.vendor_name"/>
                                             </span>
                                             <t t-if="pv.rfq_count > 1">
-                                                <span class="badge bg-secondary rounded-pill ms-1 small">
+                                                <span class="badge boq_badge_neutral rounded-pill ms-1 small">
                                                     <t t-esc="pv.rfq_count"/>
                                                 </span>
                                             </t>
@@ -397,30 +393,17 @@
                                         <t t-esc="prfq.date_order"/>
                                     </span>
 
-                                    <!-- Days pending with urgency colouring -->
+                                    <!-- Days pending -->
                                     <span class="boq_pending_col_days">
-                                        <t t-if="prfq.days_pending > 14">
-                                            <span class="badge bg-danger rounded-pill">
-                                                <i class="fa fa-exclamation me-1"/>
-                                                <t t-esc="prfq.days_pending"/>d
-                                            </span>
-                                        </t>
-                                        <t t-elif="prfq.days_pending > 7">
-                                            <span class="badge bg-warning text-dark rounded-pill">
-                                                <i class="fa fa-clock-o me-1"/>
-                                                <t t-esc="prfq.days_pending"/>d
-                                            </span>
-                                        </t>
-                                        <t t-else="">
-                                            <span class="badge bg-secondary rounded-pill">
-                                                <t t-esc="prfq.days_pending"/>d
-                                            </span>
-                                        </t>
+                                        <span class="badge boq_badge_neutral rounded-pill">
+                                            <i class="fa fa-clock-o me-1"/>
+                                            <t t-esc="prfq.days_pending"/>d
+                                        </span>
                                     </span>
 
                                     <!-- RFQ state -->
                                     <span class="boq_pending_col_status">
-                                        <span t-attf-class="badge #{ rfqStateClass(prfq.state) } rounded-pill">
+                                        <span class="badge boq_badge_neutral rounded-pill">
                                             <t t-esc="prfq.state_label"/>
                                         </span>
                                     </span>
@@ -457,12 +440,12 @@
                     <i class="fa fa-shopping-cart me-1"/>
                     <strong><t t-esc="treeTotals.rfqs"/></strong> RFQs
                 </span>
-                <span t-if="treeTotals.pending > 0" class="boq_totals_chip boq_chip_warning">
+                <span t-if="treeTotals.pending > 0" class="boq_totals_chip">
                     <i class="fa fa-clock-o me-1"/>
                     <strong><t t-esc="treeTotals.pending"/></strong> Pending
                 </span>
-                <span t-if="treeTotals.submitted > 0" class="boq_totals_chip boq_chip_success">
-                    <i class="fa fa-check-circle me-1"/>
+                <span t-if="treeTotals.submitted > 0" class="boq_totals_chip">
+                    <i class="fa fa-bell me-1"/>
                     <strong><t t-esc="treeTotals.submitted"/></strong> Recently Submitted
                 </span>
                 <span class="boq_totals_chip boq_totals_value ms-auto">
@@ -522,23 +505,23 @@
                             </span>
 
                             <span class="boq_tree_chips">
-                                <span class="badge bg-info rounded-pill" title="Partners assigned">
+                                <span class="badge boq_badge_neutral rounded-pill" title="Partners assigned">
                                     <i t-attf-class="fa #{ dashboardIcon } me-1"/>
                                     <t t-esc="trade.vendor_count"/>
                                 </span>
-                                <span class="badge bg-primary rounded-pill ms-1" title="RFQs">
+                                <span class="badge boq_badge_neutral rounded-pill ms-1" title="RFQs">
                                     <i class="fa fa-shopping-cart me-1"/>
                                     <t t-esc="trade.rfq_count"/>
                                 </span>
                                 <t t-if="trade.pending_count > 0">
-                                    <span class="badge bg-warning text-dark rounded-pill ms-1"
+                                    <span class="badge boq_badge_neutral rounded-pill ms-1"
                                           title="Pending — awaiting quotation">
                                         <i class="fa fa-clock-o me-1"/>
                                         <t t-esc="trade.pending_count"/> pending
                                     </span>
                                 </t>
                                 <t t-if="trade.submitted_count > 0">
-                                    <span class="badge boq_badge_new rounded-pill ms-1"
+                                    <span class="badge boq_badge_neutral boq_badge_submitted rounded-pill ms-1"
                                           title="Submitted in last 7 days">
                                         <i class="fa fa-bell me-1"/>
                                         <t t-esc="trade.submitted_count"/> new
@@ -595,23 +578,23 @@
 
                                     <span class="boq_tree_chips">
                                         <!-- RFQ count -->
-                                        <span class="badge bg-primary rounded-pill">
+                                        <span class="badge boq_badge_neutral rounded-pill">
                                             <t t-esc="vendor.rfq_count"/>
                                             RFQ<t t-if="vendor.rfq_count !== 1">s</t>
                                         </span>
 
-                                        <!-- Pending indicator (Task 2.5) -->
+                                        <!-- Pending indicator -->
                                         <t t-if="vendor.pending_count > 0">
-                                            <span class="badge bg-warning text-dark rounded-pill ms-1"
+                                            <span class="badge boq_badge_neutral rounded-pill ms-1"
                                                   title="RFQ sent — no quotation yet">
                                                 <i class="fa fa-clock-o me-1"/>
                                                 <t t-esc="vendor.pending_count"/> pending
                                             </span>
                                         </t>
 
-                                        <!-- Recently submitted bell (Task 2.6) -->
+                                        <!-- Recently submitted (Task 2.6 notification indicator) -->
                                         <t t-if="vendor.recently_submitted_count > 0">
-                                            <span class="badge boq_badge_new rounded-pill ms-1"
+                                            <span class="badge boq_badge_neutral boq_badge_submitted rounded-pill ms-1"
                                                   title="Quotation submitted in last 7 days">
                                                 <i class="fa fa-bell me-1"/>
                                                 <t t-esc="vendor.recently_submitted_count"/> new
@@ -647,7 +630,7 @@
                                                     <i class="fa fa-bar-chart me-1"/>RFQ Status:
                                                 </small>
                                                 <t t-foreach="vendor.state_summary" t-as="ss" t-key="ss.state">
-                                                    <span t-attf-class="badge #{ rfqStateClass(ss.state) } rounded-pill boq_state_count_badge">
+                                                    <span class="badge boq_badge_neutral rounded-pill boq_state_count_badge">
                                                         <t t-esc="ss.count"/>
                                                         <span class="ms-1"><t t-esc="ss.state_label"/></span>
                                                     </span>
@@ -690,22 +673,22 @@
                                             </span>
 
                                             <span class="boq_tree_chips">
-                                                <!-- State (Task 4.6: draft → "Quote Requested") -->
-                                                <span t-attf-class="badge #{ rfqStateClass(rfq.state) } rounded-pill">
+                                                <!-- State label -->
+                                                <span class="badge boq_badge_neutral rounded-pill">
                                                     <t t-esc="rfq.state_label"/>
                                                 </span>
 
                                                 <!-- Pending flag -->
                                                 <t t-if="rfq.is_pending">
-                                                    <span class="badge bg-warning text-dark rounded-pill ms-1"
+                                                    <span class="badge boq_badge_neutral rounded-pill ms-1"
                                                           title="Awaiting quotation">
                                                         <i class="fa fa-clock-o me-1"/>Pending
                                                     </span>
                                                 </t>
 
-                                                <!-- Recently submitted bell -->
+                                                <!-- Recently submitted indicator (Task 2.6) -->
                                                 <t t-if="rfq.is_recently_submitted">
-                                                    <span class="badge boq_badge_new rounded-pill ms-1"
+                                                    <span class="badge boq_badge_neutral boq_badge_submitted rounded-pill ms-1"
                                                           title="Submitted in last 7 days">
                                                         <i class="fa fa-bell me-1"/>New
                                                     </span>
