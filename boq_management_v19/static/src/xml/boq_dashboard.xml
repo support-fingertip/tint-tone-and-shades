@@ -618,12 +618,6 @@
                                             </span>
                                         </t>
 
-                                        <!-- Payment status badge (Task 4.5)
-                                             Shown at vendor-row level ONLY.
-                                             NOT inside the expanded RFQ list (Task 2.4). -->
-                                        <span t-attf-class="badge #{ paymentStatusClass(vendor.payment_status) } rounded-pill ms-1">
-                                            <t t-esc="vendor.payment_status_label"/>
-                                        </span>
                                     </span>
 
                                     <span class="boq_tree_value fw-semibold">
