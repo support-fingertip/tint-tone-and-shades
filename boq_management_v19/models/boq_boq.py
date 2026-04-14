@@ -764,7 +764,12 @@ class BoqBoq(models.Model):
             )
             rfq_ids = [r[0] for r in self.env.cr.fetchall()]
             if rfq_ids:
-                rfqs = self.env['purchase.order'].browse(rfq_ids)
+                # Use search (not browse) so Odoo's ir.rules + explicit company
+                # filter are both applied — prevents AccessError on company switch.
+                rfqs = self.env['purchase.order'].search([
+                    ('id', 'in', rfq_ids),
+                    ('company_id', 'in', company_ids),
+                ])
 
         state_counts = {
             'draft': len(boqs.filtered(lambda b: b.state == 'draft')),
@@ -811,7 +816,16 @@ class BoqBoq(models.Model):
                 (tuple(boqs.ids),)
             )
             rfq_boq_map = {row[0]: row[1] for row in self.env.cr.fetchall()}
-        rfqs = self.env['purchase.order'].browse(list(rfq_boq_map.keys())) if rfq_boq_map else self.env['purchase.order']
+        if rfq_boq_map:
+            rfqs = self.env['purchase.order'].search([
+                ('id', 'in', list(rfq_boq_map.keys())),
+                ('company_id', 'in', company_ids),
+            ])
+            # Narrow the map to only records accessible in the current company context
+            found_ids = set(rfqs.ids)
+            rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
+        else:
+            rfqs = self.env['purchase.order']
 
         # Build boq_id → project info map
         boq_info = {
@@ -943,7 +957,15 @@ class BoqBoq(models.Model):
             )
             rfq_boq_map = {row[0]: row[1] for row in self.env.cr.fetchall()}
 
-        rfqs = self.env['purchase.order'].browse(list(rfq_boq_map.keys())) if rfq_boq_map else self.env['purchase.order']
+        if rfq_boq_map:
+            rfqs = self.env['purchase.order'].search([
+                ('id', 'in', list(rfq_boq_map.keys())),
+                ('company_id', 'in', company_ids),
+            ])
+            found_ids = set(rfqs.ids)
+            rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
+        else:
+            rfqs = self.env['purchase.order']
 
         trade_map = {}
         for boq in boqs:
@@ -1051,10 +1073,16 @@ class BoqBoq(models.Model):
             for row in self.env.cr.fetchall():
                 rfq_boq_map[row[0]] = row[1]
 
-        all_rfqs = (
-            self.env['purchase.order'].browse(list(rfq_boq_map.keys()))
-            if rfq_boq_map else self.env['purchase.order']
-        )
+        if rfq_boq_map:
+            all_rfqs = self.env['purchase.order'].search([
+                ('id', 'in', list(rfq_boq_map.keys())),
+                ('company_id', 'in', company_ids),
+            ])
+            # Drop map entries for records inaccessible in the current company context
+            found_ids = set(all_rfqs.ids)
+            rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
+        else:
+            all_rfqs = self.env['purchase.order']
 
         # ── Filter RFQs by partner_type matching dashboard_type ──────────
         # 'vendor' dashboard → exclude pure suppliers (partner_type == 'supplier')
@@ -1254,7 +1282,17 @@ class BoqBoq(models.Model):
         if not rfq_boq_map:
             return []
 
-        all_rfqs = self.env['purchase.order'].browse(list(rfq_boq_map.keys()))
+        all_rfqs = self.env['purchase.order'].search([
+            ('id', 'in', list(rfq_boq_map.keys())),
+            ('company_id', 'in', company_ids),
+        ])
+        # Drop map entries for records inaccessible in the current company context
+        found_ids = set(all_rfqs.ids)
+        rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
+
+        if not all_rfqs:
+            return []
+
 
         # Filter to pending states only
         pending_rfqs = all_rfqs.filtered(lambda r: r.state in PENDING_STATES)
@@ -1364,10 +1402,14 @@ class BoqBoq(models.Model):
         if not rfq_ids:
             return []
 
-        # Filter to 'to approve' state (approval workflow state)
-        pending_pos = self.env['purchase.order'].browse(rfq_ids).filtered(
-            lambda p: p.state == 'to approve'
-        )
+        # Use search (not browse) — applies ir.rules + explicit company filter
+        # so switching companies never causes an AccessError.
+        # The state filter is pushed into the domain for efficiency.
+        pending_pos = self.env['purchase.order'].search([
+            ('id', 'in', rfq_ids),
+            ('company_id', 'in', company_ids),
+            ('state', '=', 'to approve'),
+        ])
 
         current_user = self.env.user
         result = []
