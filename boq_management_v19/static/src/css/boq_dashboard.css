@@ -941,13 +941,13 @@
 .boq_rfq_row:hover {
     background: #f8f9fa !important;
 }
-/* Highlight recently submitted RFQs (Task 2.6) */
+/* Highlight recently submitted RFQs (Task 2.6) — subtle left border only */
 .boq_rfq_row_new {
-    background: #fff8e1 !important;
-    border-left-color: #ffc107;
+    background: #f8f9fa !important;
+    border-left-color: #adb5bd;
 }
 .boq_rfq_row_new:hover {
-    background: #fff3cd !important;
+    background: #f1f3f5 !important;
 }
 
 /* ── Empty / informational rows ─────────────────────────────── */
@@ -1030,15 +1030,32 @@
     text-transform: uppercase;
 }
 
-/* ── "New / Recently Submitted" badge (notification style) ──── */
-.boq_badge_new {
-    background: linear-gradient(135deg, #ff9800, #f44336) !important;
-    color: #fff !important;
-    animation: boq_pulse 2s ease-in-out infinite;
+/* ── Single neutral badge — used for ALL status/count badges in the tree ── */
+/* One light uniform colour, no per-state colour coding.                    */
+.boq_badge_neutral {
+    background: #f1f3f5 !important;
+    color: #495057 !important;
+    border: 1px solid #dee2e6 !important;
+    font-weight: 500;
 }
-@keyframes boq_pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); }
-    50%       { box-shadow: 0 0 0 6px rgba(255, 152, 0, 0); }
+
+/* ── "Recently submitted" bell badge — same light base, subtle left dot ── */
+/* Keeps a minimal visual cue (bell icon) without colour drama.             */
+.boq_badge_submitted {
+    background: #f1f3f5 !important;
+    color: #495057 !important;
+    border: 1px solid #adb5bd !important;
+}
+
+/* Legacy alias kept so existing .boq_badge_new references in other         */
+/* sections don't break; maps to the same neutral style.                    */
+.boq_badge_new {
+    background: #f1f3f5 !important;
+    color: #495057 !important;
+    border: 1px solid #dee2e6 !important;
+    font-weight: 500;
+    animation: none !important;
+    box-shadow: none !important;
 }
 
 /* ── Tree summary bar ───────────────────────────────────────── */
@@ -1063,17 +1080,8 @@
     gap: 4px;
 }
 
-.boq_chip_warning {
-    border-color: #ffc107;
-    color: #856404;
-    background: #fff8e1;
-}
-
-.boq_chip_success {
-    border-color: #198754;
-    color: #0f5132;
-    background: #d1e7dd;
-}
+/* boq_chip_warning and boq_chip_success intentionally removed —
+   all chips now use the single neutral boq_totals_chip style. */
 
 .boq_totals_value {
     font-weight: 700;
@@ -1237,13 +1245,13 @@
     display: flex;
     align-items: center;
     padding: 10px 16px;
-    background: #fff8e1;
-    border-bottom: 2px solid #ffc107;
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
     font-size: 0.78rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: .04em;
-    color: #856404;
+    color: #6c757d;
     gap: 10px;
 }
 
@@ -1260,12 +1268,7 @@
 .boq_pending_row:last-child { border-bottom: none; }
 .boq_pending_row:hover      { background: #fffde7; }
 
-/* Urgent rows (> 7 days pending) */
-.boq_pending_row_urgent {
-    background: #fff3cd !important;
-    border-left: 3px solid #ffc107;
-}
-.boq_pending_row_urgent:hover { background: #ffecb5 !important; }
+/* Urgent row styling removed — all rows use uniform neutral style */
 
 /* ── Column widths ──────────────────────────────────────────── */
 .boq_pending_col_vendor {
