@@ -953,13 +953,15 @@
 .boq_rfq_row:hover {
     background: #f8f9fa !important;
 }
-/* Highlight recently submitted RFQs (Task 2.6) — subtle left border only */
+/* ── Recently submitted RFQ row — amber notification highlight ── */
 .boq_rfq_row_new {
-    background: #f8f9fa !important;
-    border-left-color: #adb5bd;
+    background: #fffbeb !important;
+    border-left: 3px solid #f59e0b !important;
+    color: #212529;
 }
 .boq_rfq_row_new:hover {
-    background: #f1f3f5 !important;
+    background: #fef3c7 !important;
+    border-left-color: #d97706 !important;
 }
 
 /* ── Empty / informational rows ─────────────────────────────── */
@@ -1051,16 +1053,76 @@
     font-weight: 500;
 }
 
-/* ── "Recently submitted" bell badge — same light base, subtle left dot ── */
-/* Keeps a minimal visual cue (bell icon) without colour drama.             */
-.boq_badge_submitted {
-    background: #f1f3f5 !important;
-    color: #495057 !important;
-    border: 1px solid #adb5bd !important;
+/* ── Notification pulse keyframe ───────────────────────────────
+   Used by .boq_badge_submitted bell badges and .boq_approval_pill_mine.
+   Soft amber glow: draws the eye without being jarring.              */
+@keyframes boq_pulse {
+    0%, 100% { box-shadow: 0 0 0 0   rgba(245, 158, 11, 0.55); }
+    50%       { box-shadow: 0 0 0 5px rgba(245, 158, 11, 0);    }
 }
 
-/* Legacy alias kept so existing .boq_badge_new references in other         */
-/* sections don't break; maps to the same neutral style.                    */
+/* ── "Recently submitted" notification badge ────────────────────
+   Amber tint — visually distinct from the neutral status badges
+   so users can instantly spot new quotation submissions.          */
+.boq_badge_submitted {
+    background: #fef3c7 !important;
+    color: #78350f !important;
+    border: 1px solid #f59e0b !important;
+    font-weight: 600;
+    animation: boq_pulse 2.2s ease-in-out infinite;
+}
+
+/* ── Vendor row notification accent ─────────────────────────────
+   Applied when the vendor has at least one recently submitted RFQ.
+   Uses a gentle amber left-border so the row stands out vs normal
+   vendor rows while respecting the open-state blue border.        */
+.boq_vendor_has_new {
+    border-left: 3px solid #fcd34d !important;
+    background: #fffef7 !important;
+}
+.boq_vendor_has_new:hover {
+    background: #fffbeb !important;
+    border-left-color: #f59e0b !important;
+}
+/* When the vendor row is expanded AND has new submissions */
+.boq_vendor_has_new.boq_vendor_row_open {
+    background: #fffbeb !important;
+    border-left-color: #f59e0b !important;
+}
+
+/* ── Trade row notification dot ─────────────────────────────────
+   Adds a very subtle amber left accent to trade rows that contain
+   recently submitted vendors, without overriding the expand state. */
+.boq_trade_has_new {
+    border-left: 3px solid #fde68a;
+}
+.boq_trade_has_new.boq_trade_row_open {
+    border-left-color: #f59e0b !important;
+}
+
+/* ── Vendor avatar ring when vendor has new submissions ─────────
+   Amber glow ring around the initials avatar; mirrors the border
+   accent on .boq_vendor_has_new rows.                            */
+.boq_avatar_new {
+    box-shadow: 0 0 0 2px #f59e0b, 0 0 0 4px rgba(245, 158, 11, 0.25);
+}
+
+/* ── "Recently Submitted" chip in the summary bar ───────────────
+   Amber tint chip to match the notification badge colour palette. */
+.boq_chip_notification {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 20px;
+    padding: 4px 12px;
+    color: #78350f;
+    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+}
+
+/* Legacy alias kept so existing .boq_badge_new references don't break */
 .boq_badge_new {
     background: #f1f3f5 !important;
     color: #495057 !important;
