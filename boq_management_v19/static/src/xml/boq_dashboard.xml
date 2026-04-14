@@ -178,11 +178,11 @@
                     </div>
                 </div>
 
-                <!-- Task 1.6 — Approval pending mini-card -->
+                <!-- Task 1.6 — Approval pending mini-card — uniform neutral colour -->
                 <t t-if="approvalTotals.count > 0">
                     <div class="boq_stat_card flex-fill boq_stat_card_approval"
                          t-on-click="openApprovalPos" style="cursor:pointer;">
-                        <div class="boq_stat_icon bg-danger-subtle text-danger">
+                        <div class="boq_stat_icon bg-secondary-subtle text-secondary">
                             <i class="fa fa-clock-o fa-2x"/>
                         </div>
                         <div class="boq_stat_body">
@@ -192,7 +192,7 @@
                             <div class="boq_stat_label">
                                 Awaiting Approval
                                 <t t-if="approvalTotals.current > 0">
-                                    <span class="badge boq_badge_new rounded-pill ms-1 small">
+                                    <span class="badge boq_badge_neutral rounded-pill ms-1 small">
                                         <t t-esc="approvalTotals.current"/> needs your action
                                     </span>
                                 </t>
@@ -248,9 +248,9 @@
                                     <!-- Key metrics -->
                                     <div class="boq_vc_metrics d-flex flex-wrap gap-2 mb-3">
 
-                                        <!-- RFQ count -->
+                                        <!-- RFQ count — neutral colour (no payment info shown) -->
                                         <div class="boq_vc_metric">
-                                            <div class="boq_vc_metric_value text-primary">
+                                            <div class="boq_vc_metric_value boq_metric_neutral">
                                                 <t t-esc="vs.rfq_count"/>
                                             </div>
                                             <div class="boq_vc_metric_label">RFQs</div>
@@ -258,16 +258,16 @@
 
                                         <!-- Total value -->
                                         <div class="boq_vc_metric">
-                                            <div class="boq_vc_metric_value small">
+                                            <div class="boq_vc_metric_value small boq_metric_neutral">
                                                 <t t-esc="fmtCurrency(vs.total_value)"/>
                                             </div>
                                             <div class="boq_vc_metric_label">Total Value</div>
                                         </div>
 
-                                        <!-- Margin % -->
+                                        <!-- Margin % — uniform light colour, no per-value coding -->
                                         <t t-if="vs.margin_percent != null">
                                             <div class="boq_vc_metric">
-                                                <div t-attf-class="boq_vc_metric_value #{ vs.margin_percent >= 20 ? 'text-success' : vs.margin_percent >= 10 ? 'text-warning' : 'text-danger' }">
+                                                <div class="boq_vc_metric_value boq_metric_neutral">
                                                     <t t-esc="vs.margin_percent.toFixed(1)"/>%
                                                 </div>
                                                 <div class="boq_vc_metric_label">Margin</div>
@@ -276,7 +276,8 @@
 
                                     </div>
 
-                                    <!-- Footer: RFQ states + open link -->
+                                    <!-- Footer: RFQ states only — payment info (vs.payment_status_label)
+                                         is intentionally excluded from all vendor-wise sections. -->
                                     <div class="boq_vc_footer d-flex align-items-center
                                                 justify-content-between flex-wrap gap-1">
 
@@ -576,14 +577,17 @@
                                         </t>
                                     </span>
 
+                                    <!-- NOTE: payment_status / payment_status_label are intentionally
+                                         NOT shown here — payment info is excluded from the
+                                         vendor-wise expanded section per design requirement. -->
                                     <span class="boq_tree_chips">
-                                        <!-- RFQ count -->
+                                        <!-- RFQ count — uniform neutral badge -->
                                         <span class="badge boq_badge_neutral rounded-pill">
                                             <t t-esc="vendor.rfq_count"/>
                                             RFQ<t t-if="vendor.rfq_count !== 1">s</t>
                                         </span>
 
-                                        <!-- Pending indicator -->
+                                        <!-- Pending indicator — uniform neutral badge -->
                                         <t t-if="vendor.pending_count > 0">
                                             <span class="badge boq_badge_neutral rounded-pill ms-1"
                                                   title="RFQ sent — no quotation yet">
@@ -592,9 +596,9 @@
                                             </span>
                                         </t>
 
-                                        <!-- Recently submitted (Task 2.6 notification indicator) -->
+                                        <!-- Recently submitted — uniform neutral badge -->
                                         <t t-if="vendor.recently_submitted_count > 0">
-                                            <span class="badge boq_badge_neutral boq_badge_submitted rounded-pill ms-1"
+                                            <span class="badge boq_badge_neutral rounded-pill ms-1"
                                                   title="Quotation submitted in last 7 days">
                                                 <i class="fa fa-bell me-1"/>
                                                 <t t-esc="vendor.recently_submitted_count"/> new
@@ -727,18 +731,18 @@
                     <div class="boq_approval_section_header d-flex align-items-center
                                 justify-content-between mb-3">
                         <h5 class="mb-0 fw-bold boq_section_title">
-                            <i class="fa fa-clock-o me-2 text-danger"/>
+                            <i class="fa fa-clock-o me-2 text-muted"/>
                             Pending Approvals
-                            <span class="badge bg-danger rounded-pill ms-2 small">
+                            <span class="badge boq_badge_neutral rounded-pill ms-2 small">
                                 <t t-esc="state.approvalPOs.length"/>
                             </span>
                             <t t-if="approvalTotals.current > 0">
-                                <span class="badge boq_badge_new rounded-pill ms-1 small">
+                                <span class="badge boq_badge_neutral rounded-pill ms-1 small">
                                     <t t-esc="approvalTotals.current"/> needs your action
                                 </span>
                             </t>
                         </h5>
-                        <button class="btn btn-sm btn-outline-danger"
+                        <button class="btn btn-sm btn-outline-secondary"
                                 t-on-click="openApprovalPos">
                             <i class="fa fa-external-link me-1"/>View All
                         </button>
@@ -791,12 +795,12 @@
                                     </small>
                                 </span>
 
-                                <!-- Approval progress pills -->
+                                <!-- Approval progress pills — uniform neutral colour -->
                                 <span class="boq_approval_col_progress">
                                     <div class="d-flex flex-wrap gap-1 align-items-center">
                                         <t t-foreach="po.approval_lines" t-as="al"
                                            t-key="al.level_name">
-                                            <span t-attf-class="badge #{ approvalStatusClass(al.status) } rounded-pill boq_approval_pill
+                                            <span t-attf-class="badge boq_badge_neutral rounded-pill boq_approval_pill
                                                                  #{ al.is_mine ? 'boq_approval_pill_mine' : '' }"
                                                   t-att-title="al.approvers">
                                                 <t t-if="al.is_mine">
@@ -813,10 +817,10 @@
                                     </div>
                                 </span>
 
-                                <!-- Action column -->
+                                <!-- Action column — uniform neutral colour for "Your Turn" -->
                                 <span class="boq_approval_col_action">
                                     <t t-if="po.has_current_approver">
-                                        <span class="badge boq_badge_new rounded-pill">
+                                        <span class="badge boq_badge_neutral rounded-pill">
                                             <i class="fa fa-bell me-1"/>Your Turn
                                         </span>
                                     </t>

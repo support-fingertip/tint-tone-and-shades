@@ -781,14 +781,26 @@
 .boq_dashboard .text-muted     { color: #6c757d !important; }
 .boq_dashboard .text-dark      { color: #212529 !important; }
 
-/* Badge colors */
-.boq_dashboard .badge.bg-primary   { background-color: #0d6efd !important; color: #fff !important; }
-.boq_dashboard .badge.bg-secondary { background-color: #6c757d !important; color: #fff !important; }
-.boq_dashboard .badge.bg-success   { background-color: #198754 !important; color: #fff !important; }
-.boq_dashboard .badge.bg-warning   { background-color: #ffc107 !important; color: #212529 !important; }
-.boq_dashboard .badge.bg-info      { background-color: #0dcaf0 !important; color: #212529 !important; }
-.boq_dashboard .badge.bg-danger    { background-color: #dc3545 !important; color: #fff !important; }
-.boq_dashboard .text-dark.badge    { color: #212529 !important; }
+/* Badge colors — ALL status badges use the single neutral style.
+   Any Bootstrap bg-* badge that slips through is remapped to neutral
+   so the dashboard always shows one uniform light colour. */
+.boq_dashboard .badge.bg-primary,
+.boq_dashboard .badge.bg-secondary,
+.boq_dashboard .badge.bg-success,
+.boq_dashboard .badge.bg-warning,
+.boq_dashboard .badge.bg-info,
+.boq_dashboard .badge.bg-danger {
+    background-color: #f1f3f5 !important;
+    color: #495057 !important;
+    border: 1px solid #dee2e6 !important;
+}
+.boq_dashboard .text-dark.badge { color: #495057 !important; }
+
+/* ── Vendor card metric value — uniform neutral text colour ──── */
+.boq_metric_neutral {
+    color: #495057 !important;
+    font-weight: 700;
+}
 
 /* ── TABLE — THE KEY FIX ─────────────────────────────────────────
    Bootstrap 5 applies stripe/hover via box-shadow (not background-
@@ -1182,16 +1194,16 @@
     padding: 3px 8px;
 }
 
-/* Pulse on pills that are the current user's turn */
+/* Pulse on pills that are the current user's turn — neutral outline */
 .boq_approval_pill_mine {
     animation: boq_pulse 1.8s ease-in-out infinite;
-    outline: 2px solid #ffc107;
+    outline: 2px solid #adb5bd;
     outline-offset: 1px;
 }
 
-/* Approval stat card accent */
+/* Approval stat card accent — neutral left border */
 .boq_stat_card_approval {
-    border-left: 3px solid #dc3545 !important;
+    border-left: 3px solid #adb5bd !important;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1199,13 +1211,13 @@
    ══════════════════════════════════════════════════════════════ */
 
 .boq_rfq_state_summary_row {
-    background: #f0f4ff !important;
+    background: #f8f9fa !important;
     min-height: 36px !important;
-    border-left: 3px solid #6ea8fe;
+    border-left: 3px solid #dee2e6;
     cursor: default !important;
 }
 .boq_rfq_state_summary_row:hover {
-    background: #e8f0fe !important;
+    background: #f1f3f5 !important;
 }
 
 .boq_rfq_state_summary {
