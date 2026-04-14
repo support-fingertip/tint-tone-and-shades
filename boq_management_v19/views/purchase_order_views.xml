@@ -80,7 +80,7 @@
                 <field name="customer_price" readonly="1"/>
                 <field name="margin_percent" string="Savings %"
                        widget="percentage"
-                       column_invisible="1"
+                       optional="show"
                        readonly="1"/>
             </xpath>
 

@@ -120,12 +120,12 @@ class PurchaseOrderBoqExtend(models.Model):
                         sell = line.unit_price * line.qty * (
                             1.0 - (line.discount or 0.0) / 100.0
                         )
-                        cost = (line.customer_price or 0.0) * line.qty
+                        cost = (line.cost_price or 0.0) * line.qty
                         total_sell += sell
                         total_cost += cost
                 if total_sell > 0:
                     order.margin_percent = (
-                        ((total_sell - total_cost) / total_sell )* 100.0
+                        (total_sell - total_cost) / total_sell * 100.0
                     )
                     continue
             # Fallback: no BOQ — savings % vs product standard cost
@@ -135,7 +135,7 @@ class PurchaseOrderBoqExtend(models.Model):
             total_std = 0.0
             total_po = 0.0
             for line in order.order_line:
-                std = (line.customer_price or 0.0) * line.product_qty
+                std = (line.product_id.standard_price or 0.0) * line.product_qty
                 po = line.price_unit * line.product_qty
                 total_std += std
                 total_po += po
