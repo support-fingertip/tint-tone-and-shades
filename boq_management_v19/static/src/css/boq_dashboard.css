@@ -1185,3 +1185,109 @@
 .boq_stat_card_approval {
     border-left: 3px solid #dc3545 !important;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   TASK 2.3 — RFQ State Breakdown Summary row (inside expanded vendor)
+   ══════════════════════════════════════════════════════════════ */
+
+.boq_rfq_state_summary_row {
+    background: #f0f4ff !important;
+    min-height: 36px !important;
+    border-left: 3px solid #6ea8fe;
+    cursor: default !important;
+}
+.boq_rfq_state_summary_row:hover {
+    background: #e8f0fe !important;
+}
+
+.boq_rfq_state_summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+}
+
+.boq_rfq_state_summary_label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.boq_state_count_badge {
+    font-size: 0.74rem;
+    padding: 3px 9px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TASK 2.5 — Awaiting Quotation / Pending RFQs Section
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Table container ─────────────────────────────────────────── */
+.boq_pending_table {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* ── Header row ─────────────────────────────────────────────── */
+.boq_pending_thead {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background: #fff8e1;
+    border-bottom: 2px solid #ffc107;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #856404;
+    gap: 10px;
+}
+
+/* ── Data row ───────────────────────────────────────────────── */
+.boq_pending_row {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    gap: 10px;
+    border-bottom: 1px solid #f0f2f5;
+    transition: background 0.12s;
+    font-size: 0.875rem;
+}
+.boq_pending_row:last-child { border-bottom: none; }
+.boq_pending_row:hover      { background: #fffde7; }
+
+/* Urgent rows (> 7 days pending) */
+.boq_pending_row_urgent {
+    background: #fff3cd !important;
+    border-left: 3px solid #ffc107;
+}
+.boq_pending_row_urgent:hover { background: #ffecb5 !important; }
+
+/* ── Column widths ──────────────────────────────────────────── */
+.boq_pending_col_vendor {
+    flex: 0 0 180px;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+.boq_pending_col_rfq    { flex: 0 0 160px; min-width: 0;
+                           white-space: nowrap; overflow: hidden;
+                           text-overflow: ellipsis; }
+.boq_pending_col_trade  { flex: 1; min-width: 0;
+                           white-space: nowrap; overflow: hidden;
+                           text-overflow: ellipsis; }
+.boq_pending_col_date   { flex: 0 0 110px; min-width: 0; }
+.boq_pending_col_days   { flex: 0 0 100px; text-align: center; }
+.boq_pending_col_status { flex: 0 0 130px; }
+.boq_pending_col_value  { flex: 0 0 120px; text-align: right;
+                           display: flex; align-items: center;
+                           justify-content: flex-end; gap: 4px; }
+
+/* Show open icon on row hover */
+.boq_pending_open_icon { opacity: 0; transition: opacity 0.15s; }
+.boq_pending_row:hover .boq_pending_open_icon { opacity: 1; }
