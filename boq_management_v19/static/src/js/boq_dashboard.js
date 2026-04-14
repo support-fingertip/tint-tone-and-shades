@@ -82,6 +82,7 @@ class BoqManagerDashboardBase extends Component {
             tree:             [],   // Level 1: trades → Level 2: vendors → Level 3: rfqs
             vendorSummary:    [],   // Flat vendor cards: name, rfq_count, value, margin, payment
             approvalPOs:      [],   // Task 1.6 — POs awaiting approval
+            pendingVendors:   [],   // Task 2.5 — Vendors with pending (draft/sent) RFQs
             expandedTrades:   {},   // { trade_id: bool }
             expandedVendors:  {},   // { vendor_id: bool }
             filterText:       "",
@@ -117,16 +118,18 @@ class BoqManagerDashboardBase extends Component {
     async _loadAll() {
         try {
             const dt = this.dashboardType;
-            const [stats, tree, vendorSummary, approvalPOs] = await Promise.all([
-                this.orm.call("boq.boq", "get_dashboard_stats",      [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_dashboard_tree_data",  [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_vendor_summary",       [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_approval_pending_pos", [], { dashboard_type: dt }),
+            const [stats, tree, vendorSummary, approvalPOs, pendingVendors] = await Promise.all([
+                this.orm.call("boq.boq", "get_dashboard_stats",        [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_dashboard_tree_data",    [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_vendor_summary",         [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_approval_pending_pos",   [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_pending_rfq_vendors",    [], { dashboard_type: dt }),
             ]);
-            this.state.stats          = stats;
-            this.state.tree           = tree;
-            this.state.vendorSummary  = vendorSummary;
-            this.state.approvalPOs    = approvalPOs;
+            this.state.stats           = stats;
+            this.state.tree            = tree;
+            this.state.vendorSummary   = vendorSummary;
+            this.state.approvalPOs     = approvalPOs;
+            this.state.pendingVendors  = pendingVendors;
         } catch (err) {
             this.state.error = err.message || "Failed to load dashboard data.";
         } finally {
@@ -138,6 +141,7 @@ class BoqManagerDashboardBase extends Component {
         this.state.loading         = true;
         this.state.error           = null;
         this.state.vendorSummary   = [];
+        this.state.pendingVendors  = [];
         this.state.expandedTrades  = {};
         this.state.expandedVendors = {};
         await this._loadAll();
@@ -183,6 +187,16 @@ class BoqManagerDashboardBase extends Component {
             pending:   t.reduce((s, r) => s + (r.pending_count   || 0), 0),
             submitted: t.reduce((s, r) => s + (r.submitted_count || 0), 0),
             value:     t.reduce((s, r) => s + (r.total_value     || 0), 0),
+        };
+    }
+
+    // ── Computed: pending RFQ totals (Task 2.5) ──────────────────────────
+    get pendingRfqTotals() {
+        const pv = this.state.pendingVendors || [];
+        return {
+            vendors: pv.length,
+            rfqs:    pv.reduce((s, v) => s + (v.rfq_count || 0), 0),
+            oldest:  pv.length ? pv[0].oldest_days : 0,  // already sorted desc
         };
     }
 

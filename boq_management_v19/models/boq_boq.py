@@ -1166,6 +1166,21 @@ class BoqBoq(models.Model):
                     'not_paid':  'Not Paid',
                 }.get(pay_status, 'Not Paid')
 
+                # Task 2.3 — State breakdown summary for vendor expansion header
+                # Shows counts per state so users can quickly see Draft/Sent/Submitted/Approved
+                _state_counts = {}
+                for rfq in rfqs_for_v:
+                    _state_counts[rfq.state] = _state_counts.get(rfq.state, 0) + 1
+                _state_order = ['draft', 'sent', 'submitted', 'to approve', 'purchase', 'done', 'cancel']
+                state_summary = [
+                    {
+                        'state':       s,
+                        'state_label': RFQ_STATE_LABELS.get(s, s),
+                        'count':       _state_counts[s],
+                    }
+                    for s in _state_order if s in _state_counts
+                ]
+
                 vendor_node = {
                     'vendor_id':      vid,
                     'vendor_name':    partner.name,
@@ -1176,6 +1191,7 @@ class BoqBoq(models.Model):
                     'total_value':    sum(r.amount_total for r in rfqs_for_v),
                     'payment_status': pay_status,
                     'payment_status_label': pay_label,
+                    'state_summary':  state_summary,
                     'rfqs':           rfq_list,
                 }
 
@@ -1194,6 +1210,121 @@ class BoqBoq(models.Model):
         # Sort trades by name
         tree.sort(key=lambda t: t['trade_name'])
         return tree
+
+    # ── Task 2.5 — Pending RFQ vendors (awaiting quotation) ──────────────
+    @api.model
+    def get_pending_rfq_vendors(self, dashboard_type='vendor'):
+        """
+        Task 2.5 — Return vendors/suppliers who received RFQs (state draft/sent)
+        but have NOT yet submitted a quotation.
+
+        Returns a list of vendors sorted by oldest-pending first, each with:
+          - vendor_id, vendor_name, vendor_email
+          - rfq_count       total pending RFQs for this vendor
+          - oldest_days     days since the oldest pending RFQ was created
+          - rfqs            list of pending RFQ details (with trade_name, days_pending)
+
+        dashboard_type: 'vendor' | 'supplier'
+        """
+        PENDING_STATES = {'draft', 'sent'}
+        RFQ_STATE_LABELS = {
+            'draft': 'Quote Requested',
+            'sent':  'Sent to Vendor',
+        }
+
+        company_ids = self._get_allowed_company_ids()
+        boqs = self.search([
+            ('company_id', 'in', company_ids),
+            ('boq_type',   '=',  dashboard_type),
+        ])
+        if not boqs:
+            return []
+
+        # Get all linked RFQ ids
+        rfq_boq_map = {}
+        if boqs.ids:
+            self.env.cr.execute(
+                "SELECT purchase_id, boq_id FROM boq_boq_purchase_order_rel WHERE boq_id IN %s",
+                (tuple(boqs.ids),)
+            )
+            for row in self.env.cr.fetchall():
+                rfq_boq_map[row[0]] = row[1]
+
+        if not rfq_boq_map:
+            return []
+
+        all_rfqs = self.env['purchase.order'].browse(list(rfq_boq_map.keys()))
+
+        # Filter to pending states only
+        pending_rfqs = all_rfqs.filtered(lambda r: r.state in PENDING_STATES)
+
+        # Filter by partner_type matching dashboard_type
+        if dashboard_type == 'supplier':
+            pending_rfqs = pending_rfqs.filtered(
+                lambda r: r.partner_id.partner_type == 'supplier'
+            )
+        else:
+            pending_rfqs = pending_rfqs.filtered(
+                lambda r: r.partner_id.partner_type != 'supplier'
+            )
+
+        if not pending_rfqs:
+            return []
+
+        # Build bulk trade lookup: (boq_id, partner_id) -> category_name
+        trade_vendor_recs = self.env['boq.trade.vendor'].search([
+            ('boq_id',       'in', boqs.ids),
+            ('partner_type', '=',  dashboard_type),
+        ])
+        trade_map = {}   # (boq_id, partner_id) -> category_name
+        for tv in trade_vendor_recs:
+            partners = tv.vendor_ids if dashboard_type == 'vendor' else tv.supplier_ids
+            for p in partners:
+                key = (tv.boq_id.id, p.id)
+                if key not in trade_map:
+                    trade_map[key] = tv.category_id.name
+
+        # Group RFQs by vendor
+        now = fields.Datetime.now()
+        vendor_map = {}
+        for rfq in pending_rfqs:
+            vid = rfq.partner_id.id
+            if vid not in vendor_map:
+                vendor_map[vid] = {
+                    'vendor_id':   vid,
+                    'vendor_name': rfq.partner_id.name,
+                    'vendor_email': rfq.partner_id.email or '',
+                    'rfq_count':   0,
+                    'oldest_days': 0,
+                    'rfqs':        [],
+                }
+            entry = vendor_map[vid]
+
+            days_pending = 0
+            if rfq.date_order:
+                days_pending = max(0, (now - rfq.date_order).days)
+
+            boq_id = rfq_boq_map.get(rfq.id)
+            trade_name = trade_map.get((boq_id, vid), '—') if boq_id else '—'
+
+            entry['rfqs'].append({
+                'rfq_id':      rfq.id,
+                'rfq_name':    rfq.name,
+                'state':       rfq.state,
+                'state_label': RFQ_STATE_LABELS.get(rfq.state, rfq.state),
+                'date_order':  rfq.date_order.strftime('%d %b %Y') if rfq.date_order else '',
+                'amount_total': rfq.amount_total,
+                'days_pending': days_pending,
+                'trade_name':  trade_name,
+            })
+            entry['rfq_count'] += 1
+            if days_pending > entry['oldest_days']:
+                entry['oldest_days'] = days_pending
+
+        result = list(vendor_map.values())
+        # Sort: longest-pending first (most urgent at top)
+        result.sort(key=lambda x: -x['oldest_days'])
+        return result
 
     # ── NEW Task 1.6 — Approval-pending PO section ────────────────────────
     @api.model

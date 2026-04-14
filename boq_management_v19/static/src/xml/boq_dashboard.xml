@@ -314,6 +314,133 @@
                 </div><!-- /vendor summary px-4 -->
             </t><!-- /vendor summary -->
 
+            <!-- ╔════════════════════════════════════════════════════╗
+                 ║  TASK 2.5 — AWAITING QUOTATION SECTION            ║
+                 ║  Vendors who received an RFQ but have NOT yet      ║
+                 ║  submitted a quotation (state = draft / sent)      ║
+                 ╚════════════════════════════════════════════════════╝ -->
+            <t t-if="state.pendingVendors.length > 0">
+                <div class="px-4 pb-3">
+
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="mb-0 fw-bold boq_section_title">
+                            <i class="fa fa-clock-o me-2 text-warning"/>
+                            Awaiting Quotation
+                            <span class="badge bg-warning text-dark rounded-pill ms-2 small">
+                                <t t-esc="pendingRfqTotals.rfqs"/> RFQ<t t-if="pendingRfqTotals.rfqs !== 1">s</t>
+                            </span>
+                            <span class="badge bg-secondary rounded-pill ms-1 small">
+                                <t t-esc="pendingRfqTotals.vendors"/>
+                                <t t-esc="partnerLabel"/><t t-if="pendingRfqTotals.vendors !== 1">s</t>
+                            </span>
+                        </h5>
+                        <small class="text-muted">
+                            <i class="fa fa-info-circle me-1"/>
+                            Oldest: <strong><t t-esc="pendingRfqTotals.oldest"/>d</strong> ago
+                        </small>
+                    </div>
+
+                    <div class="boq_pending_table">
+
+                        <!-- Table header -->
+                        <div class="boq_pending_thead">
+                            <span class="boq_pending_col_vendor">
+                                <t t-esc="partnerLabel"/>
+                            </span>
+                            <span class="boq_pending_col_rfq">RFQ Reference</span>
+                            <span class="boq_pending_col_trade">Trade</span>
+                            <span class="boq_pending_col_date">Issued On</span>
+                            <span class="boq_pending_col_days">Days Pending</span>
+                            <span class="boq_pending_col_status">Status</span>
+                            <span class="boq_pending_col_value">Value</span>
+                        </div>
+
+                        <!-- Vendor + RFQ rows -->
+                        <t t-foreach="state.pendingVendors" t-as="pv" t-key="pv.vendor_id">
+                            <t t-foreach="pv.rfqs" t-as="prfq" t-key="prfq.rfq_id">
+                                <div t-attf-class="boq_pending_row #{ prfq.days_pending > 7 ? 'boq_pending_row_urgent' : '' }"
+                                     t-on-click="() => this.openRfq(prfq.rfq_id)"
+                                     style="cursor:pointer;">
+
+                                    <!-- Vendor name (only show on first RFQ for this vendor) -->
+                                    <span class="boq_pending_col_vendor">
+                                        <t t-if="prfq_index === 0">
+                                            <span class="boq_vendor_avatar_sm flex-shrink-0">
+                                                <t t-esc="(pv.vendor_name || '?').charAt(0).toUpperCase()"/>
+                                            </span>
+                                            <span class="fw-semibold ms-2 text-truncate">
+                                                <t t-esc="pv.vendor_name"/>
+                                            </span>
+                                            <t t-if="pv.rfq_count > 1">
+                                                <span class="badge bg-secondary rounded-pill ms-1 small">
+                                                    <t t-esc="pv.rfq_count"/>
+                                                </span>
+                                            </t>
+                                        </t>
+                                    </span>
+
+                                    <!-- RFQ reference -->
+                                    <span class="boq_pending_col_rfq">
+                                        <i class="fa fa-file-text-o me-1 text-muted"/>
+                                        <span class="fw-semibold text-primary">
+                                            <t t-esc="prfq.rfq_name"/>
+                                        </span>
+                                    </span>
+
+                                    <!-- Trade -->
+                                    <span class="boq_pending_col_trade text-muted small">
+                                        <t t-esc="prfq.trade_name"/>
+                                    </span>
+
+                                    <!-- Date issued -->
+                                    <span class="boq_pending_col_date text-muted small">
+                                        <t t-esc="prfq.date_order"/>
+                                    </span>
+
+                                    <!-- Days pending with urgency colouring -->
+                                    <span class="boq_pending_col_days">
+                                        <t t-if="prfq.days_pending > 14">
+                                            <span class="badge bg-danger rounded-pill">
+                                                <i class="fa fa-exclamation me-1"/>
+                                                <t t-esc="prfq.days_pending"/>d
+                                            </span>
+                                        </t>
+                                        <t t-elif="prfq.days_pending > 7">
+                                            <span class="badge bg-warning text-dark rounded-pill">
+                                                <i class="fa fa-clock-o me-1"/>
+                                                <t t-esc="prfq.days_pending"/>d
+                                            </span>
+                                        </t>
+                                        <t t-else="">
+                                            <span class="badge bg-secondary rounded-pill">
+                                                <t t-esc="prfq.days_pending"/>d
+                                            </span>
+                                        </t>
+                                    </span>
+
+                                    <!-- RFQ state -->
+                                    <span class="boq_pending_col_status">
+                                        <span t-attf-class="badge #{ rfqStateClass(prfq.state) } rounded-pill">
+                                            <t t-esc="prfq.state_label"/>
+                                        </span>
+                                    </span>
+
+                                    <!-- Value -->
+                                    <span class="boq_pending_col_value fw-semibold">
+                                        <t t-esc="fmtCurrency(prfq.amount_total)"/>
+                                        <span class="boq_pending_open_icon ms-1">
+                                            <i class="fa fa-external-link text-muted"/>
+                                        </span>
+                                    </span>
+
+                                </div><!-- /pending row -->
+                            </t>
+                        </t>
+
+                    </div><!-- /boq_pending_table -->
+                </div><!-- /px-4 -->
+            </t><!-- /pending section -->
+
             <!-- ── SUMMARY CHIPS BAR ─────────────────────── -->
             <div class="boq_tree_summary_bar d-flex flex-wrap gap-2 px-4 pb-3">
                 <span class="boq_totals_chip">
@@ -514,6 +641,26 @@
                                 <!-- ── LEVEL 3: RFQ ROWS ──────────────── -->
                                 <!-- Task 2.4: NO payment info inside this section -->
                                 <t t-if="isVendorExpanded(vendor.vendor_id)">
+
+                                    <!-- Task 2.3 — RFQ State Breakdown Summary -->
+                                    <!-- Shows counts per state before individual RFQ rows -->
+                                    <t t-if="vendor.state_summary and vendor.state_summary.length > 0">
+                                        <div class="boq_tree_row boq_rfq_state_summary_row">
+                                            <span class="boq_tree_indent"/>
+                                            <span class="boq_tree_indent"/>
+                                            <span class="boq_rfq_state_summary">
+                                                <small class="text-muted me-2 boq_rfq_state_summary_label">
+                                                    <i class="fa fa-bar-chart me-1"/>RFQ Status:
+                                                </small>
+                                                <t t-foreach="vendor.state_summary" t-as="ss" t-key="ss.state">
+                                                    <span t-attf-class="badge #{ rfqStateClass(ss.state) } rounded-pill boq_state_count_badge">
+                                                        <t t-esc="ss.count"/>
+                                                        <span class="ms-1"><t t-esc="ss.state_label"/></span>
+                                                    </span>
+                                                </t>
+                                            </span>
+                                        </div>
+                                    </t>
 
                                     <t t-if="vendor.rfqs.length === 0">
                                         <div class="boq_tree_row boq_rfq_row boq_empty_row">
