@@ -44,10 +44,28 @@
     </record>
 
     <!-- Menu under Purchase > Configuration -->
+<!--    <menuitem-->
+<!--        id="menu_margin_threshold_config"-->
+<!--        name="Margin Thresholds"-->
+<!--        parent="purchase.menu_purchase_config"-->
+<!--        action="action_margin_threshold_config"-->
+<!--        sequence="20"/>-->
+
+    <!-- Vendor Configuration Menu -->
     <menuitem
-        id="menu_margin_threshold_config"
-        name="Margin Thresholds"
-        parent="purchase.menu_purchase_config"
-        action="action_margin_threshold_config"
-        sequence="20"/>
+            id="menu_margin_threshold_config_vendor"
+            name="Margin Thresholds"
+            parent="boq_management_v19.menu_vendor_configuration"
+            action="action_margin_threshold_config"
+            sequence="20"/>
+
+    <!-- Supplier Configuration Menu -->
+    <menuitem
+            id="menu_margin_threshold_config_supplier"
+            name="Margin Thresholds"
+            parent="boq_management_v19.menu_supplier_configuration"
+            action="action_margin_threshold_config"
+            sequence="20"/>
+
+
 </odoo>
