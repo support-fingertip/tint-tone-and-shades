@@ -445,7 +445,7 @@
                     <i class="fa fa-clock-o me-1"/>
                     <strong><t t-esc="treeTotals.pending"/></strong> Pending
                 </span>
-                <span t-if="treeTotals.submitted > 0" class="boq_totals_chip">
+                <span t-if="treeTotals.submitted > 0" class="boq_chip_notification">
                     <i class="fa fa-bell me-1"/>
                     <strong><t t-esc="treeTotals.submitted"/></strong> Recently Submitted
                 </span>
@@ -491,9 +491,11 @@
                     <!-- ── LEVEL 1: TRADE ROWS ──────────────────────── -->
                     <t t-foreach="filteredTree" t-as="trade" t-key="trade.trade_id">
 
-                        <!-- Trade header row -->
+                        <!-- Trade header row — boq_trade_has_new added when any vendor
+                             submitted a quotation in the last 7 days -->
                         <div t-attf-class="boq_tree_row boq_trade_row
-                                           #{ isTradeExpanded(trade.trade_id) ? 'boq_trade_row_open' : '' }"
+                                           #{ isTradeExpanded(trade.trade_id) ? 'boq_trade_row_open' : '' }
+                                           #{ trade.submitted_count > 0 ? 'boq_trade_has_new' : '' }"
                              t-on-click="() => this.toggleTrade(trade.trade_id)">
 
                             <span class="boq_tree_expand_icon">
@@ -521,9 +523,10 @@
                                         <t t-esc="trade.pending_count"/> pending
                                     </span>
                                 </t>
+                                <!-- Notification badge — amber pulsing bell for recent submissions -->
                                 <t t-if="trade.submitted_count > 0">
-                                    <span class="badge boq_badge_neutral boq_badge_submitted rounded-pill ms-1"
-                                          title="Submitted in last 7 days">
+                                    <span class="badge boq_badge_submitted rounded-pill ms-1"
+                                          title="Quotation submitted in last 7 days">
                                         <i class="fa fa-bell me-1"/>
                                         <t t-esc="trade.submitted_count"/> new
                                     </span>
@@ -551,9 +554,11 @@
                             <t t-foreach="trade.vendors" t-as="vendor"
                                t-key="vendor.vendor_id">
 
-                                <!-- Vendor row -->
+                                <!-- Vendor row — boq_vendor_has_new added when vendor submitted
+                                     a quotation in the last 7 days (amber left-border accent) -->
                                 <div t-attf-class="boq_tree_row boq_vendor_row
-                                                   #{ isVendorExpanded(vendor.vendor_id) ? 'boq_vendor_row_open' : '' }"
+                                                   #{ isVendorExpanded(vendor.vendor_id) ? 'boq_vendor_row_open' : '' }
+                                                   #{ vendor.recently_submitted_count > 0 ? 'boq_vendor_has_new' : '' }"
                                      t-on-click="() => this.toggleVendor(vendor.vendor_id)">
 
                                     <span class="boq_tree_indent"/>
@@ -562,7 +567,8 @@
                                         <i t-attf-class="fa #{ isVendorExpanded(vendor.vendor_id) ? 'fa-chevron-down' : 'fa-chevron-right' }"/>
                                     </span>
 
-                                    <span class="boq_vendor_avatar_sm">
+                                    <!-- Avatar — pulsing ring when vendor has new submissions -->
+                                    <span t-attf-class="boq_vendor_avatar_sm #{ vendor.recently_submitted_count > 0 ? 'boq_avatar_new' : '' }">
                                         <t t-esc="(vendor.vendor_name || '?').charAt(0).toUpperCase()"/>
                                     </span>
 
@@ -596,9 +602,9 @@
                                             </span>
                                         </t>
 
-                                        <!-- Recently submitted — uniform neutral badge -->
+                                        <!-- Recently submitted — amber notification badge with pulse -->
                                         <t t-if="vendor.recently_submitted_count > 0">
-                                            <span class="badge boq_badge_neutral rounded-pill ms-1"
+                                            <span class="badge boq_badge_submitted rounded-pill ms-1"
                                                   title="Quotation submitted in last 7 days">
                                                 <i class="fa fa-bell me-1"/>
                                                 <t t-esc="vendor.recently_submitted_count"/> new
@@ -690,10 +696,10 @@
                                                     </span>
                                                 </t>
 
-                                                <!-- Recently submitted indicator (Task 2.6) -->
+                                                <!-- Recently submitted — amber notification badge -->
                                                 <t t-if="rfq.is_recently_submitted">
-                                                    <span class="badge boq_badge_neutral boq_badge_submitted rounded-pill ms-1"
-                                                          title="Submitted in last 7 days">
+                                                    <span class="badge boq_badge_submitted rounded-pill ms-1"
+                                                          title="Submitted in last 7 days — review needed">
                                                         <i class="fa fa-bell me-1"/>New
                                                     </span>
                                                 </t>
