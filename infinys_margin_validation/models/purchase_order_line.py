@@ -28,7 +28,7 @@ class PurchaseOrderLine(models.Model):
                 line.is_margin_below_threshold = False
                 continue
 
-            product_cost = line.product_id.standard_price
+            product_cost = line.customer_price or 0.0
             vendor_price = line.price_unit
             if product_cost:
                 line.margin_percentage = ((product_cost - vendor_price) / product_cost) * 100
