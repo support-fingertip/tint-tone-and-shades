@@ -10,6 +10,21 @@
         ─ margin_percent on PO lines              (NEW TASK 3)
     -->
 
+    <!--   Send Po To Added mail Cc-->
+    <record id="view_mail_compose_message_inherit_cc" model="ir.ui.view">
+        <field name="name">mail.compose.message.form.inherit.cc</field>
+        <field name="model">mail.compose.message</field>
+        <field name="inherit_id" ref="mail.email_compose_message_wizard_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Add after To field -->
+            <xpath expr="//field[@name='subject']" position="after">
+                <field name="email_cc" string="Cc" placeholder="Add CC emails..."/>
+            </xpath>
+
+        </field>
+    </record>
+
     <record id="view_purchase_order_form_boq_inherit" model="ir.ui.view">
         <field name="name">purchase.order.form.boq.inherit</field>
         <field name="model">purchase.order</field>
