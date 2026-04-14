@@ -1453,3 +1453,27 @@ class BoqBoq(models.Model):
                     'margin_percent': round(line.margin_percent, 2),
                 })
         return rows
+
+
+class MailComposeMessage(models.TransientModel):
+    _inherit = 'mail.compose.message'
+
+    email_cc = fields.Char(string="Cc")
+
+    def action_send_mail(self):
+        return super(
+            MailComposeMessage,
+            self.with_context(custom_email_cc=self.email_cc)
+        ).action_send_mail()
+
+
+class MailMail(models.Model):
+    _inherit = 'mail.mail'
+
+    def create(self, vals):
+        cc = self.env.context.get('custom_email_cc')
+        vals_list = vals if isinstance(vals, list) else [vals]
+        for v in vals_list:
+            if cc and not v.get('email_cc'):
+                v['email_cc'] = cc
+        return super().create(vals_list if isinstance(vals, list) else vals_list[0])
