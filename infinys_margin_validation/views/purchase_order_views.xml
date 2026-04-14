@@ -89,11 +89,15 @@
                 <attribute name="invisible">state != 'sent' or (has_margin_below_threshold and margin_approval_status != 'approved')</attribute>
             </xpath>
 
-            <!-- Margin Approval Status in the status bar area -->
-            <xpath expr="//field[@name='state'][@widget='statusbar']" position="before">
-                <field name="margin_approval_status" widget="statusbar"
-                       invisible="margin_approval_status == 'none' or state in ('purchase', 'done', 'cancel')"
-                       statusbar_visible="to_approve,approved"/>
+<!--            &lt;!&ndash; Margin Approval Status in the status bar area &ndash;&gt;-->
+<!--            <xpath expr="//field[@name='state'][@widget='statusbar']" position="before">-->
+<!--                <field name="margin_approval_status" widget="statusbar"-->
+<!--                       invisible="margin_approval_status == 'none' or state in ('purchase', 'done', 'cancel')"-->
+<!--                       statusbar_visible="to_approve,approved"/>-->
+<!--            </xpath>-->
+
+             <xpath expr="//field[@name='dest_address_id']" position="after">
+                <field name="margin_approval_status" readonly="1"/>
             </xpath>
 
         </field>
