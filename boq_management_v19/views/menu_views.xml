@@ -158,25 +158,6 @@
             groups="boq_management_v19.group_vendor"
     />
 
-     <!-- Vendor Products Root -->
-    <menuitem
-            id="menu_vendor_products"
-            name="Products"
-            parent="menu_vendor_purchase_root"
-            sequence="8"
-            groups="boq_management_v19.group_vendor"
-    />
-
-    <!-- Products -->
-    <menuitem
-            id="menu_vendor_product_list"
-            name="Products"
-            parent="menu_vendor_products"
-            action="product.product_normal_action"
-            sequence="1"
-            groups="boq_management_v19.group_vendor"
-    />
-
     <menuitem
             id="menu_vendor_reporting"
             name="Reporting"
