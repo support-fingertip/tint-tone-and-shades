@@ -203,92 +203,6 @@
 
             </div><!-- /stat cards -->
 
-            <!-- ╔════════════════════════════════════════════════════╗
-                 ║  RECENTLY SUBMITTED — STICKY NOTE BOARD            ║
-                 ║  Each quotation submitted in the last 7 days gets  ║
-                 ║  its own sticky note card on a corkboard strip.    ║
-                 ╚════════════════════════════════════════════════════╝ -->
-            <t t-if="state.recentlySubmitted.length > 0">
-                <div class="px-4 pb-4">
-
-                    <!-- Board header -->
-                    <div class="boq_sticky_board_header d-flex align-items-center
-                                justify-content-between mb-3">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="boq_sticky_bell_icon">
-                                <i class="fa fa-bell"/>
-                            </span>
-                            <div>
-                                <span class="fw-bold boq_sticky_board_title">
-                                    Quotations Recently Submitted
-                                </span>
-                                <small class="text-muted ms-2">
-                                    — Click a note to open and review
-                                </small>
-                            </div>
-                        </div>
-                        <span class="badge boq_badge_submitted rounded-pill px-3 py-2">
-                            <i class="fa fa-bell me-1"/>
-                            <t t-esc="state.recentlySubmitted.length"/> new in last 7 days
-                        </span>
-                    </div>
-
-                    <!-- Corkboard: horizontally scrollable sticky note strip -->
-                    <div class="boq_sticky_board">
-                        <t t-foreach="state.recentlySubmitted" t-as="rq" t-key="rq.rfq_id">
-
-                            <!-- Sticky note card — odd/even rotate via :nth-child in CSS -->
-                            <div t-attf-class="boq_sticky_note boq_sticky_note_#{ rq_index % 3 }"
-                                 t-on-click="() => this.openRfq(rq.rfq_id)"
-                                 style="cursor:pointer;"
-                                 title="Click to open quotation">
-
-                                <!-- Tape strip at top -->
-                                <div class="boq_sticky_tape"/>
-
-                                <!-- Vendor initials avatar -->
-                                <div class="boq_sticky_avatar">
-                                    <t t-esc="rq.vendor_initial"/>
-                                </div>
-
-                                <!-- Vendor name -->
-                                <div class="boq_sticky_vendor_name fw-bold text-truncate"
-                                     t-esc="rq.vendor_name"/>
-
-                                <!-- Divider line (like writing on a notepad) -->
-                                <div class="boq_sticky_divider"/>
-
-                                <!-- RFQ reference -->
-                                <div class="boq_sticky_ref">
-                                    <i class="fa fa-file-text-o me-1"/>
-                                    <span class="fw-semibold" t-esc="rq.rfq_name"/>
-                                </div>
-
-                                <!-- Trade name -->
-                                <div class="boq_sticky_trade text-truncate">
-                                    <i class="fa fa-wrench me-1"/>
-                                    <t t-esc="rq.trade_name"/>
-                                </div>
-
-                                <!-- Amount -->
-                                <div class="boq_sticky_amount fw-bold">
-                                    <t t-esc="fmtCurrency(rq.amount_total)"/>
-                                </div>
-
-                                <!-- When submitted chip at bottom of note -->
-                                <div class="boq_sticky_when">
-                                    <i class="fa fa-clock-o me-1"/>
-                                    <t t-if="rq.days_ago === 0">Today</t>
-                                    <t t-elif="rq.days_ago === 1">Yesterday</t>
-                                    <t t-else=""><t t-esc="rq.days_ago"/> days ago</t>
-                                </div>
-
-                            </div><!-- /sticky note -->
-                        </t>
-                    </div><!-- /boq_sticky_board -->
-
-                </div>
-            </t><!-- /recently submitted sticky notes -->
 
             <!-- ╔════════════════════════════════════════════════════╗
                  ║  VENDOR SUMMARY CARDS                              ║
@@ -532,10 +446,18 @@
                     <i class="fa fa-clock-o me-1"/>
                     <strong><t t-esc="treeTotals.pending"/></strong> Pending
                 </span>
-                <span t-if="treeTotals.submitted > 0" class="boq_chip_notification">
-                    <i class="fa fa-bell me-1"/>
-                    <strong><t t-esc="treeTotals.submitted"/></strong> Recently Submitted
-                </span>
+                <!-- Clickable notification chip — toggles the recently submitted panel -->
+                <t t-if="treeTotals.submitted > 0">
+                    <button t-attf-class="boq_chip_notification boq_chip_notif_btn
+                                         #{ state.showRecentPanel ? 'boq_chip_notif_active' : '' }"
+                            t-on-click="toggleRecentPanel"
+                            type="button"
+                            title="Click to show/hide recently submitted quotations">
+                        <i class="fa fa-bell me-1"/>
+                        <strong><t t-esc="treeTotals.submitted"/></strong> Recently Submitted
+                        <i t-attf-class="fa ms-2 #{ state.showRecentPanel ? 'fa-chevron-up' : 'fa-chevron-down' }"/>
+                    </button>
+                </t>
                 <span class="boq_totals_chip boq_totals_value ms-auto">
                     <i class="fa fa-money me-1"/>
                     <strong><t t-esc="fmtCurrency(treeTotals.value)"/></strong>
@@ -543,12 +465,129 @@
             </div>
 
             <!-- ╔════════════════════════════════════════════════════╗
-                 ║  3-LEVEL EXPANDABLE TREE                           ║
+                 ║  RECENTLY SUBMITTED NOTIFICATION PANEL             ║
+                 ║  Revealed when "Recently Submitted" chip is        ║
+                 ║  clicked.  Lists all submitted RFQs with vendor,   ║
+                 ║  reference, trade, amount, and when submitted.     ║
+                 ╚════════════════════════════════════════════════════╝ -->
+            <t t-if="state.showRecentPanel and state.recentlySubmitted.length > 0">
+                <div class="px-4 pb-3">
+                    <div class="boq_recent_panel">
+
+                        <!-- Panel header -->
+                        <div class="boq_recent_panel_header d-flex align-items-center
+                                    justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="boq_notif_bell_circle">
+                                    <i class="fa fa-bell"/>
+                                </span>
+                                <div>
+                                    <span class="fw-bold boq_recent_panel_title">
+                                        Recently Submitted Quotations
+                                    </span>
+                                    <small class="boq_recent_panel_sub ms-2">
+                                        — Submitted in the last 7 days · Click a row to open
+                                    </small>
+                                </div>
+                            </div>
+                            <button class="boq_recent_panel_close" type="button"
+                                    t-on-click="toggleRecentPanel"
+                                    title="Close">
+                                <i class="fa fa-times"/>
+                            </button>
+                        </div>
+
+                        <!-- Column headers -->
+                        <div class="boq_recent_thead">
+                            <span class="boq_recent_col_vendor">Vendor</span>
+                            <span class="boq_recent_col_ref">RFQ Reference</span>
+                            <span class="boq_recent_col_trade">Trade</span>
+                            <span class="boq_recent_col_amount">Amount</span>
+                            <span class="boq_recent_col_when">Submitted</span>
+                        </div>
+
+                        <!-- One row per submitted quotation -->
+                        <t t-foreach="state.recentlySubmitted" t-as="rq" t-key="rq.rfq_id">
+                            <div class="boq_recent_row"
+                                 t-on-click="() => this.openRfq(rq.rfq_id)"
+                                 style="cursor:pointer;"
+                                 title="Open quotation">
+
+                                <!-- Vendor -->
+                                <span class="boq_recent_col_vendor d-flex align-items-center gap-2">
+                                    <span class="boq_vendor_avatar_sm boq_avatar_new flex-shrink-0">
+                                        <t t-esc="rq.vendor_initial"/>
+                                    </span>
+                                    <span class="fw-semibold text-truncate">
+                                        <t t-esc="rq.vendor_name"/>
+                                    </span>
+                                </span>
+
+                                <!-- RFQ Reference -->
+                                <span class="boq_recent_col_ref">
+                                    <i class="fa fa-file-text-o me-1 text-muted"/>
+                                    <span class="fw-semibold text-primary">
+                                        <t t-esc="rq.rfq_name"/>
+                                    </span>
+                                </span>
+
+                                <!-- Trade -->
+                                <span class="boq_recent_col_trade text-muted small">
+                                    <i class="fa fa-wrench me-1"/>
+                                    <t t-esc="rq.trade_name"/>
+                                </span>
+
+                                <!-- Amount -->
+                                <span class="boq_recent_col_amount fw-semibold">
+                                    <t t-esc="fmtCurrency(rq.amount_total)"/>
+                                </span>
+
+                                <!-- When -->
+                                <span class="boq_recent_col_when">
+                                    <span class="badge boq_badge_submitted rounded-pill">
+                                        <i class="fa fa-clock-o me-1"/>
+                                        <t t-if="rq.days_ago === 0">Today</t>
+                                        <t t-elif="rq.days_ago === 1">Yesterday</t>
+                                        <t t-else=""><t t-esc="rq.days_ago"/>d ago</t>
+                                    </span>
+                                </span>
+
+                                <!-- Open arrow -->
+                                <span class="boq_recent_open ms-auto">
+                                    <i class="fa fa-external-link text-muted"/>
+                                </span>
+
+                            </div>
+                        </t>
+
+                    </div><!-- /boq_recent_panel -->
+                </div>
+            </t><!-- /notification panel -->
+
+            <!-- ╔════════════════════════════════════════════════════╗
+                 ║  TRADE VIEW ANALYSIS — 3-LEVEL EXPANDABLE TREE    ║
                  ║  Level 1: Trade rows (always visible)              ║
                  ║  Level 2: Vendor/Supplier rows (expand from trade) ║
                  ║  Level 3: RFQ rows (expand from vendor)            ║
                  ╚════════════════════════════════════════════════════╝ -->
             <div class="px-4 pb-3">
+
+                <!-- ── TRADE VIEW ANALYSIS section label ─────────── -->
+                <div class="boq_trade_view_header d-flex align-items-center
+                            justify-content-between mb-3">
+                    <h5 class="mb-0 fw-bold boq_section_title">
+                        <i class="fa fa-bar-chart me-2 text-primary"/>
+                        Trade View Analysis
+                        <span class="badge boq_badge_neutral rounded-pill ms-2 small">
+                            <t t-esc="treeTotals.trades"/>
+                            Trade<t t-if="treeTotals.trades !== 1">s</t>
+                        </span>
+                    </h5>
+                    <small class="text-muted">
+                        <i class="fa fa-info-circle me-1"/>
+                        Click a trade row to expand vendors and RFQs
+                    </small>
+                </div>
 
                 <!-- Empty state -->
                 <t t-if="filteredTree.length === 0">

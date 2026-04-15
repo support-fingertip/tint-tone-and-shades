@@ -83,7 +83,8 @@ class BoqManagerDashboardBase extends Component {
             vendorSummary:       [],   // Flat vendor cards: name, rfq_count, value, margin, payment
             approvalPOs:         [],   // Task 1.6 — POs awaiting approval
             pendingVendors:      [],   // Task 2.5 — Vendors with pending (draft/sent) RFQs
-            recentlySubmitted:   [],   // Notification banner — flat list of recently submitted RFQs
+            recentlySubmitted:   [],   // Notification panel — flat list of recently submitted RFQs
+            showRecentPanel:     false, // Toggle for notification panel
             expandedTrades:      {},   // { trade_id: bool }
             expandedVendors:     {},   // { vendor_id: bool }
             filterText:          "",
@@ -280,6 +281,10 @@ class BoqManagerDashboardBase extends Component {
     }
 
     clearFilter() { this.state.filterText = ""; }
+
+    toggleRecentPanel() {
+        this.state.showRecentPanel = !this.state.showRecentPanel;
+    }
 
     openVendorContact(vendorId) {
         this.actionSvc.doAction({
