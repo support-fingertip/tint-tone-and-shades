@@ -158,6 +158,25 @@
             groups="boq_management_v19.group_vendor"
     />
 
+     <!-- Vendor Products Root -->
+    <menuitem
+            id="menu_vendor_products"
+            name="Products"
+            parent="menu_vendor_purchase_root"
+            sequence="8"
+            groups="boq_management_v19.group_vendor"
+    />
+
+    <!-- Products -->
+    <menuitem
+            id="menu_vendor_product_list"
+            name="Products"
+            parent="menu_vendor_products"
+            action="product.product_normal_action"
+            sequence="1"
+            groups="boq_management_v19.group_vendor"
+    />
+
     <menuitem
             id="menu_vendor_reporting"
             name="Reporting"
@@ -182,6 +201,55 @@
             parent="menu_vendor_reporting"
             action="action_vendor_my_approvals"
             sequence="2"
+            groups="boq_management_v19.group_vendor"
+    />
+
+    <!-- Vendor Configuration Root -->
+    <menuitem
+            id="menu_vendor_configuration"
+            name="Configuration"
+            parent="menu_vendor_purchase_root"
+            sequence="50"
+            groups="boq_management_v19.group_vendor"
+    />
+
+    <!-- Settings -->
+    <menuitem
+            id="menu_vendor_settings"
+            name="Settings"
+            parent="menu_vendor_configuration"
+            action="purchase.action_purchase_configuration"
+            sequence="1"
+            groups="boq_management_v19.group_vendor"
+    />
+
+    <!-- Vendor Pricelists -->
+    <menuitem
+            id="menu_vendor_pricelist"
+            name="Vendor Pricelists"
+            parent="menu_vendor_configuration"
+            action="product.product_supplierinfo_type_action"
+            sequence="2"
+            groups="boq_management_v19.group_vendor"
+    />
+
+    <!-- Approval Levels -->
+    <menuitem
+            id="menu_vendor_approval_levels"
+            name="Approval Levels"
+            parent="menu_vendor_configuration"
+            action="infinys_purchase_order_approval.action_purchase_approval_level"
+            sequence="3"
+            groups="boq_management_v19.group_vendor"
+    />
+
+    <!-- Product Categories -->
+    <menuitem
+            id="menu_vendor_categories"
+            name="Categories"
+            parent="menu_vendor_configuration"
+            action="product.product_category_action_form"
+            sequence="4"
             groups="boq_management_v19.group_vendor"
     />
 
@@ -221,6 +289,25 @@
             groups="boq_management_v19.group_supplier"
     />
 
+    <!-- Supplier Products Root -->
+    <menuitem
+            id="menu_supplier_products"
+            name="Products"
+            parent="menu_supplier_purchase_root"
+            sequence="8"
+            groups="boq_management_v19.group_supplier"
+    />
+
+    <!-- Products -->
+    <menuitem
+            id="menu_supplier_product_list"
+            name="Products"
+            parent="menu_supplier_products"
+            action="product.product_normal_action"
+            sequence="1"
+            groups="boq_management_v19.group_supplier"
+    />
+
     <menuitem
             id="menu_supplier_reporting"
             name="Reporting"
@@ -248,4 +335,57 @@
             groups="boq_management_v19.group_supplier"
     />
 
+    <!-- Supplier Configuration Root -->
+    <menuitem
+            id="menu_supplier_configuration"
+            name="Configuration"
+            parent="menu_supplier_purchase_root"
+            sequence="50"
+            groups="boq_management_v19.group_supplier"
+    />
+
+    <!-- Settings -->
+    <menuitem
+            id="menu_supplier_settings"
+            name="Settings"
+            parent="menu_supplier_configuration"
+            action="purchase.action_purchase_configuration"
+            sequence="1"
+            groups="boq_management_v19.group_supplier"
+    />
+
+    <!-- Vendor Pricelists -->
+<!--    <menuitem-->
+<!--            id="menu_supplier_pricelist"-->
+<!--            name="Vendor Pricelists"-->
+<!--            parent="menu_supplier_configuration"-->
+<!--            action="product.product_pricelist_vendor_action"-->
+<!--            sequence="2"-->
+<!--            groups="boq_management_v19.group_supplier"-->
+<!--    />-->
+
+    <!-- Approval Levels -->
+    <menuitem
+            id="menu_supplier_approval_levels"
+            name="Approval Levels"
+            parent="menu_supplier_configuration"
+            action="infinys_purchase_order_approval.action_purchase_approval_level"
+            sequence="3"
+            groups="boq_management_v19.group_supplier"
+    />
+
+    <!-- Product Categories -->
+    <menuitem
+            id="menu_supplier_categories"
+            name="Categories"
+            parent="menu_supplier_configuration"
+            action="product.product_category_action_form"
+            sequence="4"
+            groups="boq_management_v19.group_supplier"
+    />
+
+    <!-- Hide default Purchase app (Invisible) -->
+    <record id="purchase.menu_purchase_root" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
 </odoo>
