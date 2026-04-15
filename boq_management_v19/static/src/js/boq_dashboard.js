@@ -335,12 +335,25 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     get partnerLabel()      { return "Supplier"; }
     get dashboardColor()    { return "text-success"; }
 
-    // ── Data loading — adds company summary on top of base data ──────────
+    // ── Head-level KPI helpers for hero banner ────────────────────────────
+    get headTotalCompanies()  { return this.state.companySummary.length; }
+    get headTotalSuppliers()  {
+        return this.state.vendorSummary ? this.state.vendorSummary.length : 0;
+    }
+    get headPendingApprovals() { return this.state.approvalPOs ? this.state.approvalPOs.length : 0; }
+    get headRecentlySubmitted() { return this.state.recentlySubmitted ? this.state.recentlySubmitted.length : 0; }
+    get headPendingRfqs() {
+        return (this.state.pendingVendors || []).reduce((s, v) => s + (v.rfq_count || 0), 0);
+    }
+    get headTotalValue()  { return this.state.stats ? (this.state.stats.rfq_total_value || 0) : 0; }
+
+    // ── Data loading — uses allSettled so partial failures never block ────
+    // If the module hasn't been upgraded yet, get_company_wise_summary may
+    // not exist.  allSettled ensures the 6 existing methods still render.
     async _loadAll() {
         try {
             const dt = this.dashboardType;
-            const [stats, tree, vendorSummary, approvalPOs, pendingVendors,
-                   recentlySubmitted, companySummary] = await Promise.all([
+            const [r0, r1, r2, r3, r4, r5, r6] = await Promise.allSettled([
                 this.orm.call("boq.boq", "get_dashboard_stats",          [], { dashboard_type: dt }),
                 this.orm.call("boq.boq", "get_dashboard_tree_data",      [], { dashboard_type: dt }),
                 this.orm.call("boq.boq", "get_vendor_summary",           [], { dashboard_type: dt }),
@@ -349,13 +362,21 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
                 this.orm.call("boq.boq", "get_recently_submitted_rfqs",  [], { dashboard_type: dt }),
                 this.orm.call("boq.boq", "get_company_wise_summary",     [], { dashboard_type: dt }),
             ]);
-            this.state.stats             = stats;
-            this.state.tree              = tree;
-            this.state.vendorSummary     = vendorSummary;
-            this.state.approvalPOs       = approvalPOs;
-            this.state.pendingVendors    = pendingVendors;
-            this.state.recentlySubmitted = recentlySubmitted;
-            this.state.companySummary    = companySummary;
+
+            // Show error only if the two critical calls both failed
+            if (r0.status === "rejected" && r1.status === "rejected") {
+                this.state.error = r0.reason?.message || "Failed to load dashboard data.";
+                return;
+            }
+
+            if (r0.status === "fulfilled") this.state.stats             = r0.value;
+            if (r1.status === "fulfilled") this.state.tree              = r1.value;
+            if (r2.status === "fulfilled") this.state.vendorSummary     = r2.value;
+            if (r3.status === "fulfilled") this.state.approvalPOs       = r3.value;
+            if (r4.status === "fulfilled") this.state.pendingVendors    = r4.value;
+            if (r5.status === "fulfilled") this.state.recentlySubmitted = r5.value;
+            if (r6.status === "fulfilled") this.state.companySummary    = r6.value;
+
         } catch (err) {
             this.state.error = err.message || "Failed to load dashboard data.";
         } finally {

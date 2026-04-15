@@ -110,6 +110,142 @@
     margin-top: 4px;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   HERO BANNERS — visual identity for each dashboard type
+   Three variants: .boq_hero_vendor (blue) · .boq_hero_procurement
+   (green) · .boq_hero_head (teal, taller, more prominent).
+   ══════════════════════════════════════════════════════════════ */
+
+/* ─ Base hero layout ─ */
+.boq_hero {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 24px 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Decorative circle(s) in the background */
+.boq_hero::before,
+.boq_hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.12;
+    pointer-events: none;
+}
+.boq_hero::before {
+    width: 220px;
+    height: 220px;
+    background: #fff;
+    top: -60px;
+    right: 80px;
+}
+.boq_hero::after {
+    width: 140px;
+    height: 140px;
+    background: #fff;
+    bottom: -50px;
+    right: 30px;
+}
+
+/* ─ Icon wrapper circles ─ */
+.boq_hero_icons {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.boq_hero_icon_wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    backdrop-filter: blur(4px);
+}
+/* Slight scale on the first icon to add depth */
+.boq_hero_ic1 { transform: scale(1.12); }
+.boq_hero_ic2 { opacity: 0.85; }
+.boq_hero_ic3 { opacity: 0.7; }
+
+/* ─ Title block ─ */
+.boq_hero_title {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin: 0 0 4px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.boq_hero_sub {
+    color: rgba(255,255,255,0.82);
+    font-size: 0.85rem;
+}
+
+/* ─ KPI strip ─ */
+.boq_hero_kpis {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    align-items: center;
+}
+.boq_hero_kpi {
+    text-align: center;
+    background: rgba(255,255,255,0.18);
+    border-radius: 10px;
+    padding: 8px 14px;
+    min-width: 70px;
+    backdrop-filter: blur(4px);
+}
+.boq_hero_kpi_val {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.1;
+}
+.boq_hero_kpi_val.small { font-size: 0.95rem; }
+.boq_hero_kpi_lbl {
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.78);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+/* Alert/warning KPI chips */
+.boq_hero_kpi_warn  { background: rgba(255, 193, 7,  0.35) !important; }
+.boq_hero_kpi_alert { background: rgba(255, 99,  71,  0.35) !important; }
+.boq_hero_kpi_new   { background: rgba(245, 158, 11, 0.35) !important; }
+
+/* ─ VENDOR MANAGER — Blue gradient ─ */
+.boq_hero_vendor {
+    background: linear-gradient(135deg, #1a56db 0%, #0e3fa0 60%, #083080 100%);
+    border-bottom: 3px solid rgba(255,255,255,0.12);
+}
+
+/* ─ PROCUREMENT MANAGER — Green gradient ─ */
+.boq_hero_procurement {
+    background: linear-gradient(135deg, #0ea271 0%, #0b7a56 60%, #065438 100%);
+    border-bottom: 3px solid rgba(255,255,255,0.12);
+}
+
+/* ─ HEAD OF SUPPLIER — Teal gradient, taller, more prominent ─ */
+.boq_hero_head {
+    background: linear-gradient(135deg, #0d7377 0%, #095e62 40%, #143d40 100%);
+    border-bottom: 4px solid rgba(255,255,255,0.15);
+    padding: 30px 32px;    /* taller than the other two */
+}
+.boq_hero_head .boq_hero_icon_wrap {
+    width: 60px;
+    height: 60px;
+    font-size: 1.2rem;
+}
+.boq_hero_head .boq_hero_title { font-size: 1.45rem; }
+
 /* ── Vendor Summary Cards ────────────────────────────────────── */
 /* Horizontal scroll row so all cards stay on one line           */
 .boq_vendor_cards_scroll {

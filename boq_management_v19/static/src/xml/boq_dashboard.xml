@@ -121,6 +121,151 @@
              ╚════════════════════════════════════════════════════╝ -->
         <div class="boq_dash_scroll">
 
+            <!-- ╔════════════════════════════════════════════════════╗
+                 ║  HERO BANNER — visual identity per dashboard       ║
+                 ║  Vendor: blue · Procurement: green · Head: teal   ║
+                 ╚════════════════════════════════════════════════════╝ -->
+
+            <!-- Head of Supplier — large teal hero with manager KPIs -->
+            <t t-if="isHeadDashboard">
+                <div class="boq_hero boq_hero_head">
+                    <!-- Decorative icon trio -->
+                    <div class="boq_hero_icons">
+                        <div class="boq_hero_icon_wrap boq_hero_ic1">
+                            <i class="fa fa-globe fa-2x"/>
+                        </div>
+                        <div class="boq_hero_icon_wrap boq_hero_ic2">
+                            <i class="fa fa-building fa-2x"/>
+                        </div>
+                        <div class="boq_hero_icon_wrap boq_hero_ic3">
+                            <i class="fa fa-bar-chart fa-2x"/>
+                        </div>
+                    </div>
+
+                    <!-- Title block -->
+                    <div class="boq_hero_body flex-fill">
+                        <h3 class="boq_hero_title">Head of Supplier Dashboard</h3>
+                        <p class="boq_hero_sub mb-0">
+                            Enterprise-wide consolidated procurement view across all companies
+                        </p>
+                    </div>
+
+                    <!-- Manager KPI strip -->
+                    <div class="boq_hero_kpis">
+                        <div class="boq_hero_kpi">
+                            <div class="boq_hero_kpi_val">
+                                <t t-esc="headTotalCompanies"/>
+                            </div>
+                            <div class="boq_hero_kpi_lbl">Companies</div>
+                        </div>
+                        <div class="boq_hero_kpi">
+                            <div class="boq_hero_kpi_val">
+                                <t t-esc="headTotalSuppliers"/>
+                            </div>
+                            <div class="boq_hero_kpi_lbl">Suppliers</div>
+                        </div>
+                        <div class="boq_hero_kpi">
+                            <div class="boq_hero_kpi_val">
+                                <t t-esc="state.stats.total_rfqs || 0"/>
+                            </div>
+                            <div class="boq_hero_kpi_lbl">Total RFQs</div>
+                        </div>
+                        <div class="boq_hero_kpi">
+                            <div class="boq_hero_kpi_val small">
+                                <t t-esc="fmtCurrency(headTotalValue)"/>
+                            </div>
+                            <div class="boq_hero_kpi_lbl">Procurement Value</div>
+                        </div>
+                        <div t-if="headPendingRfqs > 0" class="boq_hero_kpi boq_hero_kpi_warn">
+                            <div class="boq_hero_kpi_val">
+                                <t t-esc="headPendingRfqs"/>
+                            </div>
+                            <div class="boq_hero_kpi_lbl">Awaiting Quote</div>
+                        </div>
+                        <div t-if="headPendingApprovals > 0" class="boq_hero_kpi boq_hero_kpi_alert">
+                            <div class="boq_hero_kpi_val">
+                                <t t-esc="headPendingApprovals"/>
+                            </div>
+                            <div class="boq_hero_kpi_lbl">Need Approval</div>
+                        </div>
+                        <div t-if="headRecentlySubmitted > 0" class="boq_hero_kpi boq_hero_kpi_new">
+                            <div class="boq_hero_kpi_val">
+                                <t t-esc="headRecentlySubmitted"/>
+                            </div>
+                            <div class="boq_hero_kpi_lbl">New Submissions</div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+
+            <!-- Vendor Manager hero — blue -->
+            <t t-elif="isVendorDashboard">
+                <div class="boq_hero boq_hero_vendor">
+                    <div class="boq_hero_icons">
+                        <div class="boq_hero_icon_wrap boq_hero_ic1">
+                            <i class="fa fa-industry fa-2x"/>
+                        </div>
+                        <div class="boq_hero_icon_wrap boq_hero_ic2">
+                            <i class="fa fa-users fa-2x"/>
+                        </div>
+                    </div>
+                    <div class="boq_hero_body flex-fill">
+                        <h3 class="boq_hero_title">Vendor Manager Dashboard</h3>
+                        <p class="boq_hero_sub mb-0">
+                            Trade-wise vendor RFQ summary — Installation &amp; Services
+                        </p>
+                    </div>
+                    <div class="boq_hero_kpis">
+                        <div class="boq_hero_kpi">
+                            <div class="boq_hero_kpi_val"><t t-esc="state.stats.total_boqs || 0"/></div>
+                            <div class="boq_hero_kpi_lbl">BOQs</div>
+                        </div>
+                        <div class="boq_hero_kpi">
+                            <div class="boq_hero_kpi_val"><t t-esc="state.stats.total_rfqs || 0"/></div>
+                            <div class="boq_hero_kpi_lbl">RFQs</div>
+                        </div>
+                        <div class="boq_hero_kpi">
+                            <div class="boq_hero_kpi_val small"><t t-esc="fmtCurrency(state.stats.rfq_total_value)"/></div>
+                            <div class="boq_hero_kpi_lbl">RFQ Value</div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+
+            <!-- Procurement Manager hero — green -->
+            <t t-else="">
+                <div class="boq_hero boq_hero_procurement">
+                    <div class="boq_hero_icons">
+                        <div class="boq_hero_icon_wrap boq_hero_ic1">
+                            <i class="fa fa-truck fa-2x"/>
+                        </div>
+                        <div class="boq_hero_icon_wrap boq_hero_ic2">
+                            <i class="fa fa-clipboard fa-2x"/>
+                        </div>
+                    </div>
+                    <div class="boq_hero_body flex-fill">
+                        <h3 class="boq_hero_title">Procurement Manager Dashboard</h3>
+                        <p class="boq_hero_sub mb-0">
+                            Trade-wise supplier RFQ summary — Supply &amp; Procurement
+                        </p>
+                    </div>
+                    <div class="boq_hero_kpis">
+                        <div class="boq_hero_kpi">
+                            <div class="boq_hero_kpi_val"><t t-esc="state.stats.total_boqs || 0"/></div>
+                            <div class="boq_hero_kpi_lbl">BOQs</div>
+                        </div>
+                        <div class="boq_hero_kpi">
+                            <div class="boq_hero_kpi_val"><t t-esc="state.stats.total_rfqs || 0"/></div>
+                            <div class="boq_hero_kpi_lbl">RFQs</div>
+                        </div>
+                        <div class="boq_hero_kpi">
+                            <div class="boq_hero_kpi_val small"><t t-esc="fmtCurrency(state.stats.rfq_total_value)"/></div>
+                            <div class="boq_hero_kpi_lbl">RFQ Value</div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+
             <!-- ── STAT CARDS ────────────────────────────── -->
             <div class="boq_dash_stat_row d-flex flex-wrap gap-3 p-4">
 
