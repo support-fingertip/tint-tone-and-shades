@@ -204,94 +204,91 @@
             </div><!-- /stat cards -->
 
             <!-- ╔════════════════════════════════════════════════════╗
-                 ║  RECENTLY SUBMITTED NOTIFICATION BANNER            ║
-                 ║  Shown when any quotation was submitted in the     ║
-                 ║  last 7 days.  Each row names the vendor, RFQ      ║
-                 ║  reference, trade, amount, and how many days ago.  ║
+                 ║  RECENTLY SUBMITTED — STICKY NOTE BOARD            ║
+                 ║  Each quotation submitted in the last 7 days gets  ║
+                 ║  its own sticky note card on a corkboard strip.    ║
                  ╚════════════════════════════════════════════════════╝ -->
             <t t-if="state.recentlySubmitted.length > 0">
-                <div class="px-4 pb-3">
-                    <div class="boq_notification_banner">
+                <div class="px-4 pb-4">
 
-                        <!-- Banner header -->
-                        <div class="boq_notif_header d-flex align-items-center
-                                    justify-content-between flex-wrap gap-2">
-                            <div class="d-flex align-items-center gap-3">
-                                <span class="boq_notif_icon_wrap">
-                                    <i class="fa fa-bell fa-lg"/>
-                                </span>
-                                <div>
-                                    <div class="fw-bold boq_notif_title">
-                                        <t t-esc="state.recentlySubmitted.length"/>
-                                        Quotation<t t-if="state.recentlySubmitted.length !== 1">s</t>
-                                        Recently Submitted — Review Required
-                                    </div>
-                                    <small class="boq_notif_subtitle">
-                                        The following quotations were submitted in the last 7 days.
-                                        Click a row to open and review.
-                                    </small>
-                                </div>
-                            </div>
-                            <span class="badge boq_badge_submitted rounded-pill px-3 py-2">
-                                <i class="fa fa-bell me-1"/>
-                                <t t-esc="state.recentlySubmitted.length"/> New
+                    <!-- Board header -->
+                    <div class="boq_sticky_board_header d-flex align-items-center
+                                justify-content-between mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="boq_sticky_bell_icon">
+                                <i class="fa fa-bell"/>
                             </span>
+                            <div>
+                                <span class="fw-bold boq_sticky_board_title">
+                                    Quotations Recently Submitted
+                                </span>
+                                <small class="text-muted ms-2">
+                                    — Click a note to open and review
+                                </small>
+                            </div>
                         </div>
+                        <span class="badge boq_badge_submitted rounded-pill px-3 py-2">
+                            <i class="fa fa-bell me-1"/>
+                            <t t-esc="state.recentlySubmitted.length"/> new in last 7 days
+                        </span>
+                    </div>
 
-                        <!-- One row per recently submitted quotation -->
-                        <div class="boq_notif_list">
-                            <t t-foreach="state.recentlySubmitted" t-as="rq" t-key="rq.rfq_id">
-                                <div class="boq_notif_row"
-                                     t-on-click="() => this.openRfq(rq.rfq_id)"
-                                     title="Click to open quotation"
-                                     style="cursor:pointer;">
+                    <!-- Corkboard: horizontally scrollable sticky note strip -->
+                    <div class="boq_sticky_board">
+                        <t t-foreach="state.recentlySubmitted" t-as="rq" t-key="rq.rfq_id">
 
-                                    <!-- Vendor avatar with amber glow -->
-                                    <span class="boq_vendor_avatar_sm boq_avatar_new flex-shrink-0">
-                                        <t t-esc="rq.vendor_initial"/>
-                                    </span>
+                            <!-- Sticky note card — odd/even rotate via :nth-child in CSS -->
+                            <div t-attf-class="boq_sticky_note boq_sticky_note_#{ rq_index % 3 }"
+                                 t-on-click="() => this.openRfq(rq.rfq_id)"
+                                 style="cursor:pointer;"
+                                 title="Click to open quotation">
 
-                                    <!-- Notification sentence text -->
-                                    <span class="boq_notif_text flex-fill">
-                                        <strong><t t-esc="rq.vendor_name"/></strong>
-                                        submitted
-                                        <span class="text-primary fw-semibold">
-                                            <t t-esc="rq.rfq_name"/>
-                                        </span>
-                                        <span class="text-muted"> · </span>
-                                        <span class="text-muted small">
-                                            <i class="fa fa-wrench me-1"/>
-                                            <t t-esc="rq.trade_name"/>
-                                        </span>
-                                    </span>
+                                <!-- Tape strip at top -->
+                                <div class="boq_sticky_tape"/>
 
-                                    <!-- Amount -->
-                                    <span class="boq_notif_amount fw-semibold">
-                                        <t t-esc="fmtCurrency(rq.amount_total)"/>
-                                    </span>
-
-                                    <!-- When submitted -->
-                                    <span class="boq_notif_when text-muted small">
-                                        <i class="fa fa-clock-o me-1"/>
-                                        <t t-if="rq.days_ago === 0">Today</t>
-                                        <t t-elif="rq.days_ago === 1">Yesterday</t>
-                                        <t t-else="">
-                                            <t t-esc="rq.days_ago"/>d ago
-                                        </t>
-                                    </span>
-
-                                    <!-- Open icon -->
-                                    <span class="boq_notif_open">
-                                        <i class="fa fa-external-link text-muted"/>
-                                    </span>
-
+                                <!-- Vendor initials avatar -->
+                                <div class="boq_sticky_avatar">
+                                    <t t-esc="rq.vendor_initial"/>
                                 </div>
-                            </t>
-                        </div>
 
-                    </div><!-- /boq_notification_banner -->
+                                <!-- Vendor name -->
+                                <div class="boq_sticky_vendor_name fw-bold text-truncate"
+                                     t-esc="rq.vendor_name"/>
+
+                                <!-- Divider line (like writing on a notepad) -->
+                                <div class="boq_sticky_divider"/>
+
+                                <!-- RFQ reference -->
+                                <div class="boq_sticky_ref">
+                                    <i class="fa fa-file-text-o me-1"/>
+                                    <span class="fw-semibold" t-esc="rq.rfq_name"/>
+                                </div>
+
+                                <!-- Trade name -->
+                                <div class="boq_sticky_trade text-truncate">
+                                    <i class="fa fa-wrench me-1"/>
+                                    <t t-esc="rq.trade_name"/>
+                                </div>
+
+                                <!-- Amount -->
+                                <div class="boq_sticky_amount fw-bold">
+                                    <t t-esc="fmtCurrency(rq.amount_total)"/>
+                                </div>
+
+                                <!-- When submitted chip at bottom of note -->
+                                <div class="boq_sticky_when">
+                                    <i class="fa fa-clock-o me-1"/>
+                                    <t t-if="rq.days_ago === 0">Today</t>
+                                    <t t-elif="rq.days_ago === 1">Yesterday</t>
+                                    <t t-else=""><t t-esc="rq.days_ago"/> days ago</t>
+                                </div>
+
+                            </div><!-- /sticky note -->
+                        </t>
+                    </div><!-- /boq_sticky_board -->
+
                 </div>
-            </t><!-- /recently submitted banner -->
+            </t><!-- /recently submitted sticky notes -->
 
             <!-- ╔════════════════════════════════════════════════════╗
                  ║  VENDOR SUMMARY CARDS                              ║
