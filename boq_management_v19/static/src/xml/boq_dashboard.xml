@@ -28,6 +28,15 @@
 </t>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
+     HEAD OF SUPPLIER DASHBOARD template
+     Consolidated cross-company view.  Calls DashboardBody which checks
+     isHeadDashboard to conditionally render the Company Overview section.
+════════════════════════════════════════════════════════════════════════ -->
+<t t-name="boq_management_v19.HeadSupplierDashboard">
+    <t t-call="boq_management_v19.DashboardBody"/>
+</t>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
      SHARED DASHBOARD BODY — used by both component templates via t-call
      (t-call inherits the component's `this` so all helpers work normally)
 ════════════════════════════════════════════════════════════════════════ -->
@@ -203,6 +212,102 @@
 
             </div><!-- /stat cards -->
 
+
+            <!-- ╔════════════════════════════════════════════════════╗
+                 ║  HEAD OF SUPPLIER — COMPANY OVERVIEW               ║
+                 ║  Only rendered on HeadSupplierDashboard.           ║
+                 ║  One card per allowed company showing aggregated   ║
+                 ║  BOQ, RFQ, value, pending, and submitted counts.   ║
+                 ╚════════════════════════════════════════════════════╝ -->
+            <t t-if="isHeadDashboard and state.companySummary.length > 0">
+                <div class="px-4 pb-3">
+
+                    <!-- Section header -->
+                    <div class="boq_section_header d-flex align-items-center
+                                justify-content-between mb-3">
+                        <h5 class="mb-0 fw-bold boq_section_title">
+                            <i class="fa fa-building me-2 text-success"/>
+                            Company Overview
+                            <span class="badge boq_badge_neutral rounded-pill ms-2 small">
+                                <t t-esc="state.companySummary.length"/>
+                                Compan<t t-if="state.companySummary.length !== 1">ies</t><t t-else="">y</t>
+                            </span>
+                        </h5>
+                        <small class="text-muted">
+                            <i class="fa fa-info-circle me-1"/>
+                            Aggregated across all selected companies · Click a card to view RFQs
+                        </small>
+                    </div>
+
+                    <!-- Company cards row -->
+                    <div class="d-flex flex-wrap gap-3">
+                        <t t-foreach="state.companySummary" t-as="cs" t-key="cs.company_id">
+                            <div class="boq_company_card"
+                                 t-on-click="() => this.openCompanyRfqs(cs.company_id, cs.company_name)"
+                                 style="cursor:pointer;">
+
+                                <!-- Header: avatar + name -->
+                                <div class="boq_cc_header d-flex align-items-center gap-2 mb-3">
+                                    <div class="boq_company_avatar">
+                                        <t t-esc="cs.company_initial"/>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="fw-bold text-truncate boq_cc_name"
+                                             t-esc="cs.company_name"/>
+                                        <small class="text-muted">
+                                            <t t-esc="cs.total_boqs"/> BOQ<t t-if="cs.total_boqs !== 1">s</t>
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- Key metrics row -->
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+
+                                    <div class="boq_vc_metric">
+                                        <div class="boq_vc_metric_value boq_metric_neutral">
+                                            <t t-esc="cs.total_rfqs"/>
+                                        </div>
+                                        <div class="boq_vc_metric_label">RFQs</div>
+                                    </div>
+
+                                    <div class="boq_vc_metric">
+                                        <div class="boq_vc_metric_value small boq_metric_neutral">
+                                            <t t-esc="fmtCurrency(cs.total_value)"/>
+                                        </div>
+                                        <div class="boq_vc_metric_label">Total Value</div>
+                                    </div>
+
+                                </div>
+
+                                <!-- Status badges footer -->
+                                <div class="d-flex flex-wrap gap-1 align-items-center">
+                                    <span t-if="cs.pending_count > 0"
+                                          class="badge boq_badge_neutral rounded-pill small">
+                                        <i class="fa fa-clock-o me-1"/>
+                                        <t t-esc="cs.pending_count"/> pending
+                                    </span>
+                                    <span t-if="cs.submitted_count > 0"
+                                          class="badge boq_badge_submitted rounded-pill small">
+                                        <i class="fa fa-bell me-1"/>
+                                        <t t-esc="cs.submitted_count"/> new
+                                    </span>
+                                    <span t-if="cs.approval_pending > 0"
+                                          class="badge boq_badge_neutral rounded-pill small">
+                                        <i class="fa fa-check-circle me-1"/>
+                                        <t t-esc="cs.approval_pending"/> to approve
+                                    </span>
+                                    <span t-if="cs.pending_count === 0 and cs.submitted_count === 0 and cs.approval_pending === 0"
+                                          class="badge boq_badge_neutral rounded-pill small">
+                                        <i class="fa fa-check me-1"/>All clear
+                                    </span>
+                                </div>
+
+                            </div><!-- /company card -->
+                        </t>
+                    </div><!-- /company cards row -->
+
+                </div>
+            </t><!-- /company overview -->
 
             <!-- ╔════════════════════════════════════════════════════╗
                  ║  VENDOR SUMMARY CARDS                              ║
