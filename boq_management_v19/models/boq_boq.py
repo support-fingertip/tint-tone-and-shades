@@ -1365,6 +1365,106 @@ class BoqBoq(models.Model):
         result.sort(key=lambda x: -x['oldest_days'])
         return result
 
+    # ── Notification banner — Recently submitted quotations ───────────────
+    @api.model
+    def get_recently_submitted_rfqs(self, dashboard_type='vendor'):
+        """
+        Returns a flat list of purchase.orders in 'submitted' state
+        with write_date in the last 7 days.  Used by the amber notification
+        banner at the top of the dashboard.
+
+        Each entry:
+          - rfq_id, rfq_name
+          - vendor_id, vendor_name, vendor_initial
+          - trade_name
+          - amount_total
+          - days_ago        (0 = today, 1 = yesterday, …)
+          - submitted_date  (formatted string)
+
+        Sorted: most recent first (smallest days_ago first).
+        """
+        company_ids = self._get_allowed_company_ids()
+        recently_cutoff = fields.Datetime.now() - timedelta(days=7)
+
+        boqs = self.search([
+            ('company_id', 'in', company_ids),
+            ('boq_type',   '=',  dashboard_type),
+        ])
+        if not boqs:
+            return []
+
+        # Collect linked RFQ → BOQ mapping
+        rfq_boq_map = {}
+        if boqs.ids:
+            self.env.cr.execute(
+                "SELECT purchase_id, boq_id FROM boq_boq_purchase_order_rel WHERE boq_id IN %s",
+                (tuple(boqs.ids),)
+            )
+            for row in self.env.cr.fetchall():
+                rfq_boq_map[row[0]] = row[1]
+
+        if not rfq_boq_map:
+            return []
+
+        # Fetch recently submitted — multi-company safe via search()
+        submitted_rfqs = self.env['purchase.order'].search([
+            ('id',          'in', list(rfq_boq_map.keys())),
+            ('company_id',  'in', company_ids),
+            ('state',       '=',  'submitted'),
+            ('write_date',  '>=', recently_cutoff),
+        ])
+
+        if not submitted_rfqs:
+            return []
+
+        # Filter by partner_type matching dashboard_type
+        if dashboard_type == 'supplier':
+            submitted_rfqs = submitted_rfqs.filtered(
+                lambda r: r.partner_id.partner_type == 'supplier'
+            )
+        else:
+            submitted_rfqs = submitted_rfqs.filtered(
+                lambda r: r.partner_id.partner_type != 'supplier'
+            )
+
+        if not submitted_rfqs:
+            return []
+
+        # Build trade lookup: (boq_id, partner_id) → category_name
+        trade_vendor_recs = self.env['boq.trade.vendor'].search([
+            ('boq_id',       'in', boqs.ids),
+            ('partner_type', '=',  dashboard_type),
+        ])
+        trade_map = {}
+        for tv in trade_vendor_recs:
+            partners = tv.vendor_ids if dashboard_type == 'vendor' else tv.supplier_ids
+            for p in partners:
+                key = (tv.boq_id.id, p.id)
+                if key not in trade_map:
+                    trade_map[key] = tv.category_id.name
+
+        now = fields.Datetime.now()
+        result = []
+        for rfq in submitted_rfqs:
+            boq_id    = rfq_boq_map.get(rfq.id)
+            trade_name = trade_map.get((boq_id, rfq.partner_id.id), '—') if boq_id else '—'
+            days_ago  = max(0, (now - rfq.write_date).days) if rfq.write_date else 0
+            result.append({
+                'rfq_id':         rfq.id,
+                'rfq_name':       rfq.name,
+                'vendor_id':      rfq.partner_id.id,
+                'vendor_name':    rfq.partner_id.name,
+                'vendor_initial': (rfq.partner_id.name or '?')[0].upper(),
+                'trade_name':     trade_name,
+                'amount_total':   rfq.amount_total,
+                'days_ago':       days_ago,
+                'submitted_date': rfq.write_date.strftime('%d %b %Y') if rfq.write_date else '',
+            })
+
+        # Sort: most recent first
+        result.sort(key=lambda r: r['days_ago'])
+        return result
+
     # ── NEW Task 1.6 — Approval-pending PO section ────────────────────────
     @api.model
     def get_approval_pending_pos(self, dashboard_type='vendor'):

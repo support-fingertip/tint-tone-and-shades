@@ -1122,6 +1122,100 @@
     font-weight: 600;
 }
 
+/* ── Recently Submitted Notification Banner ──────────────────────
+   Amber-tinted full-width panel that lists individual quotations
+   submitted in the last 7 days.  Each row shows vendor name,
+   RFQ reference, trade, amount, and "X days ago" plain text so
+   managers can see at a glance what needs reviewing.            */
+.boq_notification_banner {
+    background: #fffbeb;
+    border: 1.5px solid #f59e0b;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+}
+
+/* Header row: amber background, bell icon, title, badge */
+.boq_notif_header {
+    background: #fef3c7;
+    border-bottom: 1px solid #fde68a;
+    padding: 12px 16px;
+}
+
+/* Circular amber bell icon */
+.boq_notif_icon_wrap {
+    width: 38px;
+    height: 38px;
+    background: #f59e0b;
+    color: #fff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    animation: boq_pulse 2.2s ease-in-out infinite;
+}
+
+.boq_notif_title {
+    font-size: 0.92rem;
+    color: #78350f;
+}
+
+.boq_notif_subtitle {
+    color: #92400e;
+    font-size: 0.8rem;
+}
+
+/* Each quotation row inside the banner */
+.boq_notif_row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #fde68a;
+    transition: background 0.15s;
+}
+
+.boq_notif_row:last-child {
+    border-bottom: none;
+}
+
+.boq_notif_row:hover {
+    background: #fef3c7;
+}
+
+/* The sentence text "Vendor X submitted PO/001 · Trade Y" */
+.boq_notif_text {
+    min-width: 0;
+    font-size: 0.88rem;
+    color: #212529;
+    flex: 1 1 0;
+}
+
+/* Amount column */
+.boq_notif_amount {
+    font-size: 0.85rem;
+    color: #78350f;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* "Today" / "Yesterday" / "Xd ago" timestamp */
+.boq_notif_when {
+    white-space: nowrap;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    min-width: 70px;
+    text-align: right;
+}
+
+/* External-link chevron on the right */
+.boq_notif_open {
+    flex-shrink: 0;
+    color: #adb5bd;
+    font-size: 0.8rem;
+}
+
 /* Legacy alias kept so existing .boq_badge_new references don't break */
 .boq_badge_new {
     background: #f1f3f5 !important;

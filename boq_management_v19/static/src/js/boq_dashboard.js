@@ -76,16 +76,17 @@ class BoqManagerDashboardBase extends Component {
         this.notification = useService("notification");
 
         this.state = useState({
-            loading:          true,
-            error:            null,
-            stats:            {},
-            tree:             [],   // Level 1: trades → Level 2: vendors → Level 3: rfqs
-            vendorSummary:    [],   // Flat vendor cards: name, rfq_count, value, margin, payment
-            approvalPOs:      [],   // Task 1.6 — POs awaiting approval
-            pendingVendors:   [],   // Task 2.5 — Vendors with pending (draft/sent) RFQs
-            expandedTrades:   {},   // { trade_id: bool }
-            expandedVendors:  {},   // { vendor_id: bool }
-            filterText:       "",
+            loading:             true,
+            error:               null,
+            stats:               {},
+            tree:                [],   // Level 1: trades → Level 2: vendors → Level 3: rfqs
+            vendorSummary:       [],   // Flat vendor cards: name, rfq_count, value, margin, payment
+            approvalPOs:         [],   // Task 1.6 — POs awaiting approval
+            pendingVendors:      [],   // Task 2.5 — Vendors with pending (draft/sent) RFQs
+            recentlySubmitted:   [],   // Notification banner — flat list of recently submitted RFQs
+            expandedTrades:      {},   // { trade_id: bool }
+            expandedVendors:     {},   // { vendor_id: bool }
+            filterText:          "",
         });
 
         onWillStart(async () => { await this._loadAll(); });
@@ -118,18 +119,20 @@ class BoqManagerDashboardBase extends Component {
     async _loadAll() {
         try {
             const dt = this.dashboardType;
-            const [stats, tree, vendorSummary, approvalPOs, pendingVendors] = await Promise.all([
-                this.orm.call("boq.boq", "get_dashboard_stats",        [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_dashboard_tree_data",    [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_vendor_summary",         [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_approval_pending_pos",   [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_pending_rfq_vendors",    [], { dashboard_type: dt }),
+            const [stats, tree, vendorSummary, approvalPOs, pendingVendors, recentlySubmitted] = await Promise.all([
+                this.orm.call("boq.boq", "get_dashboard_stats",           [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_dashboard_tree_data",       [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_vendor_summary",            [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_approval_pending_pos",      [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_pending_rfq_vendors",       [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_recently_submitted_rfqs",   [], { dashboard_type: dt }),
             ]);
-            this.state.stats           = stats;
-            this.state.tree            = tree;
-            this.state.vendorSummary   = vendorSummary;
-            this.state.approvalPOs     = approvalPOs;
-            this.state.pendingVendors  = pendingVendors;
+            this.state.stats              = stats;
+            this.state.tree               = tree;
+            this.state.vendorSummary      = vendorSummary;
+            this.state.approvalPOs        = approvalPOs;
+            this.state.pendingVendors     = pendingVendors;
+            this.state.recentlySubmitted  = recentlySubmitted;
         } catch (err) {
             this.state.error = err.message || "Failed to load dashboard data.";
         } finally {
@@ -138,12 +141,13 @@ class BoqManagerDashboardBase extends Component {
     }
 
     async refresh() {
-        this.state.loading         = true;
-        this.state.error           = null;
-        this.state.vendorSummary   = [];
-        this.state.pendingVendors  = [];
-        this.state.expandedTrades  = {};
-        this.state.expandedVendors = {};
+        this.state.loading            = true;
+        this.state.error              = null;
+        this.state.vendorSummary      = [];
+        this.state.pendingVendors     = [];
+        this.state.recentlySubmitted  = [];
+        this.state.expandedTrades     = {};
+        this.state.expandedVendors    = {};
         await this._loadAll();
     }
 
