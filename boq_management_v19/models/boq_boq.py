@@ -1465,6 +1465,105 @@ class BoqBoq(models.Model):
         result.sort(key=lambda r: r['days_ago'])
         return result
 
+    # ── Head of Supplier Dashboard — per-company consolidated summary ─────
+    @api.model
+    def get_company_wise_summary(self, dashboard_type='supplier'):
+        """
+        Head of Supplier Dashboard only.
+
+        Returns one record per allowed company showing aggregated BOQ/RFQ
+        metrics so the head can see at a glance how each company is
+        performing across procurement.
+
+        Each entry:
+          - company_id, company_name, company_initial
+          - currency_symbol, currency_position
+          - total_boqs, total_rfqs, total_value
+          - pending_count      (draft / sent — no quote yet)
+          - submitted_count    (submitted in last 7 days)
+          - approval_pending   (to approve)
+
+        Multi-company safe: uses search() throughout; iterates over
+        allowed_company_ids from context.
+        """
+        company_ids = self._get_allowed_company_ids()
+        if not company_ids:
+            return []
+
+        recently_cutoff = fields.Datetime.now() - timedelta(days=7)
+        PENDING_STATES  = {'draft', 'sent'}
+
+        # ── Fetch all BOQs across allowed companies in one query ──────────
+        all_boqs = self.search([
+            ('company_id', 'in', company_ids),
+            ('boq_type',   '=',  dashboard_type),
+        ])
+        if not all_boqs:
+            return []
+
+        # ── Get all linked RFQ ids via join table ─────────────────────────
+        rfq_boq_map = {}
+        if all_boqs.ids:
+            self.env.cr.execute(
+                "SELECT purchase_id, boq_id FROM boq_boq_purchase_order_rel "
+                "WHERE boq_id IN %s",
+                (tuple(all_boqs.ids),)
+            )
+            for row in self.env.cr.fetchall():
+                rfq_boq_map[row[0]] = row[1]
+
+        all_rfqs = self.env['purchase.order']
+        if rfq_boq_map:
+            all_rfqs = self.env['purchase.order'].search([
+                ('id',         'in', list(rfq_boq_map.keys())),
+                ('company_id', 'in', company_ids),
+            ])
+            found_ids  = set(all_rfqs.ids)
+            rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
+
+        # Filter by partner_type matching dashboard_type
+        if dashboard_type == 'supplier':
+            all_rfqs = all_rfqs.filtered(
+                lambda r: r.partner_id.partner_type == 'supplier'
+            )
+        else:
+            all_rfqs = all_rfqs.filtered(
+                lambda r: r.partner_id.partner_type != 'supplier'
+            )
+
+        # ── Build per-company records ─────────────────────────────────────
+        result = []
+        for cid in company_ids:
+            company      = self.env['res.company'].browse(cid)
+            comp_boqs    = all_boqs.filtered(lambda b: b.company_id.id == cid)
+            comp_rfqs    = all_rfqs.filtered(lambda r: r.company_id.id == cid)
+
+            pending_count    = len(comp_rfqs.filtered(
+                lambda r: r.state in PENDING_STATES))
+            submitted_count  = len(comp_rfqs.filtered(
+                lambda r: r.state == 'submitted'
+                and r.write_date and r.write_date >= recently_cutoff))
+            approval_pending = len(comp_rfqs.filtered(
+                lambda r: r.state == 'to approve'))
+            total_value      = sum(comp_rfqs.mapped('amount_total'))
+
+            result.append({
+                'company_id':        cid,
+                'company_name':      company.name,
+                'company_initial':   (company.name or '?')[0].upper(),
+                'currency_symbol':   company.currency_id.symbol or '',
+                'currency_position': company.currency_id.position or 'before',
+                'total_boqs':        len(comp_boqs),
+                'total_rfqs':        len(comp_rfqs),
+                'total_value':       total_value,
+                'pending_count':     pending_count,
+                'submitted_count':   submitted_count,
+                'approval_pending':  approval_pending,
+            })
+
+        result.sort(key=lambda c: c['company_name'])
+        return result
+
     # ── NEW Task 1.6 — Approval-pending PO section ────────────────────────
     @api.model
     def get_approval_pending_pos(self, dashboard_type='vendor'):

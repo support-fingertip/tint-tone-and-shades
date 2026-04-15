@@ -84,6 +84,7 @@ class BoqManagerDashboardBase extends Component {
             approvalPOs:         [],   // Task 1.6 — POs awaiting approval
             pendingVendors:      [],   // Task 2.5 — Vendors with pending (draft/sent) RFQs
             recentlySubmitted:   [],   // Notification panel — flat list of recently submitted RFQs
+            companySummary:      [],   // Head dashboard — per-company consolidated data
             showRecentPanel:     false, // Toggle for notification panel
             expandedTrades:      {},   // { trade_id: bool }
             expandedVendors:     {},   // { vendor_id: bool }
@@ -96,6 +97,7 @@ class BoqManagerDashboardBase extends Component {
     // ── Dashboard identity ────────────────────────────────────────────────
     get dashboardType()     { return this.constructor.DASHBOARD_TYPE; }
     get isVendorDashboard() { return this.dashboardType === "vendor"; }
+    get isHeadDashboard()   { return false; } // overridden by HeadSupplierDashboard
 
     get dashboardTitle() {
         return this.isVendorDashboard
@@ -314,6 +316,78 @@ export class ProcurementManagerDashboard extends BoqManagerDashboardBase {
     static template       = "boq_management_v19.ProcurementManagerDashboard";
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  HEAD OF SUPPLIER DASHBOARD
+//  Consolidated cross-company view — shows per-company breakdown cards at the
+//  top, then the full aggregated Procurement Manager view below.
+//  DASHBOARD_TYPE = "supplier" so all existing Python methods are reused;
+//  get_company_wise_summary() adds the per-company breakdown row.
+// ═══════════════════════════════════════════════════════════════════════════════
+export class HeadSupplierDashboard extends BoqManagerDashboardBase {
+    static DASHBOARD_TYPE = "supplier";
+    static template       = "boq_management_v19.HeadSupplierDashboard";
+
+    // ── Identity overrides ────────────────────────────────────────────────
+    get isHeadDashboard()   { return true; }
+    get dashboardTitle()    { return "Head of Supplier Dashboard"; }
+    get dashboardSubtitle() { return "Consolidated multi-company supplier & procurement view"; }
+    get dashboardIcon()     { return "fa-globe"; }
+    get partnerLabel()      { return "Supplier"; }
+    get dashboardColor()    { return "text-success"; }
+
+    // ── Data loading — adds company summary on top of base data ──────────
+    async _loadAll() {
+        try {
+            const dt = this.dashboardType;
+            const [stats, tree, vendorSummary, approvalPOs, pendingVendors,
+                   recentlySubmitted, companySummary] = await Promise.all([
+                this.orm.call("boq.boq", "get_dashboard_stats",          [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_dashboard_tree_data",      [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_vendor_summary",           [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_approval_pending_pos",     [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_pending_rfq_vendors",      [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_recently_submitted_rfqs",  [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_company_wise_summary",     [], { dashboard_type: dt }),
+            ]);
+            this.state.stats             = stats;
+            this.state.tree              = tree;
+            this.state.vendorSummary     = vendorSummary;
+            this.state.approvalPOs       = approvalPOs;
+            this.state.pendingVendors    = pendingVendors;
+            this.state.recentlySubmitted = recentlySubmitted;
+            this.state.companySummary    = companySummary;
+        } catch (err) {
+            this.state.error = err.message || "Failed to load dashboard data.";
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
+    async refresh() {
+        this.state.loading           = true;
+        this.state.error             = null;
+        this.state.vendorSummary     = [];
+        this.state.pendingVendors    = [];
+        this.state.recentlySubmitted = [];
+        this.state.companySummary    = [];
+        this.state.expandedTrades    = {};
+        this.state.expandedVendors   = {};
+        await this._loadAll();
+    }
+
+    // ── Navigation helpers ────────────────────────────────────────────────
+    openCompanyRfqs(companyId, companyName) {
+        this.actionSvc.doAction({
+            type:      "ir.actions.act_window",
+            name:      `RFQs — ${companyName}`,
+            res_model: "purchase.order",
+            views:     [[false, "list"], [false, "form"]],
+            domain:    [["company_id", "=", companyId]],
+            target:    "current",
+        });
+    }
+}
+
 // ── Register each under its OWN tag ─────────────────────────────────────────
 registry.category("actions").add(
     "boq_management_v19.vendor_manager_dashboard_action",
@@ -322,4 +396,8 @@ registry.category("actions").add(
 registry.category("actions").add(
     "boq_management_v19.procurement_manager_dashboard_action",
     ProcurementManagerDashboard
+);
+registry.category("actions").add(
+    "boq_management_v19.head_supplier_dashboard_action",
+    HeadSupplierDashboard
 );

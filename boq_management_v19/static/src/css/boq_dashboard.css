@@ -1122,6 +1122,52 @@
     font-weight: 600;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   HEAD OF SUPPLIER DASHBOARD — Company Overview Cards
+   ══════════════════════════════════════════════════════════════════
+   One card per allowed company on the consolidated head dashboard.
+   Reuses the same layout language as .boq_vendor_card but with a
+   green accent to differentiate from the standard vendor cards.   */
+
+.boq_company_card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 14px;
+    padding: 18px 20px;
+    min-width: 220px;
+    max-width: 280px;
+    flex: 1 1 220px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+    border-top: 3px solid #198754;    /* green top accent for head dashboard */
+}
+.boq_company_card:hover {
+    box-shadow: 0 6px 20px rgba(25, 135, 84, 0.14);
+    border-color: #198754;
+    transform: translateY(-2px);
+}
+
+/* Company initial avatar — green circle */
+.boq_company_avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #198754, #0f5132);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.boq_cc_name {
+    font-size: 0.9rem;
+    color: #1a1a1a;
+    max-width: 160px;
+}
+
 /* ── "Recently Submitted" chip button styles ────────────────────
    The chip in the summary bar is a real <button> that toggles the
    notification panel.  Active state gets a darker amber border.  */

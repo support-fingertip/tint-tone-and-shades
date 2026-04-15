@@ -17,7 +17,7 @@
               web_icon="boq_management_v19,static/src/img/boq_icon.png"
               groups="boq_management_v19.group_boq_user"/>
 
-    <!-- ── Task 1: TWO separate dashboard menu items ── -->
+    <!-- ── Dashboard menu items ── -->
     <menuitem id="menu_vendor_manager_dashboard"
               name="Vendor Manager Dashboard"
               parent="menu_boq_root"
@@ -31,6 +31,14 @@
               action="action_procurement_manager_dashboard"
               sequence="6"
               groups="boq_management_v19.group_boq_user"/>
+
+    <!-- Head of Supplier — consolidated cross-company view (manager only) -->
+    <menuitem id="menu_head_supplier_dashboard"
+              name="Head of Supplier Dashboard"
+              parent="menu_boq_root"
+              action="action_head_supplier_dashboard"
+              sequence="7"
+              groups="boq_management_v19.group_boq_manager"/>
 
     <!-- ── Main BOQ section ── -->
     <menuitem id="menu_boq_main"
