@@ -16,6 +16,7 @@
     'depends': ['purchase'],
     'data': [
         'views/purchase_portal_templates.xml',
+        'views/template_rfq.xml',
     ],
     'assets': {
         'web.assets_frontend': [

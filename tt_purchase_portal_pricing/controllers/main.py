@@ -58,4 +58,19 @@ class PurchasePortalPriceUpdate(portal.CustomerPortal):
             # Change state
             order.action_submit()
 
-        return request.redirect('/my/purchase/%s' % order.id)
+        return request.redirect('/my/rfq/submitted')
+
+    @http.route(['/my/rfq/submitted', '/my/rfq/submitted/page/<int:page>'], type='http', auth="user", website=True)
+    def portal_my_submitted_rfqs(self, page=1, date_begin=None, date_end=None, sortby=None, filterby=None, **kw):
+
+        return self._render_portal(
+            "purchase.portal_my_purchase_rfqs",
+            page, date_begin, date_end, sortby, filterby,
+            [('state', 'in', ['draft', 'submitted', 'to approve', 'cancel'])],
+            {},
+            None,
+            "/my/rfq/submitted",
+            'my_submitted_rfqs_history',
+            'rfq',
+            'rfqs'
+        )
