@@ -204,6 +204,96 @@
             </div><!-- /stat cards -->
 
             <!-- ╔════════════════════════════════════════════════════╗
+                 ║  RECENTLY SUBMITTED NOTIFICATION BANNER            ║
+                 ║  Shown when any quotation was submitted in the     ║
+                 ║  last 7 days.  Each row names the vendor, RFQ      ║
+                 ║  reference, trade, amount, and how many days ago.  ║
+                 ╚════════════════════════════════════════════════════╝ -->
+            <t t-if="state.recentlySubmitted.length > 0">
+                <div class="px-4 pb-3">
+                    <div class="boq_notification_banner">
+
+                        <!-- Banner header -->
+                        <div class="boq_notif_header d-flex align-items-center
+                                    justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="boq_notif_icon_wrap">
+                                    <i class="fa fa-bell fa-lg"/>
+                                </span>
+                                <div>
+                                    <div class="fw-bold boq_notif_title">
+                                        <t t-esc="state.recentlySubmitted.length"/>
+                                        Quotation<t t-if="state.recentlySubmitted.length !== 1">s</t>
+                                        Recently Submitted — Review Required
+                                    </div>
+                                    <small class="boq_notif_subtitle">
+                                        The following quotations were submitted in the last 7 days.
+                                        Click a row to open and review.
+                                    </small>
+                                </div>
+                            </div>
+                            <span class="badge boq_badge_submitted rounded-pill px-3 py-2">
+                                <i class="fa fa-bell me-1"/>
+                                <t t-esc="state.recentlySubmitted.length"/> New
+                            </span>
+                        </div>
+
+                        <!-- One row per recently submitted quotation -->
+                        <div class="boq_notif_list">
+                            <t t-foreach="state.recentlySubmitted" t-as="rq" t-key="rq.rfq_id">
+                                <div class="boq_notif_row"
+                                     t-on-click="() => this.openRfq(rq.rfq_id)"
+                                     title="Click to open quotation"
+                                     style="cursor:pointer;">
+
+                                    <!-- Vendor avatar with amber glow -->
+                                    <span class="boq_vendor_avatar_sm boq_avatar_new flex-shrink-0">
+                                        <t t-esc="rq.vendor_initial"/>
+                                    </span>
+
+                                    <!-- Notification sentence text -->
+                                    <span class="boq_notif_text flex-fill">
+                                        <strong><t t-esc="rq.vendor_name"/></strong>
+                                        submitted
+                                        <span class="text-primary fw-semibold">
+                                            <t t-esc="rq.rfq_name"/>
+                                        </span>
+                                        <span class="text-muted"> · </span>
+                                        <span class="text-muted small">
+                                            <i class="fa fa-wrench me-1"/>
+                                            <t t-esc="rq.trade_name"/>
+                                        </span>
+                                    </span>
+
+                                    <!-- Amount -->
+                                    <span class="boq_notif_amount fw-semibold">
+                                        <t t-esc="fmtCurrency(rq.amount_total)"/>
+                                    </span>
+
+                                    <!-- When submitted -->
+                                    <span class="boq_notif_when text-muted small">
+                                        <i class="fa fa-clock-o me-1"/>
+                                        <t t-if="rq.days_ago === 0">Today</t>
+                                        <t t-elif="rq.days_ago === 1">Yesterday</t>
+                                        <t t-else="">
+                                            <t t-esc="rq.days_ago"/>d ago
+                                        </t>
+                                    </span>
+
+                                    <!-- Open icon -->
+                                    <span class="boq_notif_open">
+                                        <i class="fa fa-external-link text-muted"/>
+                                    </span>
+
+                                </div>
+                            </t>
+                        </div>
+
+                    </div><!-- /boq_notification_banner -->
+                </div>
+            </t><!-- /recently submitted banner -->
+
+            <!-- ╔════════════════════════════════════════════════════╗
                  ║  VENDOR SUMMARY CARDS                              ║
                  ║  One card per vendor/supplier — flat overview of   ║
                  ║  RFQ count, total value, margin %                  ║
