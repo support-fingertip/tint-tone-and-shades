@@ -17,28 +17,34 @@
               web_icon="boq_management_v19,static/src/img/boq_icon.png"
               groups="boq_management_v19.group_boq_user"/>
 
-    <!-- ── Dashboard menu items ── -->
+    <!-- ── Dashboard menu items ──
+         Each dashboard has its OWN dedicated group so access can be
+         assigned independently per user in Settings > Users & Companies.
+         group_vendor_manager_dashboard      → Vendor Manager Dashboard
+         group_procurement_manager_dashboard → Procurement Manager Dashboard
+         group_head_supplier_dashboard       → Head of Supplier Dashboard
+    ── -->
     <menuitem id="menu_vendor_manager_dashboard"
               name="Vendor Manager Dashboard"
               parent="menu_boq_root"
               action="action_vendor_manager_dashboard"
               sequence="5"
-              groups="boq_management_v19.group_boq_user"/>
+              groups="boq_management_v19.group_vendor_manager_dashboard"/>
 
     <menuitem id="menu_procurement_manager_dashboard"
               name="Procurement Manager Dashboard"
               parent="menu_boq_root"
               action="action_procurement_manager_dashboard"
               sequence="6"
-              groups="boq_management_v19.group_boq_user"/>
+              groups="boq_management_v19.group_procurement_manager_dashboard"/>
 
-    <!-- Head of Supplier — consolidated cross-company view (manager only) -->
+    <!-- Head of Supplier — consolidated cross-company view -->
     <menuitem id="menu_head_supplier_dashboard"
               name="Head of Supplier Dashboard"
               parent="menu_boq_root"
               action="action_head_supplier_dashboard"
               sequence="7"
-              groups="boq_management_v19.group_boq_manager"/>
+              groups="boq_management_v19.group_head_supplier_dashboard"/>
 
     <!-- ── Main BOQ section ── -->
     <menuitem id="menu_boq_main"
