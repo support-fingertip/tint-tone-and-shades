@@ -23,5 +23,29 @@
             <field name="name">Supplier</field>
         </record>
 
+        <!-- ── Dashboard-specific access groups ─────────────────────────────
+             Three separate groups — one per dashboard page.
+             Each implies group_boq_user so underlying model access is
+             inherited automatically.  Assign these in Settings > Users.
+        ─────────────────────────────────────────────────────────────────── -->
+
+        <!-- Access: Vendor Manager Dashboard only -->
+        <record id="group_vendor_manager_dashboard" model="res.groups">
+            <field name="name">Vendor Manager Dashboard</field>
+            <field name="implied_ids" eval="[(4, ref('group_boq_user'))]"/>
+        </record>
+
+        <!-- Access: Procurement Manager Dashboard only -->
+        <record id="group_procurement_manager_dashboard" model="res.groups">
+            <field name="name">Procurement Manager Dashboard</field>
+            <field name="implied_ids" eval="[(4, ref('group_boq_user'))]"/>
+        </record>
+
+        <!-- Access: Head of Supplier Dashboard (senior/manager view) -->
+        <record id="group_head_supplier_dashboard" model="res.groups">
+            <field name="name">Head of Supplier Dashboard</field>
+            <field name="implied_ids" eval="[(4, ref('group_boq_manager'))]"/>
+        </record>
+
     </data>
 </odoo>
