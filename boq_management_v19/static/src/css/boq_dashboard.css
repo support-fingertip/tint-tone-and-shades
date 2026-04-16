@@ -1669,84 +1669,174 @@
 .boq_pending_row:hover .boq_pending_open_icon { opacity: 1; }
 
 /* ══════════════════════════════════════════════════════════════
-   HEAD DASHBOARD — COMPANY FILTER BAR
-   Pill-style company selector above stat cards (head view only)
+   HEAD DASHBOARD — COMPANY FIELD SELECTOR
+   Many2many-style field for selecting which companies to view.
    ══════════════════════════════════════════════════════════════ */
 
-.boq_company_filter_bar {
-    background: #fff;
-    border: 1px solid #e9ecef;
-    border-radius: 12px;
-    padding: 12px 16px;
+/* Outer wrapper row */
+.boq_cf_wrap {
+    /* no extra card box — sits inline with the page */
 }
 
-.boq_company_filter_label {
-    font-size: .8rem;
+.boq_cf_row {
+    min-height: 40px;
+}
+
+/* "Companies" label */
+.boq_cf_label {
+    font-size: .82rem;
     font-weight: 600;
     color: #6c757d;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
-/* Individual company pill button */
-.boq_company_pill {
+/* The input box — looks like an Odoo many2many field */
+.boq_cf_input {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-height: 36px;
+    min-width: 260px;
+    max-width: 600px;
+    padding: 4px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+    position: relative;
+}
+.boq_cf_input:hover  { border-color: #198754; }
+.boq_cf_input:focus-within {
+    border-color: #198754;
+    box-shadow: 0 0 0 3px rgba(25,135,84,.12);
+}
+
+/* "All companies" placeholder text */
+.boq_cf_placeholder {
+    color: #6c757d;
+    font-size: .85rem;
+    flex: 1;
+}
+
+/* Selected company tag chip */
+.boq_cf_tag {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    border: 1.5px solid #dee2e6;
-    background: #f8f9fa;
-    color: #495057;
-    font-size: .82rem;
+    gap: 4px;
+    background: #e8f5ee;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: .8rem;
+    color: #198754;
     font-weight: 500;
-    cursor: pointer;
-    transition: all .15s;
-    white-space: nowrap;
     max-width: 180px;
 }
-.boq_company_pill:hover {
-    border-color: #198754;
-    background: #e8f5ee;
-    color: #198754;
-}
-.boq_company_pill_active {
-    border-color: #198754 !important;
-    background: #198754 !important;
-    color: #fff !important;
-}
-.boq_company_pill_active:hover {
-    background: #157347 !important;
-    border-color: #157347 !important;
-}
 
-/* Small circular initial badge inside pill */
-.boq_company_pill_avatar {
-    width: 20px;
-    height: 20px;
+.boq_cf_tag_avatar {
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    background: rgba(255,255,255,.25);
+    background: #198754;
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: .7rem;
+    font-size: .65rem;
     font-weight: 700;
     flex-shrink: 0;
 }
-.boq_company_pill_active .boq_company_pill_avatar {
-    background: rgba(255,255,255,.3);
-}
 
-.boq_company_pill_name {
-    max-width: 120px;
+.boq_cf_tag_name {
+    max-width: 130px;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.boq_pill_check { font-size: .75rem; }
+.boq_cf_tag_x {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: #198754;
+    opacity: .6;
+    cursor: pointer;
+    font-size: .7rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+}
+.boq_cf_tag_x:hover { opacity: 1; color: #dc3545; }
 
-/* Summary badge on the right */
-.boq_company_filter_info {
+/* Dropdown caret */
+.boq_cf_caret {
+    margin-left: auto;
+    color: #6c757d;
     font-size: .8rem;
+    flex-shrink: 0;
+}
+
+/* Dropdown panel — absolutely positioned below the input */
+.boq_cf_dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 260px;
+    max-width: 360px;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.12);
+    z-index: 1050;
+    overflow: hidden;
+}
+
+.boq_cf_dd_item {
+    display: flex;
+    align-items: center;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: .85rem;
+    color: #495057;
+    transition: background .1s;
+    gap: 0;
+}
+.boq_cf_dd_item:hover    { background: #f0faf5; color: #198754; }
+.boq_cf_dd_active        { background: #f0faf5; font-weight: 500; }
+
+.boq_cf_dd_all { border-bottom: 1px solid #f0f0f0; }
+
+.boq_cf_dd_avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #198754;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .68rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.boq_cf_dd_divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 0;
+}
+
+/* "Clear filter" button */
+.boq_cf_clear { font-size: .8rem; flex-shrink: 0; }
+
+/* Active-filter badge on the right */
+.boq_cf_badge {
+    font-size: .78rem;
     color: #6c757d;
     white-space: nowrap;
+    flex-shrink: 0;
 }

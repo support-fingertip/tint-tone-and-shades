@@ -267,51 +267,110 @@
             </t>
 
             <!-- ╔════════════════════════════════════════════════════╗
-                 ║  HEAD DASHBOARD — COMPANY FILTER BAR               ║
-                 ║  Only shown on HeadSupplierDashboard when there    ║
-                 ║  are multiple allowed companies.  Pill toggles let ║
-                 ║  the user filter all sections to specific companies.║
+                 ║  HEAD DASHBOARD — COMPANY FIELD SELECTOR           ║
+                 ║  Many2many-style field: shows selected companies    ║
+                 ║  as removable tags; dropdown to add/remove.        ║
+                 ║  Only shown when > 1 company is available.         ║
                  ╚════════════════════════════════════════════════════╝ -->
             <t t-if="isHeadDashboard and state.availableCompanies.length > 1">
-                <div class="boq_company_filter_bar px-4 pb-3">
-                    <div class="boq_company_filter_inner d-flex align-items-center flex-wrap gap-2">
+                <div class="boq_cf_wrap px-4 pb-3">
+                    <div class="boq_cf_row d-flex align-items-center gap-3">
 
-                        <!-- Label -->
-                        <span class="boq_company_filter_label me-1">
-                            <i class="fa fa-building me-1"/>
-                            Filter by Company:
+                        <!-- Field label -->
+                        <span class="boq_cf_label">
+                            <i class="fa fa-building me-1"/>Companies
                         </span>
 
-                        <!-- "All Companies" pill -->
-                        <button t-attf-class="boq_company_pill
-                                              #{ state.selectedCompanyIds.length === 0 ? 'boq_company_pill_active' : '' }"
-                                t-on-click="selectAllCompanies"
-                                type="button">
-                            <i class="fa fa-globe me-1"/>
-                            All Companies
-                            <span class="badge ms-1 small"><t t-esc="state.availableCompanies.length"/></span>
+                        <!-- Field input — shows tags + opens dropdown -->
+                        <div class="boq_cf_input" t-on-click="toggleCompanyDropdown"
+                             style="position:relative;">
+
+                            <!-- "All companies" placeholder -->
+                            <span t-if="state.selectedCompanyIds.length === 0"
+                                  class="boq_cf_placeholder">
+                                <i class="fa fa-globe me-1 text-muted"/>All companies
+                            </span>
+
+                            <!-- Selected company tags -->
+                            <t t-foreach="state.availableCompanies" t-as="ac" t-key="ac.id">
+                                <t t-if="isCompanyTag(ac.id)">
+                                    <span class="boq_cf_tag">
+                                        <span class="boq_cf_tag_avatar">
+                                            <t t-esc="ac.initial"/>
+                                        </span>
+                                        <span class="boq_cf_tag_name">
+                                            <t t-esc="ac.name"/>
+                                        </span>
+                                        <button class="boq_cf_tag_x"
+                                                type="button"
+                                                t-on-click="(ev) => this.removeCompany(ev, ac.id)"
+                                                title="Remove">
+                                            <i class="fa fa-times"/>
+                                        </button>
+                                    </span>
+                                </t>
+                            </t>
+
+                            <!-- Caret -->
+                            <i t-attf-class="fa boq_cf_caret
+                                             #{ state.showCompanyDropdown ? 'fa-caret-up' : 'fa-caret-down' }"/>
+
+                            <!-- Dropdown panel -->
+                            <t t-if="state.showCompanyDropdown">
+                                <div class="boq_cf_dropdown" t-on-click.stop="">
+
+                                    <!-- All companies row -->
+                                    <div t-attf-class="boq_cf_dd_item boq_cf_dd_all
+                                                       #{ state.selectedCompanyIds.length === 0 ? 'boq_cf_dd_active' : '' }"
+                                         t-on-click="selectAllCompanies">
+                                        <i t-attf-class="fa me-2
+                                                          #{ state.selectedCompanyIds.length === 0
+                                                             ? 'fa-check-circle text-success'
+                                                             : 'fa-circle-o text-muted' }"/>
+                                        <strong>All companies</strong>
+                                        <span class="badge boq_badge_neutral ms-auto small">
+                                            <t t-esc="state.availableCompanies.length"/>
+                                        </span>
+                                    </div>
+
+                                    <div class="boq_cf_dd_divider"/>
+
+                                    <!-- One row per company -->
+                                    <t t-foreach="state.availableCompanies" t-as="ac" t-key="ac.id">
+                                        <div t-attf-class="boq_cf_dd_item
+                                                           #{ isCompanySelected(ac.id) ? 'boq_cf_dd_active' : '' }"
+                                             t-on-click="() => this.toggleCompany(ac.id)">
+                                            <i t-attf-class="fa me-2
+                                                              #{ isCompanySelected(ac.id)
+                                                                 ? 'fa-check-square-o text-success'
+                                                                 : 'fa-square-o text-muted' }"/>
+                                            <span class="boq_cf_dd_avatar me-2">
+                                                <t t-esc="ac.initial"/>
+                                            </span>
+                                            <span class="text-truncate flex-fill">
+                                                <t t-esc="ac.name"/>
+                                            </span>
+                                        </div>
+                                    </t>
+
+                                </div>
+                            </t>
+                        </div><!-- /boq_cf_input -->
+
+                        <!-- "Clear filter" link when subset is active -->
+                        <button t-if="state.selectedCompanyIds.length > 0"
+                                class="boq_cf_clear btn btn-sm btn-link text-muted p-0"
+                                type="button"
+                                t-on-click="selectAllCompanies">
+                            <i class="fa fa-times-circle me-1"/>Clear filter
                         </button>
 
-                        <!-- One pill per available company -->
-                        <t t-foreach="state.availableCompanies" t-as="ac" t-key="ac.id">
-                            <button t-attf-class="boq_company_pill
-                                                  #{ isCompanySelected(ac.id) and state.selectedCompanyIds.length > 0 ? 'boq_company_pill_active' : '' }"
-                                    t-on-click="() => this.toggleCompany(ac.id)"
-                                    type="button"
-                                    t-att-title="ac.name">
-                                <span class="boq_company_pill_avatar"><t t-esc="ac.initial"/></span>
-                                <span class="text-truncate boq_company_pill_name"><t t-esc="ac.name"/></span>
-                                <i t-if="isCompanySelected(ac.id) and state.selectedCompanyIds.length > 0"
-                                   class="fa fa-check ms-1 boq_pill_check"/>
-                            </button>
-                        </t>
-
-                        <!-- Active filter summary badge -->
+                        <!-- Active filter badge -->
                         <span t-if="state.selectedCompanyIds.length > 0"
-                              class="boq_company_filter_info ms-auto">
+                              class="boq_cf_badge ms-auto">
                             <i class="fa fa-filter me-1"/>
-                            Showing <strong><t t-esc="state.selectedCompanyIds.length"/></strong>
-                            of <t t-esc="state.availableCompanies.length"/> companies
+                            <t t-esc="state.selectedCompanyIds.length"/>
+                            of <t t-esc="state.availableCompanies.length"/> selected
                         </span>
 
                     </div>

@@ -18,7 +18,7 @@
  * Task 5  — Multi-company: orm service auto-includes allowed_company_ids
  */
 
-import { Component, useState, onWillStart } from "@odoo/owl";
+import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
@@ -338,8 +338,14 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     setup() {
         super.setup();
         // Company filter state (Head dashboard only)
-        this.state.availableCompanies  = [];   // [{id, name, initial}]
-        this.state.selectedCompanyIds  = [];   // [] = all; non-empty = subset
+        this.state.availableCompanies   = [];   // [{id, name, initial}]
+        this.state.selectedCompanyIds   = [];   // [] = all; non-empty = subset
+        this.state.showCompanyDropdown  = false;
+
+        // Close dropdown when user clicks outside the field
+        this._closeDropdown = () => { this.state.showCompanyDropdown = false; };
+        onMounted(()       => document.addEventListener("click", this._closeDropdown));
+        onWillUnmount(()   => document.removeEventListener("click", this._closeDropdown));
     }
 
     // ── Company filter helpers ────────────────────────────────────────────
@@ -354,6 +360,31 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     isCompanySelected(cid) {
         return this.state.selectedCompanyIds.length === 0
             || this.state.selectedCompanyIds.includes(cid);
+    }
+
+    /** True when this company is in the explicit subset (not just "all" mode). */
+    isCompanyTag(cid) {
+        return this.state.selectedCompanyIds.includes(cid);
+    }
+
+    toggleCompanyDropdown(ev) {
+        if (ev) ev.stopPropagation();
+        this.state.showCompanyDropdown = !this.state.showCompanyDropdown;
+    }
+
+    /** Remove one company tag (× button). */
+    async removeCompany(ev, cid) {
+        if (ev) ev.stopPropagation();
+        const all = this.state.availableCompanies.map(c => c.id);
+        const cur = this.state.selectedCompanyIds;
+        if (cur.length === 0) {
+            // "All" mode — remove X → select all except X
+            this.state.selectedCompanyIds = all.filter(id => id !== cid);
+        } else {
+            const next = cur.filter(id => id !== cid);
+            this.state.selectedCompanyIds = next.length > 0 ? next : [];
+        }
+        await this._reloadFiltered();
     }
 
     /** Toggle a company on/off in the filter and reload data. */
@@ -376,8 +407,10 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         await this._reloadFiltered();
     }
 
-    async selectAllCompanies() {
-        this.state.selectedCompanyIds = [];
+    async selectAllCompanies(ev) {
+        if (ev) ev.stopPropagation();
+        this.state.showCompanyDropdown = false;
+        this.state.selectedCompanyIds  = [];
         await this._reloadFiltered();
     }
 
