@@ -335,35 +335,107 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     get partnerLabel()      { return "Supplier"; }
     get dashboardColor()    { return "text-success"; }
 
+    setup() {
+        super.setup();
+        // Company filter state (Head dashboard only)
+        this.state.availableCompanies  = [];   // [{id, name, initial}]
+        this.state.selectedCompanyIds  = [];   // [] = all; non-empty = subset
+    }
+
+    // ── Company filter helpers ────────────────────────────────────────────
+
+    /** Returns the company_ids kwarg to pass to Python, or null for "all". */
+    get _filterCompanyIds() {
+        return this.state.selectedCompanyIds.length > 0
+            ? this.state.selectedCompanyIds
+            : null;
+    }
+
+    isCompanySelected(cid) {
+        return this.state.selectedCompanyIds.length === 0
+            || this.state.selectedCompanyIds.includes(cid);
+    }
+
+    /** Toggle a company on/off in the filter and reload data. */
+    async toggleCompany(cid) {
+        const all   = this.state.availableCompanies.map(c => c.id);
+        const cur   = this.state.selectedCompanyIds;
+
+        if (cur.length === 0) {
+            // Currently "all" — deselect just this one
+            this.state.selectedCompanyIds = all.filter(id => id !== cid);
+        } else if (cur.includes(cid)) {
+            const next = cur.filter(id => id !== cid);
+            // If none remain, switch back to "all" mode
+            this.state.selectedCompanyIds = next.length > 0 ? next : [];
+        } else {
+            const next = [...cur, cid];
+            // If all are now selected, switch to "all" mode
+            this.state.selectedCompanyIds = next.length === all.length ? [] : next;
+        }
+        await this._reloadFiltered();
+    }
+
+    async selectAllCompanies() {
+        this.state.selectedCompanyIds = [];
+        await this._reloadFiltered();
+    }
+
+    async _reloadFiltered() {
+        this.state.loading         = true;
+        this.state.expandedTrades  = {};
+        this.state.expandedVendors = {};
+        await this._loadData();
+    }
+
     // ── Head-level KPI helpers for hero banner ────────────────────────────
     get headTotalCompanies()  { return this.state.companySummary.length; }
     get headTotalSuppliers()  {
         return this.state.vendorSummary ? this.state.vendorSummary.length : 0;
     }
-    get headPendingApprovals() { return this.state.approvalPOs ? this.state.approvalPOs.length : 0; }
-    get headRecentlySubmitted() { return this.state.recentlySubmitted ? this.state.recentlySubmitted.length : 0; }
+    get headPendingApprovals()   { return this.state.approvalPOs ? this.state.approvalPOs.length : 0; }
+    get headRecentlySubmitted()  { return this.state.recentlySubmitted ? this.state.recentlySubmitted.length : 0; }
     get headPendingRfqs() {
         return (this.state.pendingVendors || []).reduce((s, v) => s + (v.rfq_count || 0), 0);
     }
-    get headTotalValue()  { return this.state.stats ? (this.state.stats.rfq_total_value || 0) : 0; }
+    get headTotalValue() { return this.state.stats ? (this.state.stats.rfq_total_value || 0) : 0; }
 
-    // ── Data loading — uses allSettled so partial failures never block ────
-    // If the module hasn't been upgraded yet, get_company_wise_summary may
-    // not exist.  allSettled ensures the 6 existing methods still render.
+    // ── Data loading ──────────────────────────────────────────────────────
+
+    /** First load available companies (once), then data. */
     async _loadAll() {
         try {
-            const dt = this.dashboardType;
+            // Load available companies list on first call
+            if (this.state.availableCompanies.length === 0) {
+                const companies = await this.orm.call(
+                    "boq.boq", "get_available_companies", [], {}
+                ).catch(() => []);
+                this.state.availableCompanies = companies;
+            }
+            await this._loadData();
+        } catch (err) {
+            this.state.error   = err.message || "Failed to load dashboard data.";
+            this.state.loading = false;
+        }
+    }
+
+    /** Reload all data panels with the current company filter applied. */
+    async _loadData() {
+        try {
+            const dt  = this.dashboardType;
+            const cids = this._filterCompanyIds;  // null = all
+            const extra = cids ? { company_ids: cids } : {};
+
             const [r0, r1, r2, r3, r4, r5, r6] = await Promise.allSettled([
-                this.orm.call("boq.boq", "get_dashboard_stats",          [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_dashboard_tree_data",      [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_vendor_summary",           [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_approval_pending_pos",     [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_pending_rfq_vendors",      [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_recently_submitted_rfqs",  [], { dashboard_type: dt }),
-                this.orm.call("boq.boq", "get_company_wise_summary",     [], { dashboard_type: dt }),
+                this.orm.call("boq.boq", "get_dashboard_stats",          [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_dashboard_tree_data",      [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_vendor_summary",           [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_approval_pending_pos",     [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_pending_rfq_vendors",      [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_recently_submitted_rfqs",  [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_company_wise_summary",     [], { dashboard_type: dt, ...extra }),
             ]);
 
-            // Show error only if the two critical calls both failed
             if (r0.status === "rejected" && r1.status === "rejected") {
                 this.state.error = r0.reason?.message || "Failed to load dashboard data.";
                 return;
@@ -385,14 +457,16 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     }
 
     async refresh() {
-        this.state.loading           = true;
-        this.state.error             = null;
-        this.state.vendorSummary     = [];
-        this.state.pendingVendors    = [];
-        this.state.recentlySubmitted = [];
-        this.state.companySummary    = [];
-        this.state.expandedTrades    = {};
-        this.state.expandedVendors   = {};
+        this.state.loading            = true;
+        this.state.error              = null;
+        this.state.vendorSummary      = [];
+        this.state.pendingVendors     = [];
+        this.state.recentlySubmitted  = [];
+        this.state.companySummary     = [];
+        this.state.availableCompanies = [];
+        this.state.selectedCompanyIds = [];
+        this.state.expandedTrades     = {};
+        this.state.expandedVendors    = {};
         await this._loadAll();
     }
 

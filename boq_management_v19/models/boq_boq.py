@@ -745,13 +745,33 @@ class BoqBoq(models.Model):
         return 'not_paid'
 
     @api.model
-    def get_dashboard_stats(self, dashboard_type='vendor'):
+    def get_available_companies(self):
+        """
+        Head of Supplier Dashboard — returns all companies the user is
+        allowed to see, for the company-filter selector.
+        Returns: [{id, name, initial}] sorted by name.
+        """
+        ids = self._get_allowed_company_ids()
+        result = []
+        for cid in ids:
+            company = self.env['res.company'].browse(cid)
+            result.append({
+                'id':      cid,
+                'name':    company.name,
+                'initial': (company.name or '?')[0].upper(),
+            })
+        result.sort(key=lambda c: c['name'])
+        return result
+
+    @api.model
+    def get_dashboard_stats(self, dashboard_type='vendor', company_ids=None):
         """
         Return top-level aggregate stats for the BOQ dashboard header cards.
         Task 5: uses allowed_company_ids for multi-company support.
         dashboard_type: 'vendor' | 'supplier'
+        company_ids: optional list of company IDs to filter (Head dashboard company selector).
         """
-        company_ids = self._get_allowed_company_ids()
+        company_ids = company_ids or self._get_allowed_company_ids()
         company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
         boqs = self.search(company_domain)
 
@@ -797,13 +817,14 @@ class BoqBoq(models.Model):
         }
 
     @api.model
-    def get_vendor_summary(self, dashboard_type='vendor'):
+    def get_vendor_summary(self, dashboard_type='vendor', company_ids=None):
         """
         Return vendor-wise RFQ summary for dashboard kanban cards.
         Task 5: uses allowed_company_ids for multi-company support.
         dashboard_type: 'vendor' | 'supplier'
+        company_ids: optional list of company IDs to filter.
         """
-        company_ids = self._get_allowed_company_ids()
+        company_ids = company_ids or self._get_allowed_company_ids()
         company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
         boqs = self.search(company_domain)
 
@@ -1022,7 +1043,7 @@ class BoqBoq(models.Model):
 
     # ── NEW Task 2 — Hierarchical Tree Data ───────────────────────────────
     @api.model
-    def get_dashboard_tree_data(self, dashboard_type='vendor'):
+    def get_dashboard_tree_data(self, dashboard_type='vendor', company_ids=None):
         """
         Task 2 — Returns a 3-level hierarchical structure:
           Level 1: Trades (Electrical, Civil, Plumbing, …)
@@ -1031,6 +1052,7 @@ class BoqBoq(models.Model):
 
         Task 5: multi-company using allowed_company_ids.
         dashboard_type: 'vendor' | 'supplier'
+        company_ids: optional list of company IDs to filter.
 
         State labels (Task 4.6):
           draft      → 'Quote Requested'  (more meaningful than 'Draft')
@@ -1053,7 +1075,7 @@ class BoqBoq(models.Model):
         PENDING_STATES = {'draft', 'sent'}
         recently_cutoff = fields.Datetime.now() - timedelta(days=7)
 
-        company_ids = self._get_allowed_company_ids()
+        company_ids = company_ids or self._get_allowed_company_ids()
         company_domain = [
             ('company_id', 'in', company_ids),
             ('boq_type',   '=',  dashboard_type),
@@ -1242,7 +1264,7 @@ class BoqBoq(models.Model):
 
     # ── Task 2.5 — Pending RFQ vendors (awaiting quotation) ──────────────
     @api.model
-    def get_pending_rfq_vendors(self, dashboard_type='vendor'):
+    def get_pending_rfq_vendors(self, dashboard_type='vendor', company_ids=None):
         """
         Task 2.5 — Return vendors/suppliers who received RFQs (state draft/sent)
         but have NOT yet submitted a quotation.
@@ -1261,7 +1283,7 @@ class BoqBoq(models.Model):
             'sent':  'Sent to Vendor',
         }
 
-        company_ids = self._get_allowed_company_ids()
+        company_ids = company_ids or self._get_allowed_company_ids()
         boqs = self.search([
             ('company_id', 'in', company_ids),
             ('boq_type',   '=',  dashboard_type),
@@ -1367,7 +1389,7 @@ class BoqBoq(models.Model):
 
     # ── Notification banner — Recently submitted quotations ───────────────
     @api.model
-    def get_recently_submitted_rfqs(self, dashboard_type='vendor'):
+    def get_recently_submitted_rfqs(self, dashboard_type='vendor', company_ids=None):
         """
         Returns a flat list of purchase.orders in 'submitted' state
         with write_date in the last 7 days.  Used by the amber notification
@@ -1383,7 +1405,7 @@ class BoqBoq(models.Model):
 
         Sorted: most recent first (smallest days_ago first).
         """
-        company_ids = self._get_allowed_company_ids()
+        company_ids = company_ids or self._get_allowed_company_ids()
         recently_cutoff = fields.Datetime.now() - timedelta(days=7)
 
         boqs = self.search([
@@ -1467,7 +1489,7 @@ class BoqBoq(models.Model):
 
     # ── Head of Supplier Dashboard — per-company consolidated summary ─────
     @api.model
-    def get_company_wise_summary(self, dashboard_type='supplier'):
+    def get_company_wise_summary(self, dashboard_type='supplier', company_ids=None):
         """
         Head of Supplier Dashboard only.
 
@@ -1485,8 +1507,9 @@ class BoqBoq(models.Model):
 
         Multi-company safe: uses search() throughout; iterates over
         allowed_company_ids from context.
+        company_ids: optional subset from the Head dashboard company filter.
         """
-        company_ids = self._get_allowed_company_ids()
+        company_ids = company_ids or self._get_allowed_company_ids()
         if not company_ids:
             return []
 
@@ -1566,7 +1589,7 @@ class BoqBoq(models.Model):
 
     # ── NEW Task 1.6 — Approval-pending PO section ────────────────────────
     @api.model
-    def get_approval_pending_pos(self, dashboard_type='vendor'):
+    def get_approval_pending_pos(self, dashboard_type='vendor', company_ids=None):
         """
         Task 1.6 — Return purchase.order records in 'to approve' state that
         are linked to BOQs of the given type (vendor / supplier).
@@ -1579,8 +1602,9 @@ class BoqBoq(models.Model):
 
         Used by both Vendor Manager Dashboard and Procurement Manager Dashboard
         to display their respective "Pending Approvals" sections.
+        company_ids: optional list of company IDs to filter.
         """
-        company_ids = self._get_allowed_company_ids()
+        company_ids = company_ids or self._get_allowed_company_ids()
         company_domain = [
             ('company_id', 'in', company_ids),
             ('boq_type',   '=',  dashboard_type),

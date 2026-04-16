@@ -1667,3 +1667,86 @@
 /* Show open icon on row hover */
 .boq_pending_open_icon { opacity: 0; transition: opacity 0.15s; }
 .boq_pending_row:hover .boq_pending_open_icon { opacity: 1; }
+
+/* ══════════════════════════════════════════════════════════════
+   HEAD DASHBOARD — COMPANY FILTER BAR
+   Pill-style company selector above stat cards (head view only)
+   ══════════════════════════════════════════════════════════════ */
+
+.boq_company_filter_bar {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 12px 16px;
+}
+
+.boq_company_filter_label {
+    font-size: .8rem;
+    font-weight: 600;
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+/* Individual company pill button */
+.boq_company_pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1.5px solid #dee2e6;
+    background: #f8f9fa;
+    color: #495057;
+    font-size: .82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+    max-width: 180px;
+}
+.boq_company_pill:hover {
+    border-color: #198754;
+    background: #e8f5ee;
+    color: #198754;
+}
+.boq_company_pill_active {
+    border-color: #198754 !important;
+    background: #198754 !important;
+    color: #fff !important;
+}
+.boq_company_pill_active:hover {
+    background: #157347 !important;
+    border-color: #157347 !important;
+}
+
+/* Small circular initial badge inside pill */
+.boq_company_pill_avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.boq_company_pill_active .boq_company_pill_avatar {
+    background: rgba(255,255,255,.3);
+}
+
+.boq_company_pill_name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.boq_pill_check { font-size: .75rem; }
+
+/* Summary badge on the right */
+.boq_company_filter_info {
+    font-size: .8rem;
+    color: #6c757d;
+    white-space: nowrap;
+}

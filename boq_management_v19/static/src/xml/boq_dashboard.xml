@@ -266,6 +266,58 @@
                 </div>
             </t>
 
+            <!-- ╔════════════════════════════════════════════════════╗
+                 ║  HEAD DASHBOARD — COMPANY FILTER BAR               ║
+                 ║  Only shown on HeadSupplierDashboard when there    ║
+                 ║  are multiple allowed companies.  Pill toggles let ║
+                 ║  the user filter all sections to specific companies.║
+                 ╚════════════════════════════════════════════════════╝ -->
+            <t t-if="isHeadDashboard and state.availableCompanies.length > 1">
+                <div class="boq_company_filter_bar px-4 pb-3">
+                    <div class="boq_company_filter_inner d-flex align-items-center flex-wrap gap-2">
+
+                        <!-- Label -->
+                        <span class="boq_company_filter_label me-1">
+                            <i class="fa fa-building me-1"/>
+                            Filter by Company:
+                        </span>
+
+                        <!-- "All Companies" pill -->
+                        <button t-attf-class="boq_company_pill
+                                              #{ state.selectedCompanyIds.length === 0 ? 'boq_company_pill_active' : '' }"
+                                t-on-click="selectAllCompanies"
+                                type="button">
+                            <i class="fa fa-globe me-1"/>
+                            All Companies
+                            <span class="badge ms-1 small"><t t-esc="state.availableCompanies.length"/></span>
+                        </button>
+
+                        <!-- One pill per available company -->
+                        <t t-foreach="state.availableCompanies" t-as="ac" t-key="ac.id">
+                            <button t-attf-class="boq_company_pill
+                                                  #{ isCompanySelected(ac.id) and state.selectedCompanyIds.length > 0 ? 'boq_company_pill_active' : '' }"
+                                    t-on-click="() => this.toggleCompany(ac.id)"
+                                    type="button"
+                                    t-att-title="ac.name">
+                                <span class="boq_company_pill_avatar"><t t-esc="ac.initial"/></span>
+                                <span class="text-truncate boq_company_pill_name"><t t-esc="ac.name"/></span>
+                                <i t-if="isCompanySelected(ac.id) and state.selectedCompanyIds.length > 0"
+                                   class="fa fa-check ms-1 boq_pill_check"/>
+                            </button>
+                        </t>
+
+                        <!-- Active filter summary badge -->
+                        <span t-if="state.selectedCompanyIds.length > 0"
+                              class="boq_company_filter_info ms-auto">
+                            <i class="fa fa-filter me-1"/>
+                            Showing <strong><t t-esc="state.selectedCompanyIds.length"/></strong>
+                            of <t t-esc="state.availableCompanies.length"/> companies
+                        </span>
+
+                    </div>
+                </div>
+            </t>
+
             <!-- ── STAT CARDS ────────────────────────────── -->
             <div class="boq_dash_stat_row d-flex flex-wrap gap-3 p-4">
 
