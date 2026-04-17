@@ -61,7 +61,7 @@
         id="menu_head_dashboard_app"
         name="Head of Supplier"
         sequence="88"
-        web_icon="boq_management_v19,static/src/img/supplier_contact.png"
+        web_icon="boq_management_v19,static/src/img/head_supplier_icon.svg"
         groups="boq_management_v19.group_head_supplier_dashboard"/>
 
     <menuitem

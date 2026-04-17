@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Head of Supplier — App Home Tile Icon
+  Color: Deep indigo-to-violet gradient (distinct from BOQ blue-green)
+  Concept: Executive head (top) + org-chart lines + 3 company building nodes (bottom)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <!-- Background: deep indigo → violet, completely different from BOQ icon -->
+    <linearGradient id="bgG" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#2d1b69"/>
+      <stop offset="50%"  stop-color="#4527a0"/>
+      <stop offset="100%" stop-color="#7c4dff"/>
+    </linearGradient>
+    <!-- Node panel fill -->
+    <linearGradient id="nodeG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.10"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ── Background rounded square ── -->
+  <rect width="200" height="200" rx="38" ry="38" fill="url(#bgG)"/>
+
+  <!-- Decorative background circles (subtle depth) -->
+  <circle cx="178" cy="22"  r="58" fill="#ffffff" fill-opacity="0.05"/>
+  <circle cx="22"  cy="182" r="68" fill="#ffffff" fill-opacity="0.04"/>
+
+  <!-- ══════════════════════════════════════════════════════
+       HEAD — Executive person silhouette (top-center)
+       ══════════════════════════════════════════════════════ -->
+  <!-- Head circle -->
+  <circle cx="100" cy="44" r="21" fill="#ffffff" fill-opacity="0.93"/>
+  <!-- Shoulders / torso -->
+  <path d="M67,88 Q67,68 100,68 Q133,68 133,88 L133,97 Q133,101 129,101 L71,101 Q67,101 67,97 Z"
+        fill="#ffffff" fill-opacity="0.82"/>
+
+  <!-- ══════════════════════════════════════════════════════
+       ORG-CHART CONNECTOR LINES
+       ══════════════════════════════════════════════════════ -->
+  <!-- Vertical stem from person body down -->
+  <rect x="97" y="101" width="6" height="18" rx="3" fill="#ffffff" fill-opacity="0.50"/>
+  <!-- Horizontal bar across three branches -->
+  <rect x="38"  y="118" width="124" height="5" rx="2.5" fill="#ffffff" fill-opacity="0.50"/>
+  <!-- Left branch vertical -->
+  <rect x="38"  y="123" width="5"   height="15" rx="2.5" fill="#ffffff" fill-opacity="0.50"/>
+  <!-- Center branch vertical -->
+  <rect x="97"  y="123" width="6"   height="15" rx="3"   fill="#ffffff" fill-opacity="0.50"/>
+  <!-- Right branch vertical -->
+  <rect x="157" y="123" width="5"   height="15" rx="2.5" fill="#ffffff" fill-opacity="0.50"/>
+
+  <!-- ══════════════════════════════════════════════════════
+       THREE COMPANY NODES (bottom row)
+       ══════════════════════════════════════════════════════ -->
+  <!-- Node Left -->
+  <rect x="16"  y="138" width="54" height="44" rx="11" fill="url(#nodeG)"
+        stroke="#ffffff" stroke-opacity="0.30" stroke-width="1.5"/>
+  <!-- Node Center -->
+  <rect x="73"  y="138" width="54" height="44" rx="11" fill="url(#nodeG)"
+        stroke="#ffffff" stroke-opacity="0.30" stroke-width="1.5"/>
+  <!-- Node Right -->
+  <rect x="130" y="138" width="54" height="44" rx="11" fill="url(#nodeG)"
+        stroke="#ffffff" stroke-opacity="0.30" stroke-width="1.5"/>
+
+  <!-- ══════════════════════════════════════════════════════
+       BUILDING ICONS inside each node (3 bar-chart columns)
+       ══════════════════════════════════════════════════════ -->
+  <!-- Left node buildings -->
+  <rect x="24"  y="159" width="9" height="17" rx="2" fill="#ffffff" fill-opacity="0.78"/>
+  <rect x="36"  y="152" width="9" height="24" rx="2" fill="#ffffff" fill-opacity="0.78"/>
+  <rect x="48"  y="156" width="9" height="20" rx="2" fill="#ffffff" fill-opacity="0.78"/>
+  <!-- windows left -->
+  <rect x="26"  y="162" width="5" height="4" rx="1" fill="#4527a0" fill-opacity="0.65"/>
+  <rect x="38"  y="155" width="5" height="4" rx="1" fill="#4527a0" fill-opacity="0.65"/>
+  <rect x="50"  y="159" width="5" height="4" rx="1" fill="#4527a0" fill-opacity="0.65"/>
+
+  <!-- Center node buildings -->
+  <rect x="81"  y="156" width="9" height="20" rx="2" fill="#ffffff" fill-opacity="0.78"/>
+  <rect x="93"  y="149" width="9" height="27" rx="2" fill="#ffffff" fill-opacity="0.78"/>
+  <rect x="105" y="153" width="9" height="23" rx="2" fill="#ffffff" fill-opacity="0.78"/>
+  <!-- windows center -->
+  <rect x="83"  y="159" width="5" height="4" rx="1" fill="#4527a0" fill-opacity="0.65"/>
+  <rect x="95"  y="152" width="5" height="4" rx="1" fill="#4527a0" fill-opacity="0.65"/>
+  <rect x="107" y="156" width="5" height="4" rx="1" fill="#4527a0" fill-opacity="0.65"/>
+
+  <!-- Right node buildings -->
+  <rect x="138" y="157" width="9" height="19" rx="2" fill="#ffffff" fill-opacity="0.78"/>
+  <rect x="150" y="151" width="9" height="25" rx="2" fill="#ffffff" fill-opacity="0.78"/>
+  <rect x="162" y="155" width="9" height="21" rx="2" fill="#ffffff" fill-opacity="0.78"/>
+  <!-- windows right -->
+  <rect x="140" y="160" width="5" height="4" rx="1" fill="#4527a0" fill-opacity="0.65"/>
+  <rect x="152" y="154" width="5" height="4" rx="1" fill="#4527a0" fill-opacity="0.65"/>
+  <rect x="164" y="158" width="5" height="4" rx="1" fill="#4527a0" fill-opacity="0.65"/>
+</svg>
