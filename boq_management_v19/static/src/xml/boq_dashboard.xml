@@ -272,7 +272,7 @@
                  ║  as removable tags; dropdown to add/remove.        ║
                  ║  Only shown when > 1 company is available.         ║
                  ╚════════════════════════════════════════════════════╝ -->
-            <t t-if="isHeadDashboard and state.availableCompanies.length > 1">
+            <t t-if="isHeadDashboard and state.availableCompanies.length > 0">
                 <div class="boq_cf_wrap px-4 pb-3">
                     <div class="boq_cf_row d-flex align-items-center gap-3">
 

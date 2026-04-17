@@ -747,22 +747,21 @@ class BoqBoq(models.Model):
     @api.model
     def get_available_companies(self):
         """
-        Head of Supplier Dashboard — returns all companies the user is
-        allowed to see, for the company-filter selector.
+        Head of Supplier Dashboard — returns ALL companies the current user
+        has access to (user.company_ids), NOT just the ones currently active
+        in the Odoo company switcher.
+
+        This allows the Head dashboard company filter to list every company
+        the user can manage, even if only one is active in the switcher.
         Returns: [{id, name, initial}] sorted by name.
         """
-        ids = self._get_allowed_company_ids()
         result = []
-        for cid in ids:
-            company = self.env['res.company'].browse(cid)
+        for company in self.env.user.company_ids.sorted('name'):
             result.append({
-                'id':      cid,
+                'id':      company.id,
                 'name':    company.name,
                 'initial': (company.name or '?')[0].upper(),
             })
-        result.sort(key=lambda c: c['name'])
-        return result
-
     @api.model
     def get_dashboard_stats(self, dashboard_type='vendor', company_ids=None):
         """
@@ -772,6 +771,7 @@ class BoqBoq(models.Model):
         company_ids: optional list of company IDs to filter (Head dashboard company selector).
         """
         company_ids = company_ids or self._get_allowed_company_ids()
+        self = self.with_context(allowed_company_ids=company_ids)
         company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
         boqs = self.search(company_domain)
 
@@ -825,6 +825,7 @@ class BoqBoq(models.Model):
         company_ids: optional list of company IDs to filter.
         """
         company_ids = company_ids or self._get_allowed_company_ids()
+        self = self.with_context(allowed_company_ids=company_ids)
         company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
         boqs = self.search(company_domain)
 
@@ -1076,6 +1077,7 @@ class BoqBoq(models.Model):
         recently_cutoff = fields.Datetime.now() - timedelta(days=7)
 
         company_ids = company_ids or self._get_allowed_company_ids()
+        self = self.with_context(allowed_company_ids=company_ids)
         company_domain = [
             ('company_id', 'in', company_ids),
             ('boq_type',   '=',  dashboard_type),
@@ -1284,6 +1286,7 @@ class BoqBoq(models.Model):
         }
 
         company_ids = company_ids or self._get_allowed_company_ids()
+        self = self.with_context(allowed_company_ids=company_ids)
         boqs = self.search([
             ('company_id', 'in', company_ids),
             ('boq_type',   '=',  dashboard_type),
@@ -1406,6 +1409,7 @@ class BoqBoq(models.Model):
         Sorted: most recent first (smallest days_ago first).
         """
         company_ids = company_ids or self._get_allowed_company_ids()
+        self = self.with_context(allowed_company_ids=company_ids)
         recently_cutoff = fields.Datetime.now() - timedelta(days=7)
 
         boqs = self.search([
@@ -1510,6 +1514,7 @@ class BoqBoq(models.Model):
         company_ids: optional subset from the Head dashboard company filter.
         """
         company_ids = company_ids or self._get_allowed_company_ids()
+        self = self.with_context(allowed_company_ids=company_ids)
         if not company_ids:
             return []
 
@@ -1605,6 +1610,7 @@ class BoqBoq(models.Model):
         company_ids: optional list of company IDs to filter.
         """
         company_ids = company_ids or self._get_allowed_company_ids()
+        self = self.with_context(allowed_company_ids=company_ids)
         company_domain = [
             ('company_id', 'in', company_ids),
             ('boq_type',   '=',  dashboard_type),
