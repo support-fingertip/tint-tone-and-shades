@@ -68,7 +68,6 @@ class BoqTradeVendor(models.Model):
         store=False,
     )
 
-    # One vendor row + one supplier row allowed per trade per BOQ
     _unique_boq_category_type = models.Constraint(
         'unique(boq_id, category_id, partner_type)',
         'Each trade + type combination can only appear once per BOQ.',

@@ -1,15 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!--
-        purchase.order form extension:
-        ─ BOQ back-link smart button              (existing)
-        ─ Rate Vendor button                      visible after receipt done + invoice paid
-        ─ Margin % field                          (header)
-        ─ Payment Status display                  (BUG 6)
-        ─ margin_percent on PO lines              (NEW TASK 3)
-    -->
-
     <!--   Send Po To Added mail Cc-->
     <record id="view_mail_compose_message_inherit_cc" model="ir.ui.view">
         <field name="name">mail.compose.message.form.inherit.cc</field>
@@ -74,7 +65,6 @@
                 <attribute name="optional">show</attribute>
             </xpath>
 
-            <!-- NEW TASK 3 — Savings % column on PO lines (vs product standard cost) -->
             <xpath expr="//field[@name='order_line']//field[@name='price_subtotal']"
                    position="after">
                 <field name="customer_price" readonly="1"/>
@@ -86,11 +76,6 @@
 
         </field>
     </record>
-
-    <!-- ══════════════════════════════════════════════════════════════════════
-         NEW TASK 1 — Vendor RFQ action (partner_type = 'vendor' or unset)
-         Previously named "RFQs from BOQ" → now "Vendor RFQ"
-    ══════════════════════════════════════════════════════════════════════════ -->
     <record id="action_boq_rfq_list" model="ir.actions.act_window">
         <field name="name">Vendor RFQ</field>
         <field name="res_model">purchase.order</field>
@@ -103,7 +88,6 @@
         </field>
     </record>
 
-    <!-- NEW TASK 1 — Supplier RFQ action (partner_type = 'supplier') -->
     <record id="action_boq_supplier_rfq_list" model="ir.actions.act_window">
         <field name="name">Supplier RFQ</field>
         <field name="res_model">purchase.order</field>

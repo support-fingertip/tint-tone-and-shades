@@ -1,15 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- ══════════════════════════════════════════════════════════
-         BOQ MANAGEMENT — Application Menu (Odoo 19 Enterprise)
-         ========================================================
-         Task 1: Replaced single "Dashboard" menu with two separate pages:
-           - "Vendor Manager Dashboard"      (seq 5)
-           - "Procurement Manager Dashboard" (seq 6)
-         Task 1: Vendor RFQ / Supplier RFQ split menus retained.
-    ══════════════════════════════════════════════════════════ -->
-
+   
     <!-- Root app menu -->
     <menuitem id="menu_boq_root"
               name="BOQ"
@@ -17,12 +9,7 @@
               web_icon="boq_management_v19,static/src/img/boq_icon.png"
               groups="boq_management_v19.group_boq_user"/>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         THREE STANDALONE DASHBOARD APP TILES (Home Screen)
-         Each appears as a separate icon on the Odoo home screen, controlled
-         by its own dedicated group.  Clicking the tile opens the dashboard
-         directly — no extra navigation needed.
-         ══════════════════════════════════════════════════════════════════════ -->
+
 
     <!-- ── Home Screen Tile 1: Vendor Manager Dashboard ──────────────────── -->
     <menuitem
@@ -159,9 +146,6 @@
               action="action_boq_category"
               sequence="10"/>
 
-     <!-- ══════════════════════════════════════════════════════════════════════
-     Separate Root Menus for Vendor & Supplier Purchase
-    ══════════════════════════════════════════════════════════════════════════ -->
 
     <!-- ── Root: Vendor ─────────────────────────────────────── -->
     <menuitem

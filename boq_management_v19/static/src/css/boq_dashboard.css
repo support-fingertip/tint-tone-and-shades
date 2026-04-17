@@ -1,10 +1,4 @@
-/* ============================================================
-   BOQ Dashboard Styles — Task 4 (Odoo 19)
-   ============================================================ */
 
-/* ── Root action wrapper ─────────────────────────────────────── */
-/* flex-column so the header is fixed-height and boq_dash_scroll */
-/* fills the remainder. No overflow here — scroll is in child.   */
 .o_action.boq_dashboard {
     display: flex !important;
     flex-direction: column !important;
@@ -12,10 +6,7 @@
     position: relative !important;
     overflow: hidden !important;
 }
-
-/* ── Scrollable content body ─────────────────────────────────── */
-/* flex:1 + min-height:0 is the standard "scrollable flex child" */
-/* pattern. Works inside Odoo's flex action manager.             */
+  */
 .boq_dash_scroll {
     flex: 1 1 0 !important;
     min-height: 0 !important;
@@ -25,14 +16,12 @@
     position: relative;
 }
 
-/* ── Page wrapper — force light theme regardless of OS/Odoo dark mode ── */
 .boq_dashboard {
     background: #f8f9fa !important;
     min-height: 100%;
     font-family: inherit;
     color-scheme: light !important;
     color: #212529 !important;
-    /* Reset Bootstrap 5 dark-mode CSS custom properties to light values */
     --bs-body-bg: #ffffff;
     --bs-body-color: #212529;
     --bs-body-color-rgb: 33, 37, 41;
@@ -542,7 +531,6 @@
     to   { transform: scale(1); }
 }
 
-/* ── Vendor totals bar ───────────────────────────────────────── */
 .boq_vendor_totals_bar {
     border-top: 1px solid #e9ecef;
     border-bottom: 1px solid #e9ecef;
@@ -551,10 +539,7 @@
     color: #495057;
     margin-bottom: 4px;
 }
-/* .boq_totals_chip and .boq_totals_value are defined once in the
-   Task 2 tree section below (canonical definitions). */
 
-/* ── Vendor filter widget ────────────────────────────────────── */
 .boq_vendor_filter_wrap {
     position: relative;
     width: 260px;
@@ -1020,11 +1005,6 @@
     }
 }
 
-/* ══════════════════════════════════════════════════════════════
-   TASK 2 — 3-Level Expandable Tree: Trade → Vendor → RFQ
-   ══════════════════════════════════════════════════════════════ */
-
-/* ── Tree container ─────────────────────────────────────────── */
 .boq_tree_table {
     background: #fff;
     border: 1px solid #e9ecef;
@@ -1453,8 +1433,6 @@
     gap: 4px;
 }
 
-/* boq_chip_warning and boq_chip_success intentionally removed —
-   all chips now use the single neutral boq_totals_chip style. */
 
 .boq_totals_value {
     font-weight: 700;
@@ -1462,9 +1440,7 @@
     border-color: #0d6efd;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   TASK 1 — Header icon blocks for the two dashboards
-   ══════════════════════════════════════════════════════════════ */
+
 
 .boq_dash_header_icon {
     width: 48px; height: 48px;
@@ -1476,7 +1452,6 @@
 .boq_hdr_vendor   { background: rgba(13,110,253,.15); color: #0d6efd; }
 .boq_hdr_supplier { background: rgba(25,135,84,.15);  color: #198754; }
 
-/* Search bar in header */
 .boq_header_search {
     width: 220px;
 }
@@ -1486,9 +1461,6 @@
     border-color: #ced4da;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   TASK 1.6 — Pending Approvals Section
-   ══════════════════════════════════════════════════════════════ */
 
 /* ── Section header ─────────────────────────────────────────── */
 .boq_approval_section_header {
@@ -1567,10 +1539,6 @@
     border-left: 3px solid #adb5bd !important;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   TASK 2.3 — RFQ State Breakdown Summary row (inside expanded vendor)
-   ══════════════════════════════════════════════════════════════ */
-
 .boq_rfq_state_summary_row {
     background: #f8f9fa !important;
     min-height: 36px !important;
@@ -1601,11 +1569,7 @@
     padding: 3px 9px;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   TASK 2.5 — Awaiting Quotation / Pending RFQs Section
-   ══════════════════════════════════════════════════════════════ */
 
-/* ── Table container ─────────────────────────────────────────── */
 .boq_pending_table {
     background: #fff;
     border: 1px solid #e9ecef;

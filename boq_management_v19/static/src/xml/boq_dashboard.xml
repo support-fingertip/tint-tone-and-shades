@@ -443,7 +443,6 @@
                     </div>
                 </div>
 
-                <!-- Task 1.6 — Approval pending mini-card — uniform neutral colour -->
                 <t t-if="approvalTotals.count > 0">
                     <div class="boq_stat_card flex-fill boq_stat_card_approval"
                          t-on-click="openApprovalPos" style="cursor:pointer;">
@@ -673,11 +672,6 @@
                 </div><!-- /vendor summary px-4 -->
             </t><!-- /vendor summary -->
 
-            <!-- ╔════════════════════════════════════════════════════╗
-                 ║  TASK 2.5 — AWAITING QUOTATION SECTION            ║
-                 ║  Vendors who received an RFQ but have NOT yet      ║
-                 ║  submitted a quotation (state = draft / sent)      ║
-                 ╚════════════════════════════════════════════════════╝ -->
             <t t-if="state.pendingVendors.length > 0">
                 <div class="px-4 pb-3">
 
@@ -1113,11 +1107,8 @@
                                 </div><!-- /vendor row -->
 
                                 <!-- ── LEVEL 3: RFQ ROWS ──────────────── -->
-                                <!-- Task 2.4: NO payment info inside this section -->
                                 <t t-if="isVendorExpanded(vendor.vendor_id)">
 
-                                    <!-- Task 2.3 — RFQ State Breakdown Summary -->
-                                    <!-- Shows counts per state before individual RFQ rows -->
                                     <t t-if="vendor.state_summary and vendor.state_summary.length > 0">
                                         <div class="boq_tree_row boq_rfq_state_summary_row">
                                             <span class="boq_tree_indent"/>
@@ -1213,11 +1204,7 @@
 
             </div><!-- /tree px-4 -->
 
-            <!-- ╔════════════════════════════════════════════════════╗
-                 ║  TASK 1.6 — APPROVAL DASHBOARD SECTION            ║
-                 ║  Shows POs awaiting approval linked to this        ║
-                 ║  dashboard's BOQ type (vendor / supplier)          ║
-                 ╚════════════════════════════════════════════════════╝ -->
+      
             <t t-if="state.approvalPOs.length > 0">
                 <div class="px-4 pb-4">
 

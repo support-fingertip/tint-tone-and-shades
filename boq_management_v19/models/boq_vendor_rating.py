@@ -4,14 +4,7 @@ from odoo.exceptions import ValidationError
 
 
 class BoqVendorRating(models.Model):
-    """
-    NEW TASK 4 / BUG 3 — Vendor Rating after receipt.
-
-    A rating record is created after the PO is fully received (stock.picking
-    state = 'done') AND the invoice is fully paid.  The rating popup (form view)
-    is triggered by the 'Rate Vendor' button on purchase.order, which is only
-    visible when those conditions are met.
-    """
+    
     _name = 'boq.vendor.rating'
     _description = 'Vendor Rating'
     _inherit = ['mail.thread']

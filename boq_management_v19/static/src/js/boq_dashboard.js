@@ -1,28 +1,8 @@
 /** @odoo-module **/
-/**
- * BOQ Manager Dashboards — Odoo 19 OWL Components
- * =================================================
- *
- * Architecture: ONE shared base class, TWO registered subclasses.
- * Each subclass gets its own ir.actions.client tag and its own menu
- * item → truly separate pages, not a toggle.
- *
- *  VendorManagerDashboard          → tag: boq_management_v19.vendor_manager_dashboard_action
- *  ProcurementManagerDashboard     → tag: boq_management_v19.procurement_manager_dashboard_action
- *
- * Task 1  — Two fully separate menu pages (different component + tag)
- * Task 1.6— Approval-pending PO section per dashboard
- * Task 2  — Expandable Trade → Vendor → RFQ tree (3 levels)
- * Task 4  — Renamed labels, no "lines", payment badge on vendor row,
- *            Draft → "Quote Requested"
- * Task 5  — Multi-company: orm service auto-includes allowed_company_ids
- */
-
 import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
-// ─── Shared helpers ──────────────────────────────────────────────────────────
 
 function formatCurrency(value, symbol, position) {
     const n = Number(value || 0).toLocaleString(undefined, {
@@ -52,16 +32,9 @@ function approvalStatusClass(s) {
         || "bg-secondary";
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  BASE CLASS — all logic lives here
-// ═══════════════════════════════════════════════════════════════════════════════
+
 class BoqManagerDashboardBase extends Component {
-    /**
-     * Subclasses MUST define:
-     *   static DASHBOARD_TYPE = "vendor" | "supplier";
-     *   static template       = "boq_management_v19.VendorManagerDashboard"
-     *                         | "boq_management_v19.ProcurementManagerDashboard";
-     */
+   
     static props = {
         action:            { type: Object,   optional: true },
         actionId:          { optional: true },
@@ -79,15 +52,15 @@ class BoqManagerDashboardBase extends Component {
             loading:             true,
             error:               null,
             stats:               {},
-            tree:                [],   // Level 1: trades → Level 2: vendors → Level 3: rfqs
-            vendorSummary:       [],   // Flat vendor cards: name, rfq_count, value, margin, payment
-            approvalPOs:         [],   // Task 1.6 — POs awaiting approval
-            pendingVendors:      [],   // Task 2.5 — Vendors with pending (draft/sent) RFQs
-            recentlySubmitted:   [],   // Notification panel — flat list of recently submitted RFQs
-            companySummary:      [],   // Head dashboard — per-company consolidated data
-            showRecentPanel:     false, // Toggle for notification panel
-            expandedTrades:      {},   // { trade_id: bool }
-            expandedVendors:     {},   // { vendor_id: bool }
+            tree:                [],   
+            vendorSummary:       [], 
+            approvalPOs:         [], 
+            pendingVendors:      [],  
+            recentlySubmitted:   [],  
+            companySummary:      [],   
+            showRecentPanel:     false, 
+            expandedTrades:      {},  
+            expandedVendors:     {},  
             filterText:          "",
         });
 
@@ -97,7 +70,7 @@ class BoqManagerDashboardBase extends Component {
     // ── Dashboard identity ────────────────────────────────────────────────
     get dashboardType()     { return this.constructor.DASHBOARD_TYPE; }
     get isVendorDashboard() { return this.dashboardType === "vendor"; }
-    get isHeadDashboard()   { return false; } // overridden by HeadSupplierDashboard
+    get isHeadDashboard()   { return false; } 
 
     get dashboardTitle() {
         return this.isVendorDashboard
@@ -115,10 +88,6 @@ class BoqManagerDashboardBase extends Component {
     get partnerLabel()   { return this.isVendorDashboard ? "Vendor" : "Supplier"; }
     get dashboardColor() { return this.isVendorDashboard ? "text-primary" : "text-success"; }
 
-    // ── Data loading ──────────────────────────────────────────────────────
-    // Task 5: Odoo's orm service automatically includes allowed_company_ids
-    // in every RPC context (populated by the company switcher), so
-    // self.env.context.get('allowed_company_ids') in Python is always correct.
     async _loadAll() {
         try {
             const dt = this.dashboardType;
@@ -197,13 +166,12 @@ class BoqManagerDashboardBase extends Component {
         };
     }
 
-    // ── Computed: pending RFQ totals (Task 2.5) ──────────────────────────
     get pendingRfqTotals() {
         const pv = this.state.pendingVendors || [];
         return {
             vendors: pv.length,
             rfqs:    pv.reduce((s, v) => s + (v.rfq_count || 0), 0),
-            oldest:  pv.length ? pv[0].oldest_days : 0,  // already sorted desc
+            oldest:  pv.length ? pv[0].oldest_days : 0,  
         };
     }
 
@@ -288,7 +256,6 @@ class BoqManagerDashboardBase extends Component {
         this.state.showRecentPanel = !this.state.showRecentPanel;
     }
 
-    // ── Per-dashboard icon getters (Vendor / Procurement defaults) ────────
     get iconBoqs()             { return "fa-calculator"; }
     get iconBOQValue()         { return "fa-money"; }
     get iconGrandTotal()       { return "fa-bar-chart"; }
@@ -316,29 +283,18 @@ class BoqManagerDashboardBase extends Component {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  VENDOR MANAGER DASHBOARD — separate component, separate action tag
-// ═══════════════════════════════════════════════════════════════════════════════
 export class VendorManagerDashboard extends BoqManagerDashboardBase {
     static DASHBOARD_TYPE = "vendor";
     static template       = "boq_management_v19.VendorManagerDashboard";
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  PROCUREMENT MANAGER DASHBOARD — separate component, separate action tag
-// ═══════════════════════════════════════════════════════════════════════════════
+
 export class ProcurementManagerDashboard extends BoqManagerDashboardBase {
     static DASHBOARD_TYPE = "supplier";
     static template       = "boq_management_v19.ProcurementManagerDashboard";
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  HEAD OF SUPPLIER DASHBOARD
-//  Consolidated cross-company view — shows per-company breakdown cards at the
-//  top, then the full aggregated Procurement Manager view below.
-//  DASHBOARD_TYPE = "supplier" so all existing Python methods are reused;
-//  get_company_wise_summary() adds the per-company breakdown row.
-// ═══════════════════════════════════════════════════════════════════════════════
+
 export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     static DASHBOARD_TYPE = "supplier";
     static template       = "boq_management_v19.HeadSupplierDashboard";

@@ -204,19 +204,14 @@ class BoqOrderLine(models.Model):
                 DROP CONSTRAINT IF EXISTS boq_trade_vendor_boq_id_category_id_key;
         """)
 
-        # ── boq_boq: add boq_type column (added in v3.0) ─────────────────
-        # Ensures the column exists even on a plain restart (no -u required).
-        # Existing rows get default 'vendor' so the Vendor Manager Dashboard
-        # still shows all legacy BOQs.
+      
         self.env.cr.execute("""
             ALTER TABLE boq_boq
                 ADD COLUMN IF NOT EXISTS boq_type VARCHAR DEFAULT 'vendor';
             UPDATE boq_boq SET boq_type = 'vendor' WHERE boq_type IS NULL;
         """)
 
-        # ── res_partner columns (BOQ v2.0 — NEW TASK 1 + NEW TASK 4) ─────
-        # Cannot use res.partner._auto_init() because res.partner is owned
-        # by 'base' and Odoo won't call _auto_init() on it for our module.
+     
         self.env.cr.execute("""
             ALTER TABLE res_partner
                 ADD COLUMN IF NOT EXISTS partner_type VARCHAR,
@@ -224,16 +219,7 @@ class BoqOrderLine(models.Model):
                 ADD COLUMN IF NOT EXISTS rating_count INTEGER       DEFAULT 0;
         """)
 
-        # ── Clean up stale ir.rule for boq.vendor.rating ──────────────────
-        # A legacy ir.rule has domain_force [('res_model','=','res.partner')]
-        # which crashes every res.partner read because boq.vendor.rating has
-        # no `res_model` field.
-        #
-        # Raw SQL DELETE is used instead of ORM unlink because _register_hook
-        # runs during registry build before the ir.rule ORM cache is populated,
-        # making a direct DELETE safe and more reliable than ORM operations.
-        # The query is scoped to only the affected models to avoid removing
-        # unrelated security rules from other modules.
+      
         try:
             self.env.cr.execute("""
                 DELETE FROM ir_rule
@@ -244,7 +230,7 @@ class BoqOrderLine(models.Model):
                    )
             """, ('%res_model%',))
         except Exception:
-            pass  # ir_rule table may not exist yet on very first install
+            pass 
 
         return res
 

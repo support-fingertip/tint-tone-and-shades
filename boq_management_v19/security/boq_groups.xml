@@ -23,11 +23,6 @@
             <field name="name">Supplier</field>
         </record>
 
-        <!-- ── Dashboard-specific access groups ─────────────────────────────
-             Three separate groups — one per dashboard page.
-             Each implies group_boq_user so underlying model access is
-             inherited automatically.  Assign these in Settings > Users.
-        ─────────────────────────────────────────────────────────────────── -->
 
         <!-- Access: Vendor Manager Dashboard only -->
         <record id="group_vendor_manager_dashboard" model="res.groups">

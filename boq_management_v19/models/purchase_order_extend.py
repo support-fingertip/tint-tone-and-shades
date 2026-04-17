@@ -4,19 +4,9 @@ from odoo.exceptions import UserError
 
 
 class PurchaseOrderBoqExtend(models.Model):
-    """
-    Extends purchase.order with:
-    ─ BOQ back-link (non-stored)
-    ─ Vendor rating trigger after receipt + invoice paid  (BUG 3)
-    ─ Margin % computed from BOQ lines                    (BUG 4 / NEW TASK 3)
-    ─ Payment status display                              (BUG 6)
-    ─ Total tax alias                                     (existing)
-    """
+    
     _inherit = 'purchase.order'
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # 1.  BOQ BACK-LINK  (non-stored — derived from rfq_ids M2M)
-    # ══════════════════════════════════════════════════════════════════════════
     boq_id = fields.Many2one(
         comodel_name='boq.boq',
         string='BOQ Reference',
@@ -27,11 +17,9 @@ class PurchaseOrderBoqExtend(models.Model):
 
     @api.depends()
     def _compute_boq_id(self):
-        # In Odoo 19 every record MUST be assigned by the compute method,
-        # even new unsaved ones (NewId).  Separate real DB ids from virtual
-        # ones so we can run the SQL only for persisted records.
+      
         real = self.filtered(lambda r: isinstance(r.id, int))
-        (self - real).update({'boq_id': False})   # new / virtual records
+        (self - real).update({'boq_id': False})   
 
         if not real:
             return
@@ -95,10 +83,6 @@ class PurchaseOrderBoqExtend(models.Model):
             'target': 'current',
         }
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # 2.  MARGIN %  (BUG 4 / NEW TASK 3)
-    #     Computed from BOQ lines when available, else from PO lines.
-    # ══════════════════════════════════════════════════════════════════════════
     margin_percent = fields.Float(
         string='Margin %',
         compute='_compute_po_margin',
@@ -111,7 +95,6 @@ class PurchaseOrderBoqExtend(models.Model):
                  'order_line.product_qty')
     def _compute_po_margin(self):
         for order in self:
-            # Prefer BOQ-line margin (more accurate — uses BOQ unit_price as sale price)
             if order.boq_id:
                 total_sell = 0.0
                 total_cost = 0.0
@@ -128,10 +111,7 @@ class PurchaseOrderBoqExtend(models.Model):
                         (total_sell - total_cost) / total_sell * 100.0
                     )
                     continue
-            # Fallback: no BOQ — savings % vs product standard cost
-            # savings = (standard_cost - vendor_price) / standard_cost × 100
-            # Positive = vendor is cheaper than internal standard (good deal)
-            # Negative = vendor is more expensive than internal standard
+          
             total_std = 0.0
             total_po = 0.0
             for line in order.order_line:
@@ -143,16 +123,7 @@ class PurchaseOrderBoqExtend(models.Model):
                 (total_std - total_po) / total_std * 100.0
             ) if total_std > 0 else 0.0
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # 3.  VENDOR RATING TRIGGER  (BUG 3 / NEW TASK 4)
-    #     'Rate Vendor' button appears ONLY when:
-    #     • PO state == 'purchase' (confirmed)
-    #     • invoice_status == 'invoiced' (fully invoiced)
-    #     • ALL linked stock.picking records are 'done'
-    # ══════════════════════════════════════════════════════════════════════════
-    # ── Partner type relay (vendor or supplier) ───────────────────────────
-    # Stored on purchase.order so the view invisible expression can reference
-    # it without a dot-traversal that Odoo 19 may not resolve at render time.
+   
     partner_type = fields.Selection(
         related='partner_id.partner_type',
         string='Partner Type',
@@ -250,14 +221,8 @@ class PurchaseOrderBoqExtend(models.Model):
             else:
                 order.payment_status_display = label_map.get(states[0], 'Not Paid')
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # 6.  PORTAL QUOTATION SUBMIT  (NEW TASK 5)
-    # ══════════════════════════════════════════════════════════════════════════
     def action_submit_quotation_portal(self):
-        """
-        NEW TASK 5 — Triggered when vendor clicks 'Submit' on the portal RFQ.
-        Sends notification mail and posts to chatter.
-        """
+        
         self.ensure_one()
         template = self.env.ref(
             'boq_management_v19.mail_template_vendor_portal_submit',
@@ -266,7 +231,6 @@ class PurchaseOrderBoqExtend(models.Model):
         if template:
             template.send_mail(self.id, force_send=True)
         else:
-            # Fallback: post to chatter
             self.message_post(
                 body=_(
                     'The vendor <b>%(vendor)s</b> has submitted the quotation '
@@ -277,15 +241,8 @@ class PurchaseOrderBoqExtend(models.Model):
             )
         return True
 
-
-# ═════════════════════════════════════════════════════════════════════════════
-# purchase.order.line EXTENSION  (NEW TASK 3 — margin on comparison view)
-# ═════════════════════════════════════════════════════════════════════════════
 class PurchaseOrderLineBoqExtend(models.Model):
-    """
-    NEW TASK 3 — Extend purchase.order.line with cost_price and margin_percent
-    so the 'Compare Product Lines' view can display margin side-by-side.
-    """
+    
     _inherit = 'purchase.order.line'
 
     cost_price = fields.Float(

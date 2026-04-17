@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!--
-        NEW TASK 5 — Mail template: vendor submits quotation from portal.
-        Sent to the vendor manager (followers of the PO) when a vendor
-        clicks "Submit" on the portal RFQ form.
-        Stored in the chatter of the PO for audit trail.
-    -->
+    
     <record id="mail_template_vendor_portal_submit" model="mail.template">
         <field name="name">BOQ: Vendor Portal Quotation Submitted</field>
         <field name="model_id" ref="purchase.model_purchase_order"/>

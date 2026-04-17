@@ -1,51 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!--
-        Task 1 — TWO Fully Separate Dashboard Pages
-        =============================================
-        Each dashboard has its OWN ir.actions.client tag that maps to a
-        DIFFERENT OWL component class (VendorManagerDashboard and
-        ProcurementManagerDashboard).  This is NOT a toggle or tab —
-        these are completely independent pages with separate URLs.
-
-        Tags:
-          boq_management_v19.vendor_manager_dashboard_action
-              → VendorManagerDashboard  (DASHBOARD_TYPE = "vendor")
-
-          boq_management_v19.procurement_manager_dashboard_action
-              → ProcurementManagerDashboard  (DASHBOARD_TYPE = "supplier")
-    -->
-
-    <!-- ═══════════════════════════════════════════════════════════════════
-         VENDOR MANAGER DASHBOARD
-         Shows: Vendor-type BOQs · Vendor RFQs · Vendor partner trees
-                Vendor PO approval section (Task 1.6)
-    ═══════════════════════════════════════════════════════════════════════ -->
+  
     <record id="action_vendor_manager_dashboard" model="ir.actions.client">
         <field name="name">Vendor Manager Dashboard</field>
         <field name="tag">boq_management_v19.vendor_manager_dashboard_action</field>
         <field name="target">current</field>
     </record>
 
-    <!-- ═══════════════════════════════════════════════════════════════════
-         PROCUREMENT MANAGER DASHBOARD
-         Shows: Supplier-type BOQs · Supplier RFQs · Supplier partner trees
-                Supplier PO approval section (Task 1.6)
-    ═══════════════════════════════════════════════════════════════════════ -->
+
     <record id="action_procurement_manager_dashboard" model="ir.actions.client">
         <field name="name">Procurement Manager Dashboard</field>
         <field name="tag">boq_management_v19.procurement_manager_dashboard_action</field>
         <field name="target">current</field>
     </record>
 
-    <!-- ═══════════════════════════════════════════════════════════════════
-         HEAD OF SUPPLIER DASHBOARD
-         Consolidated cross-company view.  Uses DASHBOARD_TYPE = "supplier"
-         so all existing Python methods are reused.  Adds per-company
-         breakdown cards at the top via get_company_wise_summary().
-         Visible to: group_boq_manager (head-level access).
-    ═══════════════════════════════════════════════════════════════════════ -->
+   
     <record id="action_head_supplier_dashboard" model="ir.actions.client">
         <field name="name">Head of Supplier Dashboard</field>
         <field name="tag">boq_management_v19.head_supplier_dashboard_action</field>

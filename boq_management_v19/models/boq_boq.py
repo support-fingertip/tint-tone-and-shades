@@ -377,29 +377,7 @@ class BoqBoq(models.Model):
     # ── Auto-populate trade_vendor_ids when categories are added ─────────
     @api.onchange('category_ids')
     def _onchange_category_ids(self):
-        """
-        Rebuild trade_vendor_ids so there is exactly one row per unique
-        category in category_ids.  Rows for removed categories are kept
-        (so the user doesn't lose vendor selections by accident).
-
-        ROOT-CAUSE FIX for the duplication bug (Task 3):
-        ─────────────────────────────────────────────────
-        Recordset assignment (self.trade_vendor_ids = recordset) only sends
-        a diff to the client — it does NOT emit the (5, 0, 0) clear-all
-        command.  When the many2many_tags widget fires onchange multiple
-        times before the client applies the first response (race condition),
-        each call sees trade_vendor_ids = [] on the virtual record and
-        independently creates the same rows.  Both deltas reach the client
-        and are both applied → duplicate rows.
-
-        The definitive fix uses explicit ORM commands starting with (5,0,0),
-        which forces the client to clear ALL rows before applying the new
-        list.  This makes the onchange fully idempotent: running it N times
-        with the same input always yields exactly one row per category.
-
-        partner_type inherits from boq_type so Supplier BOQs automatically
-        produce supplier-typed rows that appear on the Procurement Dashboard.
-        """
+      
         default_type = self.boq_type or 'vendor'
 
         # Snapshot existing rows: preserve vendor/supplier selections and
@@ -708,18 +686,9 @@ class BoqBoq(models.Model):
         )
         return cat.id if cat else False
 
-    # ═══════════════════════════════════════════════════════════════════════
-    # DASHBOARD DATA METHODS  (Tasks 1, 2, 4, 5)
-    # Called via RPC from OWL dashboard components.
-    # ═══════════════════════════════════════════════════════════════════════
-
+  
     def _get_allowed_company_ids(self):
-        """
-        Task 5 — Multi-company support.
-        Returns list of company IDs the user is allowed to see.
-        Uses allowed_company_ids from context (set by Odoo company switcher).
-        Falls back to the current company.
-        """
+      
         ctx_ids = self.env.context.get('allowed_company_ids')
         if ctx_ids:
             return list(ctx_ids)
@@ -766,12 +735,7 @@ class BoqBoq(models.Model):
 
     @api.model
     def get_dashboard_stats(self, dashboard_type='vendor', company_ids=None):
-        """
-        Return top-level aggregate stats for the BOQ dashboard header cards.
-        Task 5: uses allowed_company_ids for multi-company support.
-        dashboard_type: 'vendor' | 'supplier'
-        company_ids: optional list of company IDs to filter (Head dashboard company selector).
-        """
+       
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
         company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
@@ -820,12 +784,7 @@ class BoqBoq(models.Model):
 
     @api.model
     def get_vendor_summary(self, dashboard_type='vendor', company_ids=None):
-        """
-        Return vendor-wise RFQ summary for dashboard kanban cards.
-        Task 5: uses allowed_company_ids for multi-company support.
-        dashboard_type: 'vendor' | 'supplier'
-        company_ids: optional list of company IDs to filter.
-        """
+       
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
         company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
@@ -962,12 +921,7 @@ class BoqBoq(models.Model):
 
     @api.model
     def get_trade_summary(self, dashboard_type='vendor'):
-        """
-        Trade Assignments for the dashboard.
-        Group BOQ lines by work_category_id (trade) and sum total_value per trade.
-        Task 5: uses allowed_company_ids for multi-company support.
-        dashboard_type: 'vendor' | 'supplier'
-        """
+        
         company_ids = self._get_allowed_company_ids()
         company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
         boqs = self.search(company_domain)
@@ -1044,28 +998,9 @@ class BoqBoq(models.Model):
         result.sort(key=lambda x: x['total_value'], reverse=True)
         return result
 
-    # ── NEW Task 2 — Hierarchical Tree Data ───────────────────────────────
     @api.model
     def get_dashboard_tree_data(self, dashboard_type='vendor', company_ids=None):
-        """
-        Task 2 — Returns a 3-level hierarchical structure:
-          Level 1: Trades (Electrical, Civil, Plumbing, …)
-          Level 2: Vendors/Suppliers per trade
-          Level 3: RFQs per vendor with state breakdown
-
-        Task 5: multi-company using allowed_company_ids.
-        dashboard_type: 'vendor' | 'supplier'
-        company_ids: optional list of company IDs to filter.
-
-        State labels (Task 4.6):
-          draft      → 'Quote Requested'  (more meaningful than 'Draft')
-          sent       → 'Sent to Vendor'
-          submitted  → 'Submitted'
-          to approve → 'Awaiting Approval'
-          purchase   → 'Approved'
-          done       → 'Done'
-          cancel     → 'Cancelled'
-        """
+        
         RFQ_STATE_LABELS = {
             'draft':      'Quote Requested',
             'sent':       'Sent to Vendor',
@@ -1194,7 +1129,6 @@ class BoqBoq(models.Model):
                     and r.write_date and r.write_date >= recently_cutoff
                 ]
 
-                # RFQ list — Task 2.4: NO payment info inside vendor-expanded section
                 rfq_list = []
                 for rfq in rfqs_for_v:
                     rfq_list.append({
@@ -1212,7 +1146,6 @@ class BoqBoq(models.Model):
                         ),
                     })
 
-                # Payment status badge at vendor-row level (Task 4.5)
                 pay_status = self._vendor_payment_status(rfqs_for_v)
                 pay_label  = {
                     'paid':      'Fully Paid',
@@ -1221,8 +1154,7 @@ class BoqBoq(models.Model):
                     'not_paid':  'Not Paid',
                 }.get(pay_status, 'Not Paid')
 
-                # Task 2.3 — State breakdown summary for vendor expansion header
-                # Shows counts per state so users can quickly see Draft/Sent/Submitted/Approved
+              
                 _state_counts = {}
                 for rfq in rfqs_for_v:
                     _state_counts[rfq.state] = _state_counts.get(rfq.state, 0) + 1
@@ -1266,21 +1198,9 @@ class BoqBoq(models.Model):
         tree.sort(key=lambda t: t['trade_name'])
         return tree
 
-    # ── Task 2.5 — Pending RFQ vendors (awaiting quotation) ──────────────
     @api.model
     def get_pending_rfq_vendors(self, dashboard_type='vendor', company_ids=None):
-        """
-        Task 2.5 — Return vendors/suppliers who received RFQs (state draft/sent)
-        but have NOT yet submitted a quotation.
-
-        Returns a list of vendors sorted by oldest-pending first, each with:
-          - vendor_id, vendor_name, vendor_email
-          - rfq_count       total pending RFQs for this vendor
-          - oldest_days     days since the oldest pending RFQ was created
-          - rfqs            list of pending RFQ details (with trade_name, days_pending)
-
-        dashboard_type: 'vendor' | 'supplier'
-        """
+        
         PENDING_STATES = {'draft', 'sent'}
         RFQ_STATE_LABELS = {
             'draft': 'Quote Requested',
@@ -1594,23 +1514,9 @@ class BoqBoq(models.Model):
         result.sort(key=lambda c: c['company_name'])
         return result
 
-    # ── NEW Task 1.6 — Approval-pending PO section ────────────────────────
     @api.model
     def get_approval_pending_pos(self, dashboard_type='vendor', company_ids=None):
-        """
-        Task 1.6 — Return purchase.order records in 'to approve' state that
-        are linked to BOQs of the given type (vendor / supplier).
-
-        Each entry includes:
-          - po_id, po_name, partner_name, amount_total, currency_symbol
-          - approval_lines: list of {level_name, status, approvers}
-          - has_current_approver: True when the current user is the next approver
-          - date_order
-
-        Used by both Vendor Manager Dashboard and Procurement Manager Dashboard
-        to display their respective "Pending Approvals" sections.
-        company_ids: optional list of company IDs to filter.
-        """
+        
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
         company_domain = [

@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!--
-        NEW TASK 4 / BUG 3 — Vendor Rating views.
-        Form opens as popup from the 'Rate Vendor' button on purchase.order.
-        List view accessible from the Reporting menu.
-    -->
 
-    <!-- ── Form View (popup dialog) ────────────────────────────────────── -->
     <record id="view_boq_vendor_rating_form" model="ir.ui.view">
         <field name="name">boq.vendor.rating.form</field>
         <field name="model">boq.vendor.rating</field>
