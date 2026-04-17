@@ -21,6 +21,7 @@
         'account',
         'project',
         'stock',
+        'infinys_purchase_order_approval',
     ],
     'data': [
         'security/boq_groups.xml',
