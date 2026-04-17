@@ -132,13 +132,13 @@
                     <!-- Decorative icon trio -->
                     <div class="boq_hero_icons">
                         <div class="boq_hero_icon_wrap boq_hero_ic1">
-                            <i class="fa fa-globe fa-2x"/>
+                            <i class="fa fa-sitemap fa-2x"/>
                         </div>
                         <div class="boq_hero_icon_wrap boq_hero_ic2">
-                            <i class="fa fa-building fa-2x"/>
+                            <i class="fa fa-building-o fa-2x"/>
                         </div>
                         <div class="boq_hero_icon_wrap boq_hero_ic3">
-                            <i class="fa fa-bar-chart fa-2x"/>
+                            <i class="fa fa-area-chart fa-2x"/>
                         </div>
                     </div>
 
@@ -381,8 +381,8 @@
             <div class="boq_dash_stat_row d-flex flex-wrap gap-3 p-4">
 
                 <div class="boq_stat_card flex-fill" t-on-click="openAllBoqs" style="cursor:pointer;">
-                    <div t-attf-class="boq_stat_icon #{ isVendorDashboard ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success' }">
-                        <i class="fa fa-calculator fa-2x"/>
+                    <div t-attf-class="boq_stat_icon #{ statBoqBg }">
+                        <i t-attf-class="fa #{ iconBoqs } fa-2x"/>
                     </div>
                     <div class="boq_stat_body">
                         <div class="boq_stat_value"><t t-esc="state.stats.total_boqs || 0"/></div>
@@ -392,7 +392,7 @@
 
                 <div class="boq_stat_card flex-fill">
                     <div class="boq_stat_icon bg-info-subtle text-info">
-                        <i class="fa fa-money fa-2x"/>
+                        <i t-attf-class="fa #{ iconBOQValue } fa-2x"/>
                     </div>
                     <div class="boq_stat_body">
                         <div class="boq_stat_value small">
@@ -404,7 +404,7 @@
 
                 <div class="boq_stat_card flex-fill">
                     <div class="boq_stat_icon bg-warning-subtle text-warning">
-                        <i class="fa fa-bar-chart fa-2x"/>
+                        <i t-attf-class="fa #{ iconGrandTotal } fa-2x"/>
                     </div>
                     <div class="boq_stat_body">
                         <div class="boq_stat_value small">
@@ -416,7 +416,7 @@
 
                 <div class="boq_stat_card flex-fill" t-on-click="openRfqs" style="cursor:pointer;">
                     <div class="boq_stat_icon bg-secondary-subtle text-secondary">
-                        <i class="fa fa-shopping-cart fa-2x"/>
+                        <i t-attf-class="fa #{ iconRfqs } fa-2x"/>
                     </div>
                     <div class="boq_stat_body">
                         <div class="boq_stat_value"><t t-esc="state.stats.total_rfqs || 0"/></div>
@@ -433,7 +433,7 @@
                 <div class="boq_stat_card flex-fill">
                     <div class="boq_stat_icon"
                          style="background:rgba(13,110,253,.1);color:#0d6efd;">
-                        <i class="fa fa-money fa-2x"/>
+                        <i t-attf-class="fa #{ iconRfqValue } fa-2x"/>
                     </div>
                     <div class="boq_stat_body">
                         <div class="boq_stat_value small">
@@ -448,7 +448,7 @@
                     <div class="boq_stat_card flex-fill boq_stat_card_approval"
                          t-on-click="openApprovalPos" style="cursor:pointer;">
                         <div class="boq_stat_icon bg-secondary-subtle text-secondary">
-                            <i class="fa fa-clock-o fa-2x"/>
+                            <i t-attf-class="fa #{ iconApprovalCard } fa-2x"/>
                         </div>
                         <div class="boq_stat_body">
                             <div class="boq_stat_value">
@@ -482,7 +482,7 @@
                     <div class="boq_section_header d-flex align-items-center
                                 justify-content-between mb-3">
                         <h5 class="mb-0 fw-bold boq_section_title">
-                            <i class="fa fa-building me-2 text-success"/>
+                            <i class="fa fa-sitemap me-2 text-success"/>
                             Company Overview
                             <span class="badge boq_badge_neutral rounded-pill ms-2 small">
                                 <t t-esc="state.companySummary.length"/>
@@ -683,7 +683,7 @@
 
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <h5 class="mb-0 fw-bold boq_section_title">
-                            <i class="fa fa-clock-o me-2 text-warning"/>
+                            <i t-attf-class="fa #{ iconPendingSection } me-2 text-warning"/>
                             Awaiting Quotation
                             <span class="badge boq_badge_neutral rounded-pill ms-2 small">
                                 <t t-esc="pendingRfqTotals.rfqs"/> RFQ<t t-if="pendingRfqTotals.rfqs !== 1">s</t>
@@ -937,7 +937,7 @@
                 <div class="boq_trade_view_header d-flex align-items-center
                             justify-content-between mb-3">
                     <h5 class="mb-0 fw-bold boq_section_title">
-                        <i class="fa fa-bar-chart me-2 text-primary"/>
+                        <i t-attf-class="fa #{ iconTradeAnalysis } me-2 text-primary"/>
                         Trade View Analysis
                         <span class="badge boq_badge_neutral rounded-pill ms-2 small">
                             <t t-esc="treeTotals.trades"/>
@@ -1224,7 +1224,7 @@
                     <div class="boq_approval_section_header d-flex align-items-center
                                 justify-content-between mb-3">
                         <h5 class="mb-0 fw-bold boq_section_title">
-                            <i class="fa fa-clock-o me-2 text-muted"/>
+                            <i t-attf-class="fa #{ iconPendingApprovals } me-2 text-muted"/>
                             Pending Approvals
                             <span class="badge boq_badge_neutral rounded-pill ms-2 small">
                                 <t t-esc="state.approvalPOs.length"/>

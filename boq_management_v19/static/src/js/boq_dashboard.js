@@ -288,6 +288,22 @@ class BoqManagerDashboardBase extends Component {
         this.state.showRecentPanel = !this.state.showRecentPanel;
     }
 
+    // ── Per-dashboard icon getters (Vendor / Procurement defaults) ────────
+    get iconBoqs()             { return "fa-calculator"; }
+    get iconBOQValue()         { return "fa-money"; }
+    get iconGrandTotal()       { return "fa-bar-chart"; }
+    get iconRfqs()             { return "fa-shopping-cart"; }
+    get iconRfqValue()         { return "fa-money"; }
+    get iconApprovalCard()     { return "fa-clock-o"; }
+    get iconPendingSection()   { return "fa-clock-o"; }
+    get iconTradeAnalysis()    { return "fa-bar-chart"; }
+    get iconPendingApprovals() { return "fa-clock-o"; }
+    get statBoqBg() {
+        return this.isVendorDashboard
+            ? "bg-primary-subtle text-primary"
+            : "bg-success-subtle text-success";
+    }
+
     openVendorContact(vendorId) {
         this.actionSvc.doAction({
             type:      "ir.actions.act_window",
@@ -334,6 +350,18 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     get dashboardIcon()     { return "fa-globe"; }
     get partnerLabel()      { return "Supplier"; }
     get dashboardColor()    { return "text-success"; }
+
+    // ── Icon overrides — enterprise / executive theme ─────────────────────
+    get iconBoqs()             { return "fa-clipboard"; }
+    get iconBOQValue()         { return "fa-tag"; }
+    get iconGrandTotal()       { return "fa-pie-chart"; }
+    get iconRfqs()             { return "fa-inbox"; }
+    get iconRfqValue()         { return "fa-credit-card"; }
+    get iconApprovalCard()     { return "fa-hourglass-half"; }
+    get iconPendingSection()   { return "fa-hourglass-2"; }
+    get iconTradeAnalysis()    { return "fa-area-chart"; }
+    get iconPendingApprovals() { return "fa-tasks"; }
+    get statBoqBg()            { return "bg-info-subtle text-info"; }
 
     setup() {
         super.setup();

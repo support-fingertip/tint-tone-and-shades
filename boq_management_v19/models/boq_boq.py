@@ -762,6 +762,8 @@ class BoqBoq(models.Model):
                 'name':    company.name,
                 'initial': (company.name or '?')[0].upper(),
             })
+        return result
+
     @api.model
     def get_dashboard_stats(self, dashboard_type='vendor', company_ids=None):
         """
