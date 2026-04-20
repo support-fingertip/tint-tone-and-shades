@@ -7,7 +7,7 @@
     "license": "LGPL-3",
     "category": "Purchases",
     "version": "19.0.1.0.0",
-    "depends": ["purchase", "mail", 'account',],
+    "depends": ["purchase", "mail", 'account','boq_management_v19'],
     "data": [
         "security/ir.model.access.csv",
         "views/margin_threshold_views.xml",
