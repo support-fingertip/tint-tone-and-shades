@@ -89,17 +89,33 @@ class PurchaseOrder(models.Model):
 
     def button_confirm(self):
         for order in self:
-            if order.has_margin_below_threshold and order.margin_approval_status not in ('approved', 'none'):
+            if order.has_margin_below_threshold and order.margin_approval_status not in ('approved',):
                 raise UserError(_(
                     "Cannot confirm this order. Some product margins are below the threshold. "
-                    "Please request margin approval first."
+                    "Please request and obtain margin approval first."
                 ))
-            if order.has_margin_below_threshold and order.margin_approval_status == 'none':
-                raise UserError(_(
-                    "Cannot confirm this order. Some product margins are below the threshold. "
-                    "Please request margin approval first."
-                ))
+
+        # Odoo's super() only processes 'draft' or 'sent' states.
+        # Temporarily move 'submitted' orders back to 'sent' so super() picks them up.
+        submitted = self.filtered(lambda o: o.state == 'submitted')
+        if submitted:
+            submitted.write({'state': 'sent'})
+
         return super().button_confirm()
+
+    # def button_confirm(self):
+    #     for order in self:
+    #         if order.has_margin_below_threshold and order.margin_approval_status not in ('approved', 'none'):
+    #             raise UserError(_(
+    #                 "Cannot confirm this order. Some product margins are below the threshold. "
+    #                 "Please request margin approval first."
+    #             ))
+    #         if order.has_margin_below_threshold and order.margin_approval_status == 'none':
+    #             raise UserError(_(
+    #                 "Cannot confirm this order. Some product margins are below the threshold. "
+    #                 "Please request margin approval first."
+    #             ))
+    #     return super().button_confirm()
 
     def action_request_margin_approval(self):
         self.ensure_one()
