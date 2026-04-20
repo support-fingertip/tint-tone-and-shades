@@ -1,87 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <record id="purchase_advance_payment_inv_form_inherit" model="ir.ui.view">
         <field name="name">purchase.advance.payment.inv.form.inherit</field>
         <field name="model">purchase.advance.payment.inv</field>
         <field name="inherit_id" ref="tk_purchase_advance_payment.view_purchase_advance_payment_inv_inherit"/>
         <field name="arch" type="xml">
-
-            <!-- Step 1: Replace advance_payment_method with two conditional fields -->
-            <xpath expr="//field[@name='advance_payment_method']" position="replace">
-                <field name="has_existing_bill" invisible="1"/>
-                <field name="advance_payment_method_new" widget="radio" invisible="has_existing_bill == True"/>
-                <field name="advance_payment_method_running" widget="radio" invisible="has_existing_bill == False"/>
-            </xpath>
-
-            <!-- Step 2: Fix label for Percentage -->
-            <xpath expr="//label[@for='amount']" position="replace">
-                <label for="amount" string="Down Payment Percentage"
-                       invisible="has_existing_bill == True or advance_payment_method_new != 'percentage'"/>
-                <label for="amount" string="Running Bill Payment Percentage"
-                       invisible="has_existing_bill == False or advance_payment_method_running != 'percentage'"/>
-            </xpath>
-
-            <!-- Step 3: Fix label for Fixed Amount -->
-            <xpath expr="//label[@for='fixed_amount']" position="replace">
-                <label for="fixed_amount" string="Down Payment Amount"
-                       invisible="has_existing_bill == True or advance_payment_method_new != 'fixed'"/>
-                <label for="fixed_amount" string="Running Bill Payment Amount"
-                       invisible="has_existing_bill == False or advance_payment_method_running != 'fixed'"/>
-            </xpath>
-
-            <!-- Step 4: Fix fixed_amount visibility -->
-            <xpath expr="//field[@name='fixed_amount']" position="attributes">
-                <attribute name="invisible">has_existing_bill == False and advance_payment_method_new != 'fixed' or has_existing_bill == True and advance_payment_method_running != 'fixed'</attribute>
-                <attribute name="required">has_existing_bill == False and advance_payment_method_new == 'fixed' or has_existing_bill == True and advance_payment_method_running == 'fixed'</attribute>
-            </xpath>
-
-            <!-- Step 5: Fix amount (percentage) visibility -->
-            <xpath expr="//field[@name='amount']" position="attributes">
-                <attribute name="invisible">has_existing_bill == False and advance_payment_method_new != 'percentage' or has_existing_bill == True and advance_payment_method_running != 'percentage'</attribute>
-                <attribute name="required">has_existing_bill == False and advance_payment_method_new == 'percentage' or has_existing_bill == True and advance_payment_method_running == 'percentage'</attribute>
-            </xpath>
-
-            <!-- Step 6: Fix % span visibility -->
-            <xpath expr="//span[contains(@class,'oe_inline')]" position="attributes">
-                <attribute name="invisible">has_existing_bill == False and advance_payment_method_new != 'percentage' or has_existing_bill == True and advance_payment_method_running != 'percentage'</attribute>
-            </xpath>
-
-            <!-- Step 7: Add Remarks and Attachments before footer -->
-            <xpath expr="//footer" position="before">
-                <group>
-                    <field name="comment" string="Remarks" placeholder="Add remarks here..."/>
-                </group>
-                <group>
-                    <label for="attachment_ids" string="Attachments"/>
-                    <field name="attachment_ids" widget="many2many_binary" nolabel="1"/>
-                </group>
-            </xpath>
-
-        </field>
-    </record>
-
-
-    <!-- Attachments -->
-    <record id="view_move_form_inherit_attachment" model="ir.ui.view">
-        <field name="name">account.move.form.inherit.attach.tab</field>
-        <field name="model">account.move</field>
-        <field name="inherit_id" ref="account.view_move_form"/>
-        <field name="arch" type="xml">
-            <!-- Insert new tab after Other Info -->
-            <xpath expr="//page[@name='other_info']" position="after">
-                <page string="Bill Attachments" name="bill_attachments_tab">
-                    <group>
-                        <field name="bill_attachment_ids" nolabel="1">
-                            <list>
-                                <field name="name"/>
-                                <field name="create_date" string="Created On"/>
-                                <field name="datas" filename="name"/>
-                            </list>
-                        </field>
-                    </group>
-                </page>
+            <xpath expr="//field[@name='advance_payment_method']" position="after">
+                <field name="comment" string="Remarks" placeholder="Add remarks here..."/>
             </xpath>
         </field>
     </record>
-
 </odoo>
