@@ -15,7 +15,7 @@
     "license": "LGPL-3",
     "category": "Purchases",
     "version": "19.0.1.0.0",
-    "depends": ["base", "purchase", "mail", "infinys_margin_validation"],
+    "depends": ["base", "purchase", "mail",],
     # always loaded
     "data": [
         "security/ir.model.access.csv",
