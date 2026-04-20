@@ -14,7 +14,6 @@
                             <field name="bill_state"/>
                             <field name="amount"/>
                             <field name="comment"/>
-                            <field name="payment_type"/>
                         </list>
                     </field>
                 </page>
