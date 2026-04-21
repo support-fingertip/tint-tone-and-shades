@@ -33,6 +33,12 @@ class PurchasePaymentInvoiceLine(models.Model):
         store=True,
         readonly=True
     )
+    payment_type = fields.Selection([
+        ('down', 'Down Payment'),
+        ('running', 'Running Payment')
+    ], string="Payment Type", store=True)
+
+
 
 
 
