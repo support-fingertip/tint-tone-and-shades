@@ -20,3 +20,9 @@ class PurchaseApprovalLevel(models.Model):
         ('unique_sequence_company', 'unique(sequence, company_id)', 'The sequence must be unique per approval level within a company!'),
         ('amount_check', 'CHECK(minimum_amount <= maximum_amount OR maximum_amount = 0)', 'Minimum amount must be less than or equal to maximum amount!'),
     ]
+
+    type = fields.Selection([
+        ('vendor', 'Vendor'),
+        ('supplier', 'Supplier'),
+    ], string="Type", required=True,
+        default=lambda self: self.env.context.get('default_type', 'vendor'))
