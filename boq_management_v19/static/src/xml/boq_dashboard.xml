@@ -625,15 +625,19 @@
                                             <div class="boq_vc_metric_label">Total Value</div>
                                         </div>
 
-                                        <!-- Margin % — uniform light colour, no per-value coding -->
-                                        <t t-if="vs.margin_percent != null">
-                                            <div class="boq_vc_metric">
-                                                <div class="boq_vc_metric_value boq_metric_neutral">
+                                        <!-- Margin % — colour-coded when vendor has quoted; "—" when pending -->
+                                        <div class="boq_vc_metric">
+                                            <t t-if="vs.has_vendor_price">
+                                                <div t-attf-class="boq_vc_metric_value {{ marginClass(vs.margin_percent) }}"
+                                                     style="border-radius:6px;padding:2px 6px;">
                                                     <t t-esc="vs.margin_percent.toFixed(1)"/>%
                                                 </div>
-                                                <div class="boq_vc_metric_label">Margin</div>
-                                            </div>
-                                        </t>
+                                            </t>
+                                            <t t-else="">
+                                                <div class="boq_vc_metric_value text-muted" style="font-size:0.85rem;">—</div>
+                                            </t>
+                                            <div class="boq_vc_metric_label">Margin</div>
+                                        </div>
 
                                     </div>
 
