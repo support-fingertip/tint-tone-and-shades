@@ -817,6 +817,12 @@
                     <i class="fa fa-money me-1"/>
                     <strong><t t-esc="fmtCurrency(treeTotals.value)"/></strong>
                 </span>
+                <t t-if="overallMargin !== null">
+                    <span class="boq_totals_chip boq_totals_margin" title="Overall gross margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price">
+                        <i class="fa fa-percent me-1"/>
+                        Margin <strong><t t-esc="overallMargin"/>%</strong>
+                    </span>
+                </t>
             </div>
 
             <!-- ╔════════════════════════════════════════════════════╗
@@ -1012,6 +1018,13 @@
                                         <t t-esc="trade.submitted_count"/> new
                                     </span>
                                 </t>
+                                <t t-if="trade.margin_percent > 0">
+                                    <span class="badge boq_badge_margin rounded-pill ms-1"
+                                          title="Trade gross margin %">
+                                        <i class="fa fa-percent me-1"/>
+                                        <t t-esc="trade.margin_percent.toFixed(1)"/>%
+                                    </span>
+                                </t>
                             </span>
 
                             <span class="boq_tree_value fw-bold">
@@ -1092,6 +1105,15 @@
                                             </span>
                                         </t>
 
+                                        <!-- Margin % — only when vendor has quoted at least one RFQ -->
+                                        <t t-if="vendor.margin_percent > 0">
+                                            <span t-attf-class="badge rounded-pill ms-1 {{ marginClass(vendor.margin_percent) }}"
+                                                  title="Vendor gross margin: (Customer Price − Vendor Cost) / Customer Price">
+                                                <i class="fa fa-percent me-1"/>
+                                                <t t-esc="vendor.margin_percent.toFixed(1)"/>%
+                                            </span>
+                                        </t>
+
                                     </span>
 
                                     <span class="boq_tree_value fw-semibold">
@@ -1140,6 +1162,8 @@
 
                                     <t t-foreach="vendor.rfqs" t-as="rfq"
                                        t-key="rfq.rfq_id">
+
+                                        <!-- Level 3: RFQ summary row -->
                                         <div t-attf-class="boq_tree_row boq_rfq_row
                                                            #{ rfq.is_recently_submitted ? 'boq_rfq_row_new' : '' }"
                                              t-on-click.stop="() => this.openRfq(rfq.rfq_id)"
@@ -1147,6 +1171,13 @@
 
                                             <span class="boq_tree_indent"/>
                                             <span class="boq_tree_indent"/>
+
+                                            <!-- Expand / collapse line items (Level 4) -->
+                                            <span class="boq_tree_expand_icon"
+                                                  t-on-click.stop="(ev) => this.toggleRfqLines(ev, rfq.rfq_id)"
+                                                  title="Show / hide line items">
+                                                <i t-attf-class="fa #{ isRfqExpanded(rfq.rfq_id) ? 'fa-chevron-down' : 'fa-chevron-right' }"/>
+                                            </span>
 
                                             <span class="boq_tree_label">
                                                 <i class="fa fa-file-text-o me-2 text-muted"/>
@@ -1181,6 +1212,35 @@
                                                         <i class="fa fa-bell me-1"/>New
                                                     </span>
                                                 </t>
+
+                                                <!-- Margin badge — only when vendor has quoted -->
+                                                <t t-if="rfq.has_vendor_price">
+                                                    <span t-attf-class="badge rounded-pill ms-1 {{ marginClass(rfq.margin_percent) }}"
+                                                          title="Gross Margin: (Selling Price − Vendor Cost) / Selling Price">
+                                                        <i class="fa fa-percent me-1"/>
+                                                        <t t-esc="rfq.margin_percent.toFixed(1)"/>%
+                                                    </span>
+                                                </t>
+                                            </span>
+
+                                            <!-- Customer Selling Price + Vendor Cost pair -->
+                                            <span class="boq_rfq_prices" t-if="rfq.customer_total > 0">
+                                                <span class="boq_rfq_price_item">
+                                                    <small class="boq_price_label">Sell</small>
+                                                    <span class="text-success fw-semibold">
+                                                        <t t-esc="fmtCurrency(rfq.customer_total)"/>
+                                                    </span>
+                                                </span>
+                                                <span class="boq_price_sep">|</span>
+                                                <span class="boq_rfq_price_item">
+                                                    <small class="boq_price_label">Cost</small>
+                                                    <span t-attf-class="fw-semibold #{ rfq.has_vendor_price ? 'text-primary' : 'text-muted' }">
+                                                        <t t-if="rfq.has_vendor_price">
+                                                            <t t-esc="fmtCurrency(rfq.vendor_cost_total)"/>
+                                                        </t>
+                                                        <t t-else="">Pending</t>
+                                                    </span>
+                                                </span>
                                             </span>
 
                                             <span class="boq_tree_value text-muted">
@@ -1191,7 +1251,112 @@
                                                 <i class="fa fa-external-link text-muted"/>
                                             </span>
                                         </div><!-- /rfq row -->
-                                    </t>
+
+                                        <!-- Level 4: Per-line margin detail (lazy-loaded) -->
+                                        <t t-if="isRfqExpanded(rfq.rfq_id)">
+
+                                            <!-- Loading spinner -->
+                                            <t t-if="state.rfqLinesLoading[rfq.rfq_id]">
+                                                <div class="boq_line_loading_row text-muted small">
+                                                    <i class="fa fa-spinner fa-spin me-1"/>
+                                                    Loading line items…
+                                                </div>
+                                            </t>
+
+                                            <!-- Line items table -->
+                                            <t t-elif="state.rfqLineItems[rfq.rfq_id] and state.rfqLineItems[rfq.rfq_id].length > 0">
+                                                <div class="boq_line_items_table">
+
+                                                    <!-- Column header row -->
+                                                    <div class="boq_line_row boq_line_header">
+                                                        <span class="boq_line_col_code">Code</span>
+                                                        <span class="boq_line_col_product">Product / Material</span>
+                                                        <span class="boq_line_col_qty">Qty</span>
+                                                        <span class="boq_line_col_sell">Sell Price</span>
+                                                        <span class="boq_line_col_cost">Vendor Cost</span>
+                                                        <span class="boq_line_col_margin">Margin</span>
+                                                        <span class="boq_line_col_total_sell">Sell Total</span>
+                                                        <span class="boq_line_col_total_cost">Cost Total</span>
+                                                    </div>
+
+                                                    <!-- One row per product line -->
+                                                    <t t-foreach="state.rfqLineItems[rfq.rfq_id]" t-as="ln" t-key="ln.line_id">
+                                                        <div class="boq_line_row">
+
+                                                            <span class="boq_line_col_code text-muted">
+                                                                <t t-esc="ln.product_code || '—'"/>
+                                                            </span>
+
+                                                            <span class="boq_line_col_product">
+                                                                <t t-esc="ln.product_name"/>
+                                                            </span>
+
+                                                            <span class="boq_line_col_qty text-muted">
+                                                                <t t-esc="ln.qty"/>
+                                                                <small class="ms-1"><t t-esc="ln.uom_name"/></small>
+                                                            </span>
+
+                                                            <!-- Customer selling price (BOQ estimate) -->
+                                                            <span class="boq_line_col_sell text-success fw-semibold">
+                                                                <t t-esc="fmtCurrency(ln.customer_price)"/>
+                                                            </span>
+
+                                                            <!-- Vendor cost -->
+                                                            <span class="boq_line_col_cost">
+                                                                <t t-if="ln.has_vendor_price">
+                                                                    <span class="text-primary fw-semibold">
+                                                                        <t t-esc="fmtCurrency(ln.vendor_cost)"/>
+                                                                    </span>
+                                                                </t>
+                                                                <t t-else="">
+                                                                    <span class="badge boq_badge_neutral rounded-pill">Pending</span>
+                                                                </t>
+                                                            </span>
+
+                                                            <!-- Margin % with colour coding -->
+                                                            <span class="boq_line_col_margin">
+                                                                <t t-if="ln.has_vendor_price">
+                                                                    <span t-attf-class="badge rounded-pill {{ marginClass(ln.margin_percent) }}">
+                                                                        <t t-esc="ln.margin_percent.toFixed(1)"/>%
+                                                                    </span>
+                                                                </t>
+                                                                <t t-else="">
+                                                                    <span class="text-muted">—</span>
+                                                                </t>
+                                                            </span>
+
+                                                            <!-- Totals -->
+                                                            <span class="boq_line_col_total_sell text-success">
+                                                                <t t-esc="fmtCurrency(ln.customer_total)"/>
+                                                            </span>
+
+                                                            <span class="boq_line_col_total_cost">
+                                                                <t t-if="ln.has_vendor_price">
+                                                                    <span class="text-primary">
+                                                                        <t t-esc="fmtCurrency(ln.vendor_total)"/>
+                                                                    </span>
+                                                                </t>
+                                                                <t t-else="">
+                                                                    <span class="text-muted">—</span>
+                                                                </t>
+                                                            </span>
+
+                                                        </div><!-- /line row -->
+                                                    </t>
+
+                                                </div><!-- /boq_line_items_table -->
+                                            </t>
+
+                                            <!-- Empty state (no product lines) -->
+                                            <t t-else="">
+                                                <div class="boq_line_loading_row text-muted small">
+                                                    <i class="fa fa-info-circle me-1"/>No product lines found.
+                                                </div>
+                                            </t>
+
+                                        </t><!-- /Level 4 -->
+
+                                    </t><!-- /rfq foreach -->
 
                                 </t><!-- /rfqs expanded -->
 

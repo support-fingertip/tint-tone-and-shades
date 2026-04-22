@@ -1127,6 +1127,27 @@ class BoqBoq(models.Model):
             for oid, eff_total in self.env.cr.fetchall():
                 rfq_eff_total_tree[oid] = float(eff_total)
 
+        # Pre-compute per-order: customer_total (BOQ selling price to customer) and
+        # vendor_cost_total (raw vendor quoted cost, 0 when not yet quoted).
+        # Gross margin = (customer_total − vendor_cost_total) / customer_total × 100
+        rfq_margin_tree = {}
+        if filtered_rfqs.ids:
+            self.env.cr.execute("""
+                SELECT
+                    pol.order_id,
+                    COALESCE(SUM(pol.customer_price * pol.product_qty), 0),
+                    COALESCE(SUM(pol.price_unit     * pol.product_qty), 0)
+                FROM purchase_order_line pol
+                WHERE pol.order_id IN %s
+                  AND (pol.display_type IS NULL OR pol.display_type = '')
+                GROUP BY pol.order_id
+            """, (tuple(filtered_rfqs.ids),))
+            for oid, cust_t, vend_t in self.env.cr.fetchall():
+                rfq_margin_tree[oid] = {
+                    'customer_total':    float(cust_t),
+                    'vendor_cost_total': float(vend_t),
+                }
+
         # ── Build trade → vendor assignments ─────────────────────────────
         # Primary: from boq.trade.vendor rows
         trade_data = {}   # {cat_id: {'category': rec, 'vendors': {vid: partner}}}
@@ -1172,15 +1193,18 @@ class BoqBoq(models.Model):
             vendors_dict = cat_data['vendors']
 
             trade_node = {
-                'trade_id':       cat_id,
-                'trade_name':     category.name,
-                'trade_icon':     category.icon or 'fa-cogs',
-                'trade_code':     category.code or '',
-                'rfq_count':      0,
-                'pending_count':  0,
-                'submitted_count': 0,
-                'total_value':    0.0,
-                'vendor_count':   len(vendors_dict),
+                'trade_id':          cat_id,
+                'trade_name':        category.name,
+                'trade_icon':        category.icon or 'fa-cogs',
+                'trade_code':        category.code or '',
+                'rfq_count':         0,
+                'pending_count':     0,
+                'submitted_count':   0,
+                'total_value':       0.0,
+                'customer_total':    0.0,
+                'vendor_cost_total': 0.0,
+                'margin_percent':    0.0,
+                'vendor_count':      len(vendors_dict),
                 'vendors':        [],
             }
 
@@ -1196,14 +1220,25 @@ class BoqBoq(models.Model):
 
                 rfq_list = []
                 for rfq in rfqs_for_v:
+                    _mt    = rfq_margin_tree.get(rfq.id, {})
+                    _cust  = _mt.get('customer_total',    0.0)
+                    _vend  = _mt.get('vendor_cost_total', 0.0)
+                    _margin = (
+                        round((_cust - _vend) / _cust * 100, 2)
+                        if _cust > 0 and _vend > 0 else 0.0
+                    )
                     rfq_list.append({
-                        'rfq_id':     rfq.id,
-                        'rfq_name':   rfq.name,
-                        'state':      rfq.state,
-                        'state_label': RFQ_STATE_LABELS.get(rfq.state, rfq.state),
-                        'amount_untaxed': rfq.amount_untaxed,
-                        'amount_total':   rfq_eff_total_tree.get(rfq.id, rfq.amount_total),
-                        'is_pending':     rfq.state in PENDING_STATES,
+                        'rfq_id':            rfq.id,
+                        'rfq_name':          rfq.name,
+                        'state':             rfq.state,
+                        'state_label':       RFQ_STATE_LABELS.get(rfq.state, rfq.state),
+                        'amount_untaxed':    rfq.amount_untaxed,
+                        'amount_total':      rfq_eff_total_tree.get(rfq.id, rfq.amount_total),
+                        'customer_total':    _cust,
+                        'vendor_cost_total': _vend,
+                        'margin_percent':    _margin,
+                        'has_vendor_price':  _vend > 0,
+                        'is_pending':        rfq.state in PENDING_STATES,
                         'is_recently_submitted': rfq in submitted_rfqs,
                         'date_order': (
                             rfq.date_order.strftime('%d %b %Y')
@@ -1233,28 +1268,54 @@ class BoqBoq(models.Model):
                     for s in _state_order if s in _state_counts
                 ]
 
+                _vc_cust = sum(
+                    rfq_margin_tree.get(r.id, {}).get('customer_total',    0.0)
+                    for r in rfqs_for_v
+                )
+                _vc_vend = sum(
+                    rfq_margin_tree.get(r.id, {}).get('vendor_cost_total', 0.0)
+                    for r in rfqs_for_v
+                )
+                _vc_margin = (
+                    round((_vc_cust - _vc_vend) / _vc_cust * 100, 2)
+                    if _vc_cust > 0 and _vc_vend > 0 else 0.0
+                )
+
                 vendor_node = {
-                    'vendor_id':      vid,
-                    'vendor_name':    partner.name,
-                    'vendor_email':   partner.email or '',
-                    'rfq_count':      len(rfqs_for_v),
-                    'pending_count':  len(pending_rfqs),
+                    'vendor_id':         vid,
+                    'vendor_name':       partner.name,
+                    'vendor_email':      partner.email or '',
+                    'rfq_count':         len(rfqs_for_v),
+                    'pending_count':     len(pending_rfqs),
                     'recently_submitted_count': len(submitted_rfqs),
-                    'total_value':    sum(
+                    'total_value':       sum(
                         rfq_eff_total_tree.get(r.id, r.amount_total)
                         for r in rfqs_for_v
                     ),
-                    'payment_status': pay_status,
+                    'customer_total':    _vc_cust,
+                    'vendor_cost_total': _vc_vend,
+                    'margin_percent':    _vc_margin,
+                    'payment_status':    pay_status,
                     'payment_status_label': pay_label,
-                    'state_summary':  state_summary,
-                    'rfqs':           rfq_list,
+                    'state_summary':     state_summary,
+                    'rfqs':              rfq_list,
                 }
 
                 trade_node['vendors'].append(vendor_node)
-                trade_node['rfq_count']      += vendor_node['rfq_count']
-                trade_node['pending_count']  += vendor_node['pending_count']
-                trade_node['submitted_count'] += vendor_node['recently_submitted_count']
-                trade_node['total_value']    += vendor_node['total_value']
+                trade_node['rfq_count']          += vendor_node['rfq_count']
+                trade_node['pending_count']       += vendor_node['pending_count']
+                trade_node['submitted_count']     += vendor_node['recently_submitted_count']
+                trade_node['total_value']         += vendor_node['total_value']
+                trade_node['customer_total']      += vendor_node['customer_total']
+                trade_node['vendor_cost_total']   += vendor_node['vendor_cost_total']
+
+            # Compute trade-level margin from accumulated totals
+            _tr_c = trade_node['customer_total']
+            _tr_v = trade_node['vendor_cost_total']
+            trade_node['margin_percent'] = (
+                round((_tr_c - _tr_v) / _tr_c * 100, 2)
+                if _tr_c > 0 and _tr_v > 0 else 0.0
+            )
 
             # Sort vendors: recently-submitted first, then by name
             trade_node['vendors'].sort(
@@ -1265,6 +1326,47 @@ class BoqBoq(models.Model):
         # Sort trades by name
         tree.sort(key=lambda t: t['trade_name'])
         return tree
+
+    @api.model
+    def get_rfq_line_items(self, rfq_id):
+        """Return per-line margin data for one RFQ (lazy-loaded by the dashboard).
+
+        For each product line:
+          customer_price  = BOQ selling price (what we charge the customer)
+          vendor_cost     = price_unit (what the vendor quoted; 0 = not yet quoted)
+          margin_percent  = (customer_price - vendor_cost) / customer_price × 100
+        """
+        lines = self.env['purchase.order.line'].sudo().search(
+            [
+                ('order_id', '=', int(rfq_id)),
+                ('product_id', '!=', False),
+                '|', ('display_type', '=', False), ('display_type', '=', ''),
+            ],
+            order='sequence asc, id asc',
+        )
+        result = []
+        for line in lines:
+            cust = line.customer_price or 0.0
+            vend = line.price_unit or 0.0
+            qty  = line.product_qty or 0.0
+            margin = (
+                round((cust - vend) / cust * 100, 2)
+                if cust > 0 and vend > 0 else 0.0
+            )
+            result.append({
+                'line_id':         line.id,
+                'product_name':    line.product_id.display_name,
+                'product_code':    line.product_id.default_code or '',
+                'qty':             qty,
+                'uom_name':        line.product_uom.name if line.product_uom else '',
+                'customer_price':  cust,
+                'vendor_cost':     vend,
+                'customer_total':  round(cust * qty, 2),
+                'vendor_total':    round(vend * qty, 2),
+                'margin_percent':  margin,
+                'has_vendor_price': vend > 0,
+            })
+        return result
 
     @api.model
     def get_pending_rfq_vendors(self, dashboard_type='vendor', company_ids=None):
