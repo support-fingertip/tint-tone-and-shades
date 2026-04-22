@@ -821,10 +821,14 @@
                     <i class="fa fa-money me-1"/>
                     <strong><t t-esc="fmtCurrency(treeTotals.value)"/></strong>
                 </span>
-                <t t-if="overallMargin !== null">
-                    <span class="boq_totals_chip boq_totals_margin" title="Overall gross margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price">
+                <t t-if="treeTotals.trades > 0">
+                    <span class="boq_totals_chip boq_totals_margin"
+                          title="Overall gross margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price × 100">
                         <i class="fa fa-percent me-1"/>
-                        Margin <strong><t t-esc="overallMargin"/>%</strong>
+                        Margin <strong>
+                            <t t-if="overallMargin !== null"><t t-esc="overallMargin"/>%</t>
+                            <t t-else="">—</t>
+                        </strong>
                     </span>
                 </t>
             </div>
@@ -1022,13 +1026,15 @@
                                         <t t-esc="trade.submitted_count"/> new
                                     </span>
                                 </t>
-                                <t t-if="trade.margin_percent > 0">
-                                    <span class="badge boq_badge_margin rounded-pill ms-1"
-                                          title="Trade gross margin %">
-                                        <i class="fa fa-percent me-1"/>
+                                <!-- Margin — always visible: % when quoted, — when pending -->
+                                <span t-attf-class="badge rounded-pill ms-1 {{ (trade.vendor_cost_total || 0) > 0 ? marginClass(trade.margin_percent) : 'boq_badge_neutral' }}"
+                                      title="Trade gross margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price × 100">
+                                    <i class="fa fa-percent me-1"/>
+                                    <t t-if="(trade.vendor_cost_total || 0) > 0">
                                         <t t-esc="trade.margin_percent.toFixed(1)"/>%
-                                    </span>
-                                </t>
+                                    </t>
+                                    <t t-else="">—</t>
+                                </span>
                             </span>
 
                             <span class="boq_tree_value fw-bold">
@@ -1109,14 +1115,15 @@
                                             </span>
                                         </t>
 
-                                        <!-- Margin % — only when vendor has quoted at least one RFQ -->
-                                        <t t-if="vendor.margin_percent > 0">
-                                            <span t-attf-class="badge rounded-pill ms-1 {{ marginClass(vendor.margin_percent) }}"
-                                                  title="Vendor gross margin: (Customer Price − Vendor Cost) / Customer Price">
-                                                <i class="fa fa-percent me-1"/>
+                                        <!-- Margin — always visible: % when vendor has quoted, — when pending -->
+                                        <span t-attf-class="badge rounded-pill ms-1 {{ (vendor.vendor_cost_total || 0) > 0 ? marginClass(vendor.margin_percent) : 'boq_badge_neutral' }}"
+                                              title="Gross Margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price × 100">
+                                            <i class="fa fa-percent me-1"/>
+                                            <t t-if="(vendor.vendor_cost_total || 0) > 0">
                                                 <t t-esc="vendor.margin_percent.toFixed(1)"/>%
-                                            </span>
-                                        </t>
+                                            </t>
+                                            <t t-else="">—</t>
+                                        </span>
 
                                     </span>
 
@@ -1217,14 +1224,15 @@
                                                     </span>
                                                 </t>
 
-                                                <!-- Margin badge — only when vendor has quoted -->
-                                                <t t-if="rfq.has_vendor_price">
-                                                    <span t-attf-class="badge rounded-pill ms-1 {{ marginClass(rfq.margin_percent) }}"
-                                                          title="Gross Margin: (Selling Price − Vendor Cost) / Selling Price">
-                                                        <i class="fa fa-percent me-1"/>
+                                                <!-- Margin — always visible: % when quoted, — when pending -->
+                                                <span t-attf-class="badge rounded-pill ms-1 {{ rfq.has_vendor_price ? marginClass(rfq.margin_percent) : 'boq_badge_neutral' }}"
+                                                      title="Gross Margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price × 100">
+                                                    <i class="fa fa-percent me-1"/>
+                                                    <t t-if="rfq.has_vendor_price">
                                                         <t t-esc="rfq.margin_percent.toFixed(1)"/>%
-                                                    </span>
-                                                </t>
+                                                    </t>
+                                                    <t t-else="">—</t>
+                                                </span>
                                             </span>
 
                                             <!-- Customer Selling Price + Vendor Cost pair -->
