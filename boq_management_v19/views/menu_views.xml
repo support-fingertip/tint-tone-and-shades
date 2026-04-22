@@ -258,11 +258,11 @@
     />
 
     <!-- Approval Levels -->
-     <menuitem
+    <menuitem
             id="menu_vendor_approval_levels"
             name="Approval Levels"
             parent="menu_vendor_configuration"
-            action="infinys_purchase_order_approval.action_vendor_approval_level"
+            action="infinys_purchase_order_approval.action_purchase_approval_level"
             sequence="3"
             groups="boq_management_v19.group_vendor"
     />
@@ -389,11 +389,11 @@
 <!--    />-->
 
     <!-- Approval Levels -->
-   <menuitem
+    <menuitem
             id="menu_supplier_approval_levels"
             name="Approval Levels"
             parent="menu_supplier_configuration"
-            action="infinys_purchase_order_approval.action_supplier_approval_level"
+            action="infinys_purchase_order_approval.action_purchase_approval_level"
             sequence="3"
             groups="boq_management_v19.group_supplier"
     />
