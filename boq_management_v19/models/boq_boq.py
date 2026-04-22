@@ -765,8 +765,30 @@ class BoqBoq(models.Model):
         total_value = sum(boqs.mapped('total_amount'))
         total_tax   = sum(boqs.mapped('total_tax'))
         grand_total = sum(boqs.mapped('grand_total'))
-        rfq_total = sum(rfqs.mapped('amount_total'))
-        rfq_tax = sum(rfqs.mapped('amount_tax'))
+
+        # RFQ value: use vendor-quoted price when available, else fall back to
+        # customer_price (the BOQ-estimated value set at RFQ creation time).
+        # This ensures the stat card always shows a meaningful procurement
+        # scope even before vendors have submitted their prices.
+        rfq_total = 0.0
+        rfq_tax   = 0.0
+        if rfqs.ids:
+            self.env.cr.execute("""
+                SELECT
+                    COALESCE(SUM(
+                        CASE WHEN pol.price_unit > 0
+                             THEN pol.price_unit * pol.product_qty
+                             ELSE COALESCE(pol.customer_price, 0) * pol.product_qty
+                        END
+                    ), 0)
+                FROM purchase_order_line pol
+                WHERE pol.order_id IN %s
+                  AND (pol.display_type IS NULL OR pol.display_type = '')
+            """, (tuple(rfqs.ids),))
+            row = self.env.cr.fetchone()
+            rfq_total = float(row[0]) if row else 0.0
+            # Tax: only sum from orders that already have actual vendor prices
+            rfq_tax = sum(rfq.amount_tax for rfq in rfqs if rfq.amount_untaxed > 0)
 
         return {
             'total_boqs': len(boqs),
@@ -820,6 +842,29 @@ class BoqBoq(models.Model):
             for b in boqs
         }
 
+        # Pre-compute effective total per RFQ: use vendor-quoted price when
+        # available (price_unit > 0), else fall back to the BOQ customer_price.
+        # This mirrors the same logic used in get_dashboard_stats so that the
+        # vendor card values are consistent with the summary stat card.
+        rfq_effective_total = {}
+        if rfqs.ids:
+            self.env.cr.execute("""
+                SELECT
+                    pol.order_id,
+                    COALESCE(SUM(
+                        CASE WHEN pol.price_unit > 0
+                             THEN pol.price_unit * pol.product_qty
+                             ELSE COALESCE(pol.customer_price, 0) * pol.product_qty
+                        END
+                    ), 0)
+                FROM purchase_order_line pol
+                WHERE pol.order_id IN %s
+                  AND (pol.display_type IS NULL OR pol.display_type = '')
+                GROUP BY pol.order_id
+            """, (tuple(rfqs.ids),))
+            for oid, eff_total in self.env.cr.fetchall():
+                rfq_effective_total[oid] = float(eff_total)
+
         vendor_map = {}
         for rfq in rfqs:
             vid = rfq.partner_id.id
@@ -839,7 +884,7 @@ class BoqBoq(models.Model):
                 }
             entry = vendor_map[vid]
             entry['rfq_count'] += 1
-            entry['total_value'] += rfq.amount_total
+            entry['total_value'] += rfq_effective_total.get(rfq.id, rfq.amount_total)
             entry['total_tax'] += rfq.amount_tax
 
             # Payment status: invoice status on PO
@@ -1062,6 +1107,26 @@ class BoqBoq(models.Model):
         for rfq in filtered_rfqs:
             partner_rfq_map.setdefault(rfq.partner_id.id, []).append(rfq)
 
+        # Pre-compute effective total per RFQ for the tree node values
+        rfq_eff_total_tree = {}
+        if filtered_rfqs.ids:
+            self.env.cr.execute("""
+                SELECT
+                    pol.order_id,
+                    COALESCE(SUM(
+                        CASE WHEN pol.price_unit > 0
+                             THEN pol.price_unit * pol.product_qty
+                             ELSE COALESCE(pol.customer_price, 0) * pol.product_qty
+                        END
+                    ), 0)
+                FROM purchase_order_line pol
+                WHERE pol.order_id IN %s
+                  AND (pol.display_type IS NULL OR pol.display_type = '')
+                GROUP BY pol.order_id
+            """, (tuple(filtered_rfqs.ids),))
+            for oid, eff_total in self.env.cr.fetchall():
+                rfq_eff_total_tree[oid] = float(eff_total)
+
         # ── Build trade → vendor assignments ─────────────────────────────
         # Primary: from boq.trade.vendor rows
         trade_data = {}   # {cat_id: {'category': rec, 'vendors': {vid: partner}}}
@@ -1175,7 +1240,10 @@ class BoqBoq(models.Model):
                     'rfq_count':      len(rfqs_for_v),
                     'pending_count':  len(pending_rfqs),
                     'recently_submitted_count': len(submitted_rfqs),
-                    'total_value':    sum(r.amount_total for r in rfqs_for_v),
+                    'total_value':    sum(
+                        rfq_eff_total_tree.get(r.id, r.amount_total)
+                        for r in rfqs_for_v
+                    ),
                     'payment_status': pay_status,
                     'payment_status_label': pay_label,
                     'state_summary':  state_summary,
@@ -1481,6 +1549,26 @@ class BoqBoq(models.Model):
                 lambda r: r.partner_id.partner_type != 'supplier'
             )
 
+        # ── Pre-compute effective total per RFQ (vendor price or BOQ estimate) ──
+        rfq_effective_total_cs = {}
+        if all_rfqs.ids:
+            self.env.cr.execute("""
+                SELECT
+                    pol.order_id,
+                    COALESCE(SUM(
+                        CASE WHEN pol.price_unit > 0
+                             THEN pol.price_unit * pol.product_qty
+                             ELSE COALESCE(pol.customer_price, 0) * pol.product_qty
+                        END
+                    ), 0)
+                FROM purchase_order_line pol
+                WHERE pol.order_id IN %s
+                  AND (pol.display_type IS NULL OR pol.display_type = '')
+                GROUP BY pol.order_id
+            """, (tuple(all_rfqs.ids),))
+            for oid, eff_total in self.env.cr.fetchall():
+                rfq_effective_total_cs[oid] = float(eff_total)
+
         # ── Build per-company records ─────────────────────────────────────
         result = []
         for cid in company_ids:
@@ -1495,7 +1583,10 @@ class BoqBoq(models.Model):
                 and r.write_date and r.write_date >= recently_cutoff))
             approval_pending = len(comp_rfqs.filtered(
                 lambda r: r.state == 'to approve'))
-            total_value      = sum(comp_rfqs.mapped('amount_total'))
+            total_value      = sum(
+                rfq_effective_total_cs.get(r.id, r.amount_total)
+                for r in comp_rfqs
+            )
 
             result.append({
                 'company_id':        cid,
