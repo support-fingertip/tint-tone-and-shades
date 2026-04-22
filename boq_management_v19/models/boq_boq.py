@@ -1202,7 +1202,7 @@ class BoqBoq(models.Model):
                         'state':      rfq.state,
                         'state_label': RFQ_STATE_LABELS.get(rfq.state, rfq.state),
                         'amount_untaxed': rfq.amount_untaxed,
-                        'amount_total':   rfq.amount_total,
+                        'amount_total':   rfq_eff_total_tree.get(rfq.id, rfq.amount_total),
                         'is_pending':     rfq.state in PENDING_STATES,
                         'is_recently_submitted': rfq in submitted_rfqs,
                         'date_order': (
@@ -1338,6 +1338,30 @@ class BoqBoq(models.Model):
                 if key not in trade_map:
                     trade_map[key] = tv.category_id.name
 
+        # Pre-compute effective total per pending RFQ: use vendor-quoted price if
+        # set (price_unit > 0), else fall back to customer_price (BOQ estimate).
+        # Pending RFQs are in draft/sent state so price_unit is usually 0 — the
+        # fallback makes the "Value" column in the Awaiting Quotation table show
+        # a meaningful procurement estimate instead of $0.00.
+        pending_eff_total = {}
+        if pending_rfqs.ids:
+            self.env.cr.execute("""
+                SELECT
+                    pol.order_id,
+                    COALESCE(SUM(
+                        CASE WHEN pol.price_unit > 0
+                             THEN pol.price_unit * pol.product_qty
+                             ELSE COALESCE(pol.customer_price, 0) * pol.product_qty
+                        END
+                    ), 0)
+                FROM purchase_order_line pol
+                WHERE pol.order_id IN %s
+                  AND (pol.display_type IS NULL OR pol.display_type = '')
+                GROUP BY pol.order_id
+            """, (tuple(pending_rfqs.ids),))
+            for oid, eff_total in self.env.cr.fetchall():
+                pending_eff_total[oid] = float(eff_total)
+
         # Group RFQs by vendor
         now = fields.Datetime.now()
         vendor_map = {}
@@ -1367,7 +1391,7 @@ class BoqBoq(models.Model):
                 'state':       rfq.state,
                 'state_label': RFQ_STATE_LABELS.get(rfq.state, rfq.state),
                 'date_order':  rfq.date_order.strftime('%d %b %Y') if rfq.date_order else '',
-                'amount_total': rfq.amount_total,
+                'amount_total': pending_eff_total.get(rfq.id, rfq.amount_total),
                 'days_pending': days_pending,
                 'trade_name':  trade_name,
             })
