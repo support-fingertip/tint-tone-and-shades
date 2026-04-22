@@ -52,15 +52,18 @@ class BoqManagerDashboardBase extends Component {
             loading:             true,
             error:               null,
             stats:               {},
-            tree:                [],   
-            vendorSummary:       [], 
-            approvalPOs:         [], 
-            pendingVendors:      [],  
-            recentlySubmitted:   [],  
-            companySummary:      [],   
-            showRecentPanel:     false, 
-            expandedTrades:      {},  
-            expandedVendors:     {},  
+            tree:                [],
+            vendorSummary:       [],
+            approvalPOs:         [],
+            pendingVendors:      [],
+            recentlySubmitted:   [],
+            companySummary:      [],
+            showRecentPanel:     false,
+            expandedTrades:      {},
+            expandedVendors:     {},
+            expandedRfqs:        {},   // {rfq_id: true} — Level 4 line items open
+            rfqLineItems:        {},   // {rfq_id: [{line data}…]}
+            rfqLinesLoading:     {},   // {rfq_id: true} — loading spinner per RFQ
             filterText:          "",
         });
 
@@ -120,6 +123,9 @@ class BoqManagerDashboardBase extends Component {
         this.state.recentlySubmitted  = [];
         this.state.expandedTrades     = {};
         this.state.expandedVendors    = {};
+        this.state.expandedRfqs       = {};
+        this.state.rfqLineItems       = {};
+        this.state.rfqLinesLoading    = {};
         await this._loadAll();
     }
 
@@ -140,6 +146,50 @@ class BoqManagerDashboardBase extends Component {
 
     isTradeExpanded(id)  { return !!this.state.expandedTrades[id];  }
     isVendorExpanded(id) { return !!this.state.expandedVendors[id]; }
+    isRfqExpanded(id)    { return !!this.state.expandedRfqs[id];    }
+
+    async toggleRfqLines(ev, rfqId) {
+        if (ev) ev.stopPropagation();
+        if (this.state.expandedRfqs[rfqId]) {
+            this.state.expandedRfqs = { ...this.state.expandedRfqs, [rfqId]: false };
+            return;
+        }
+        if (!this.state.rfqLineItems[rfqId]) {
+            this.state.rfqLinesLoading = { ...this.state.rfqLinesLoading, [rfqId]: true };
+            try {
+                const lines = await this.orm.call("boq.boq", "get_rfq_line_items", [rfqId], {});
+                this.state.rfqLineItems = { ...this.state.rfqLineItems, [rfqId]: lines };
+            } catch (e) {
+                this.state.rfqLineItems = { ...this.state.rfqLineItems, [rfqId]: [] };
+            } finally {
+                this.state.rfqLinesLoading = { ...this.state.rfqLinesLoading, [rfqId]: false };
+            }
+        }
+        this.state.expandedRfqs = { ...this.state.expandedRfqs, [rfqId]: true };
+    }
+
+    // ── Margin helpers ────────────────────────────────────────────────────
+    fmtPercent(val) {
+        return (val || 0).toFixed(1) + "%";
+    }
+
+    marginClass(pct) {
+        if (pct >= 30) return "boq_margin_good";
+        if (pct >= 15) return "boq_margin_ok";
+        return "boq_margin_low";
+    }
+
+    get overallMargin() {
+        let custTotal = 0, vendTotal = 0;
+        for (const trade of this.filteredTree) {
+            custTotal += trade.customer_total    || 0;
+            vendTotal += trade.vendor_cost_total || 0;
+        }
+        if (custTotal > 0 && vendTotal > 0) {
+            return ((custTotal - vendTotal) / custTotal * 100).toFixed(1);
+        }
+        return null;
+    }
 
     // ── Computed: filtered tree ───────────────────────────────────────────
     get filteredTree() {
@@ -484,6 +534,9 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         this.state.selectedCompanyIds = [];
         this.state.expandedTrades     = {};
         this.state.expandedVendors    = {};
+        this.state.expandedRfqs       = {};
+        this.state.rfqLineItems       = {};
+        this.state.rfqLinesLoading    = {};
         await this._loadAll();
     }
 

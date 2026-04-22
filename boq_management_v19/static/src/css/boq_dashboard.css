@@ -1230,6 +1230,134 @@
     border-left-color: #f59e0b !important;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   MARGIN DISPLAY — badges, price columns, line-items table
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Margin badge variants */
+.boq_badge_margin {
+    background: #e8f5e9 !important;
+    color: #1b5e20 !important;
+    border: 1px solid #a5d6a7 !important;
+    font-weight: 600;
+}
+.boq_margin_good {
+    background: #d4edda !important;
+    color: #155724 !important;
+    border: 1px solid #c3e6cb !important;
+}
+.boq_margin_ok {
+    background: #fff3cd !important;
+    color: #856404 !important;
+    border: 1px solid #ffc107 !important;
+}
+.boq_margin_low {
+    background: #f8d7da !important;
+    color: #721c24 !important;
+    border: 1px solid #f5c6cb !important;
+}
+
+/* Customer / Vendor price pair shown on Level-3 RFQ rows */
+.boq_rfq_prices {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+.boq_rfq_price_item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+    min-width: 80px;
+}
+.boq_price_label {
+    color: #6c757d;
+    font-size: 0.68rem;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.boq_price_sep {
+    color: #dee2e6;
+    font-size: 1rem;
+}
+
+/* Overall margin chip in the summary bar */
+.boq_totals_margin {
+    background: #d4edda !important;
+    border: 1px solid #a5d6a7 !important;
+    color: #155724 !important;
+    font-weight: 600;
+}
+
+/* ── Level 4 — Line items table ─────────────────────────────────── */
+.boq_line_items_table {
+    background: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    border-top: 1px solid #e9ecef;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.80rem;
+    overflow-x: auto;
+}
+
+.boq_line_row {
+    display: grid;
+    grid-template-columns: 80px 1fr 80px 110px 110px 80px 110px 110px;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px 6px 96px; /* deep indent matching L4 nesting */
+    border-bottom: 1px solid #f0f2f5;
+    min-height: 36px;
+}
+.boq_line_row:last-child {
+    border-bottom: none;
+}
+
+.boq_line_header {
+    background: #e9f0ff;
+    font-weight: 600;
+    color: #344767;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.boq_line_row:not(.boq_line_header):hover {
+    background: #f0f4ff;
+}
+
+/* Individual column cells */
+.boq_line_col_code    { color: #6c757d; }
+.boq_line_col_product { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.boq_line_col_qty,
+.boq_line_col_sell,
+.boq_line_col_cost,
+.boq_line_col_margin,
+.boq_line_col_total_sell,
+.boq_line_col_total_cost { text-align: right; }
+
+/* Loading row inside line items panel */
+.boq_line_loading_row {
+    padding: 10px 16px 10px 96px;
+    color: #6c757d;
+    font-size: 0.82rem;
+}
+
+@media (max-width: 900px) {
+    .boq_line_row {
+        grid-template-columns: 60px 1fr 60px 90px 90px 70px;
+    }
+    .boq_line_col_total_sell,
+    .boq_line_col_total_cost {
+        display: none;
+    }
+}
+
 /* ── Vendor avatar ring when vendor has new submissions ─────────
    Amber glow ring around the initials avatar; mirrors the border
    accent on .boq_vendor_has_new rows.                            */
