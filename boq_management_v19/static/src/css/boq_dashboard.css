@@ -1,18 +1,32 @@
 
+/* ── Odoo 19 scroll fix (absolute strategy) ──────────────────────────────────
+   height:100% and flex:1 both fail when the OWL action container wrapper does
+   not have an explicit/computed height of its own.  The ONLY approach that
+   works regardless of the parent chain is position:absolute + inset:0, which
+   anchors the component to the nearest position:relative ancestor — which is
+   always .o_action_manager in Odoo 19.  The inner .boq_dash_scroll then fills
+   the remaining flex space and provides the actual vertical scroll.
+   ────────────────────────────────────────────────────────────────────────── */
 .o_action.boq_dashboard {
+    position: absolute !important;
+    inset: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    height: 100% !important;
-    position: relative !important;
     overflow: hidden !important;
 }
-  */
+
+/* Scrollable body fills all remaining space below the pinned header */
 .boq_dash_scroll {
     flex: 1 1 0 !important;
     min-height: 0 !important;
     overflow-y: auto !important;
     background: #f8f9fa !important;
     color: #212529 !important;
+    position: relative;
+}
+
+/* The action manager must be the positioning context */
+.o_action_manager {
     position: relative;
 }
 
