@@ -865,27 +865,54 @@ class BoqBoq(models.Model):
             for oid, eff_total in self.env.cr.fetchall():
                 rfq_effective_total[oid] = float(eff_total)
 
+        # Pre-compute per-order margin data: customer_total (BOQ selling price)
+        # and vendor_cost_total (sum of price_unit × qty, 0 when not yet quoted).
+        # Replaces the old BOQ-line vendor_ids matching which failed when vendors
+        # are assigned via boq.trade.vendor (not boq.order.line.vendor_ids).
+        rfq_margin_vs = {}
+        if rfqs.ids:
+            self.env.cr.execute("""
+                SELECT
+                    pol.order_id,
+                    COALESCE(SUM(pol.customer_price * pol.product_qty), 0),
+                    COALESCE(SUM(pol.price_unit     * pol.product_qty), 0)
+                FROM purchase_order_line pol
+                WHERE pol.order_id IN %s
+                  AND (pol.display_type IS NULL OR pol.display_type = '')
+                GROUP BY pol.order_id
+            """, (tuple(rfqs.ids),))
+            for oid, cust_t, vend_t in self.env.cr.fetchall():
+                rfq_margin_vs[oid] = {
+                    'customer_total':    float(cust_t),
+                    'vendor_cost_total': float(vend_t),
+                }
+
         vendor_map = {}
         for rfq in rfqs:
             vid = rfq.partner_id.id
             if vid not in vendor_map:
                 vendor_map[vid] = {
-                    'vendor_id': vid,
-                    'vendor_name': rfq.partner_id.name,
+                    'vendor_id':    vid,
+                    'vendor_name':  rfq.partner_id.name,
                     'vendor_email': rfq.partner_id.email or '',
                     'partner_type': rfq.partner_id.partner_type or 'vendor',
-                    'rfq_count': 0,
-                    'total_value': 0.0,
-                    'total_tax': 0.0,
-                    'paid_value': 0.0,
-                    'states': [],
+                    'rfq_count':    0,
+                    'total_value':  0.0,
+                    'total_tax':    0.0,
+                    'paid_value':   0.0,
+                    'states':        [],
                     'project_names': [],
-                    'rfq_states': [],
+                    'rfq_states':    [],
+                    '_cust_total':   0.0,
+                    '_vend_total':   0.0,
                 }
             entry = vendor_map[vid]
             entry['rfq_count'] += 1
             entry['total_value'] += rfq_effective_total.get(rfq.id, rfq.amount_total)
             entry['total_tax'] += rfq.amount_tax
+            _mt = rfq_margin_vs.get(rfq.id, {})
+            entry['_cust_total'] += _mt.get('customer_total',    0.0)
+            entry['_vend_total'] += _mt.get('vendor_cost_total', 0.0)
 
             # Payment status: invoice status on PO
             rfq_state_label = {
@@ -909,28 +936,18 @@ class BoqBoq(models.Model):
                 if state not in entry['states']:
                     entry['states'].append(state)
 
-        # Compute margin per vendor using BOQ lines
-        vendor_margins = {}
-        for boq in boqs:
-            for line in boq.line_ids:
-                for vendor in line.vendor_ids:
-                    vid = vendor.id
-                    if vid not in vendor_margins:
-                        vendor_margins[vid] = {'total_sell': 0.0, 'total_cost': 0.0}
-                    sell = line.unit_price * line.qty * (1.0 - line.discount / 100.0)
-                    cost = (line.cost_price or 0.0) * line.qty
-                    vendor_margins[vid]['total_sell'] += sell
-                    vendor_margins[vid]['total_cost'] += cost
-
         result = []
         for vid, entry in vendor_map.items():
-            margin_data = vendor_margins.get(vid, {'total_sell': 0.0, 'total_cost': 0.0})
-            sell = margin_data['total_sell']
-            cost = margin_data['total_cost']
-            entry['margin_percent'] = round(((sell - cost) / sell * 100) if sell > 0 else 0.0, 2)
+            cust_t = entry.pop('_cust_total', 0.0)
+            vend_t = entry.pop('_vend_total', 0.0)
+            entry['margin_percent'] = (
+                round((cust_t - vend_t) / cust_t * 100, 2)
+                if cust_t > 0 and vend_t > 0 else 0.0
+            )
+            entry['has_vendor_price'] = vend_t > 0
             entry['project_names'] = ', '.join(entry['project_names']) or '—'
-            entry['rfq_states'] = ', '.join(entry['rfq_states']) or '—'
-            entry['boq_states'] = ', '.join(entry['states']) or '—'
+            entry['rfq_states']    = ', '.join(entry['rfq_states'])    or '—'
+            entry['boq_states']    = ', '.join(entry['states'])        or '—'
             result.append(entry)
 
         # BUG 6 — Add payment_status from account.move (vendor bills) linked to each PO
