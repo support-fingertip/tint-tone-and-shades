@@ -1107,17 +1107,11 @@ class BoqBoq(models.Model):
         else:
             all_rfqs = self.env['purchase.order']
 
-        # ── Filter RFQs by partner_type matching dashboard_type ──────────
-        # 'vendor' dashboard → exclude pure suppliers (partner_type == 'supplier')
-        # 'supplier' dashboard → include only partners with type == 'supplier'
-        if dashboard_type == 'supplier':
-            filtered_rfqs = all_rfqs.filtered(
-                lambda r: r.partner_id.partner_type == 'supplier'
-            )
-        else:
-            filtered_rfqs = all_rfqs.filtered(
-                lambda r: r.partner_id.partner_type != 'supplier'
-            )
+        # All RFQs linked to this BOQ type belong to this dashboard.
+        # boq_type on the BOQ is the authoritative indicator — no secondary
+        # partner_type filter needed (and it broke counts when partner_type
+        # was not explicitly set on the partner record).
+        filtered_rfqs = all_rfqs
 
         # Build: partner_id → [rfq, …]
         partner_rfq_map = {}
@@ -1428,18 +1422,8 @@ class BoqBoq(models.Model):
             return []
 
 
-        # Filter to pending states only
+        # Filter to pending states only — boq_type already scopes to this dashboard
         pending_rfqs = all_rfqs.filtered(lambda r: r.state in PENDING_STATES)
-
-        # Filter by partner_type matching dashboard_type
-        if dashboard_type == 'supplier':
-            pending_rfqs = pending_rfqs.filtered(
-                lambda r: r.partner_id.partner_type == 'supplier'
-            )
-        else:
-            pending_rfqs = pending_rfqs.filtered(
-                lambda r: r.partner_id.partner_type != 'supplier'
-            )
 
         if not pending_rfqs:
             return []
@@ -1576,15 +1560,7 @@ class BoqBoq(models.Model):
         if not submitted_rfqs:
             return []
 
-        # Filter by partner_type matching dashboard_type
-        if dashboard_type == 'supplier':
-            submitted_rfqs = submitted_rfqs.filtered(
-                lambda r: r.partner_id.partner_type == 'supplier'
-            )
-        else:
-            submitted_rfqs = submitted_rfqs.filtered(
-                lambda r: r.partner_id.partner_type != 'supplier'
-            )
+        # boq_type already scopes submitted RFQs to the correct dashboard.
 
         if not submitted_rfqs:
             return []
@@ -1682,15 +1658,8 @@ class BoqBoq(models.Model):
             found_ids  = set(all_rfqs.ids)
             rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
 
-        # Filter by partner_type matching dashboard_type
-        if dashboard_type == 'supplier':
-            all_rfqs = all_rfqs.filtered(
-                lambda r: r.partner_id.partner_type == 'supplier'
-            )
-        else:
-            all_rfqs = all_rfqs.filtered(
-                lambda r: r.partner_id.partner_type != 'supplier'
-            )
+        # boq_type on the BOQ already determines which dashboard these RFQs
+        # belong to — no secondary partner_type filter required.
 
         # ── Pre-compute effective total per RFQ (vendor price or BOQ estimate) ──
         rfq_effective_total_cs = {}
@@ -1785,12 +1754,8 @@ class BoqBoq(models.Model):
         current_user = self.env.user
         result = []
         for po in pending_pos:
-            # Filter by partner_type matching dashboard_type
-            vtype = po.partner_id.partner_type or 'vendor'
-            if dashboard_type == 'supplier' and vtype != 'supplier':
-                continue
-            if dashboard_type == 'vendor' and vtype == 'supplier':
-                continue
+            # boq_type already scopes these POs to the correct dashboard —
+            # no secondary partner_type check required.
 
             # Build approval lines list
             # Guard: approval_line_ids only exists when infinys_purchase_order_approval
