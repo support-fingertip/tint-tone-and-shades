@@ -5,7 +5,6 @@ from odoo import models, fields, api, _
 class ResPartner(models.Model):
     _inherit = 'res.partner'
 
-    # ── Existing BOQ relation ─────────────────────────────────────────────
     boq_ids = fields.One2many(
         comodel_name='boq.boq',
         inverse_name='partner_id',

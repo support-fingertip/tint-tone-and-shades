@@ -6,7 +6,6 @@ from odoo.exceptions import UserError
 from odoo.tools import format_date
 
 
-# ── Predefined category codes (must match seeded data) ───────────────────────
 _CATEGORY_CODES = ['electrical', 'civil', 'lighting', 'plumbing', 'hvac', 'finishing']
 
 
@@ -64,8 +63,7 @@ class BoqBoq(models.Model):
         string='Site Contact',
         domain="[('parent_id', '=', partner_id)]",
     )
-    # project_id: non-stored computed — uses project_name (existing column) as
-    # backing storage so no new DB column is ever required on boq_boq.
+   
     project_id = fields.Many2one(
         comodel_name='project.project',
         string='Project',
@@ -94,8 +92,6 @@ class BoqBoq(models.Model):
         index=True,
     )
 
-    # ── Status ────────────────────────────────────────────────────────────
-    # Approval workflow removed: Draft → Done only.
     state = fields.Selection(
         selection=[
             ('draft', 'Draft'),
@@ -112,7 +108,6 @@ class BoqBoq(models.Model):
         string='Priority',
         default='0',
     )
-    # ── BOQ Type: controls which dashboard this BOQ flows into ───────────
     boq_type = fields.Selection(
         selection=[
             ('vendor',   'Vendor (Installation / Services)'),
@@ -130,11 +125,7 @@ class BoqBoq(models.Model):
         sanitize_overridable=True,
     )
 
-    # ═══════════════════════════════════════════════════════════════════════
-    # CATEGORY VISIBILITY CONTROL
-    # category_ids drives which notebook tabs appear.
-    # One boolean compute field per category enables `invisible` in views.
-    # ═══════════════════════════════════════════════════════════════════════
+   
     category_ids = fields.Many2many(
         comodel_name='boq.category',
         relation='boq_boq_category_rel',
@@ -145,7 +136,6 @@ class BoqBoq(models.Model):
              'Unselected categories will be hidden.',
     )
 
-    # Boolean visibility flags (non-stored computes, evaluated in view)
     show_electrical = fields.Boolean(compute='_compute_tab_flags')
     show_civil      = fields.Boolean(compute='_compute_tab_flags')
     show_lighting   = fields.Boolean(compute='_compute_tab_flags')
@@ -153,7 +143,6 @@ class BoqBoq(models.Model):
     show_hvac       = fields.Boolean(compute='_compute_tab_flags')
     show_finishing  = fields.Boolean(compute='_compute_tab_flags')
 
-    # Per-category reference fields used in view context for default_category_id
     electrical_category_id = fields.Many2one('boq.category', compute='_compute_category_refs')
     civil_category_id      = fields.Many2one('boq.category', compute='_compute_category_refs')
     lighting_category_id   = fields.Many2one('boq.category', compute='_compute_category_refs')
@@ -199,9 +188,7 @@ class BoqBoq(models.Model):
             rec.hvac_category_id       = cats.get('hvac',       empty)
             rec.finishing_category_id  = cats.get('finishing',  empty)
 
-    # ═══════════════════════════════════════════════════════════════════════
-    # ORDER LINES — one domain-filtered O2M per category tab
-    # ═══════════════════════════════════════════════════════════════════════
+  
     line_ids = fields.One2many(
         comodel_name='boq.order.line',
         inverse_name='boq_id',
@@ -314,20 +301,14 @@ class BoqBoq(models.Model):
     def _compute_rfq_count(self):
         user_partner = self.env.user.partner_id
         ptype = user_partner.partner_type
-        allowed_companies = self.env.companies.ids  # multi-company support
+        allowed_companies = self.env.companies.ids
         for rec in self:
             rfqs = rec.rfq_ids.filtered(lambda r: r.company_id.id in allowed_companies)
             if ptype in ('vendor', 'supplier'):
                 rfqs = rfqs.filtered(lambda r: r.partner_id.partner_type == ptype)
             rec.rfq_count = len(rfqs)
 
-    # ── _compute_totals ────────────────────────────────────────────────────
-    # IMPORTANT: Only depend on stored `line_ids.*` fields.
-    # tax_amount on boq.order.line is store=False — using a non-stored computed
-    # field in @api.depends causes Odoo ORM to silently drop ALL triggers in the
-    # decorator, making every total show 0.  We therefore compute taxes inline
-    # here using tax_ids.compute_all() directly, mirroring _compute_total_value
-    # on the line, so no non-stored field is ever accessed through mapped().
+  
     @api.depends('line_ids.subtotal', 'line_ids.tax_ids', 'line_ids.qty',
                  'line_ids.unit_price', 'line_ids.discount', 'line_ids.category_id',
                  'partner_id')
@@ -350,8 +331,6 @@ class BoqBoq(models.Model):
 
             subtotal = sum(lines.mapped('subtotal'))
 
-            # ── Compute taxes inline (avoid non-stored tax_amount) ──────
-            # Mirrors _compute_total_value logic on boq.order.line.
             tax_total = 0.0
             for line in lines:
                 if line.tax_ids and (line.qty or line.unit_price):
@@ -374,16 +353,11 @@ class BoqBoq(models.Model):
             rec.grand_total  = subtotal + tax_total
             rec.line_count   = len(lines)
 
-    # ── Auto-populate trade_vendor_ids when categories are added ─────────
     @api.onchange('category_ids')
     def _onchange_category_ids(self):
       
         default_type = self.boq_type or 'vendor'
 
-        # Snapshot existing rows: preserve vendor/supplier selections and
-        # partner_type overrides so they survive the clear-and-rebuild.
-        # First occurrence wins if there are already duplicates from a
-        # previous save (this handles legacy data gracefully).
         existing = {}
         for row in self.trade_vendor_ids:
             cid = row.category_id.id
@@ -394,12 +368,9 @@ class BoqBoq(models.Model):
                     'supplier_ids': [(4, s.id) for s in (row.supplier_ids or [])],
                 }
 
-        # (5, 0, 0) — clear all rows on the client before adding new ones.
-        # This is the critical command that prevents duplication.
         commands = [(5, 0, 0)]
         seen = set()
 
-        # One (0,0,vals) command per unique selected category
         for cat in self.category_ids:
             if cat.id in seen:
                 continue
@@ -416,8 +387,6 @@ class BoqBoq(models.Model):
                 vals['supplier_ids'] = d['supplier_ids']
             commands.append((0, 0, vals))
 
-        # Re-append rows for removed categories so the user doesn't lose
-        # their vendor selections by accidentally deselecting a category.
         for cid, d in existing.items():
             if cid not in seen:
                 vals = {
@@ -447,9 +416,7 @@ class BoqBoq(models.Model):
         if not self.boq_type:
             return
         for row in self.trade_vendor_ids:
-            # Update rows that carry a boq-level default (vendor or supplier)
-            # but DON'T touch rows explicitly set to the other type, in case
-            # the user intentionally mixed types on a single BOQ.
+          
             if row.partner_type != self.boq_type:
                 row.partner_type = self.boq_type
 
@@ -461,10 +428,7 @@ class BoqBoq(models.Model):
                 vals['name'] = (
                     self.env['ir.sequence'].next_by_code('boq.boq') or 'New'
                 )
-            # Deduplicate trade_vendor_ids CREATE commands before saving.
-            # Concurrent onchange calls (many2many_tags race condition) can
-            # produce multiple (0,0,{category_id:X}) commands for the same
-            # category.  Filter them here so the DB is always clean.
+           
             if 'trade_vendor_ids' in vals:
                 vals['trade_vendor_ids'] = self._dedup_trade_vendor_cmds(
                     vals['trade_vendor_ids']
@@ -496,18 +460,16 @@ class BoqBoq(models.Model):
         for cmd in (commands or []):
             op = cmd[0] if isinstance(cmd, (list, tuple)) else None
             if op == 5:
-                seen = set()          # CLEAR resets the dedup window
+                seen = set()       
                 result.append(cmd)
             elif op == 0:
-                # CREATE — skip if we already queued a create for this category
                 cat_id = cmd[2].get('category_id') if isinstance(cmd[2], dict) else None
                 if cat_id is None or cat_id not in seen:
                     if cat_id is not None:
                         seen.add(cat_id)
                     result.append(cmd)
-                # else: duplicate CREATE — silently drop it
             else:
-                result.append(cmd)   # UPDATE, DELETE, LINK, SET — keep as-is
+                result.append(cmd)   
         return result
 
     def copy(self, default=None):
