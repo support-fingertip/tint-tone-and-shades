@@ -46,12 +46,12 @@
             <field name="view_mode">list,form</field>
         </record>
 
-<!--        <menuitem -->
-<!--            id="menu_purchase_approval_level" -->
-<!--            name="Approval Levels" -->
-<!--            parent="purchase.menu_purchase_config" -->
-<!--            action="action_purchase_approval_level" -->
-<!--            sequence="10"/>-->
+        <menuitem
+            id="menu_purchase_approval_level"
+            name="Approval Levels"
+            parent="purchase.menu_purchase_config"
+            action="action_purchase_approval_level"
+            sequence="10"/>
 
         <record id="action_vendor_approval_level" model="ir.actions.act_window">
             <field name="name">Vendor Approval Levels</field>
