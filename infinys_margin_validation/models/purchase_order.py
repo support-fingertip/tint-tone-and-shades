@@ -14,6 +14,8 @@ class PurchaseOrder(models.Model):
         ('rejected', 'Rejected'),
     ], string="Margin Approval Status", default='none', tracking=True, copy=False)
 
+    margin_rejection_reason = fields.Char(string="Rejection Remarks")
+
     has_margin_below_threshold = fields.Boolean(
         string="Has Low Margin Lines",
         compute='_compute_has_margin_below_threshold',
@@ -192,6 +194,38 @@ class PurchaseOrder(models.Model):
             subtype_xmlid='mail.mt_note',
         )
 
+    # def action_reject_margin(self):
+    #     self.ensure_one()
+    #     if self.margin_approval_status != 'to_approve':
+    #         raise UserError(_("This order is not waiting for margin approval."))
+    #
+    #     # Check if current user is an authorized approver
+    #     low_lines = self.order_line.filtered(lambda l: l.is_margin_below_threshold and not l.display_type)
+    #     approvers = self.env['res.users']
+    #     for line in low_lines:
+    #         threshold = self.env['margin.threshold.config'].search([
+    #             ('category_id', '=', line.product_id.categ_id.id),
+    #             ('company_id', '=', self.company_id.id),
+    #         ], limit=1)
+    #         if threshold and threshold.approver_id:
+    #             approvers |= threshold.approver_id
+    #     if self.env.user not in approvers:
+    #         raise UserError(_("Only the authorized approver (%s) can reject this margin.", ', '.join(approvers.mapped('name'))))
+    #
+    #     self.margin_approval_status = 'rejected'
+    #
+    #     # Mark related activities as done
+    #     activities = self.activity_ids.filtered(
+    #         lambda a: 'Margin Approval' in (a.summary or '')
+    #     )
+    #     activities.action_feedback(feedback=_("Margin rejected by %s", self.env.user.name))
+    #
+    #     self.message_post(
+    #         body=_("Margin rejected by <b>%s</b>.", self.env.user.name),
+    #         message_type='notification',
+    #         subtype_xmlid='mail.mt_note',
+    #     )
+
     def action_reject_margin(self):
         self.ensure_one()
         if self.margin_approval_status != 'to_approve':
@@ -207,19 +241,19 @@ class PurchaseOrder(models.Model):
             ], limit=1)
             if threshold and threshold.approver_id:
                 approvers |= threshold.approver_id
+
         if self.env.user not in approvers:
-            raise UserError(_("Only the authorized approver (%s) can reject this margin.", ', '.join(approvers.mapped('name'))))
+            raise UserError(
+                _("Only the authorized approver (%s) can reject this margin.", ', '.join(approvers.mapped('name'))))
 
-        self.margin_approval_status = 'rejected'
-
-        # Mark related activities as done
-        activities = self.activity_ids.filtered(
-            lambda a: 'Margin Approval' in (a.summary or '')
-        )
-        activities.action_feedback(feedback=_("Margin rejected by %s", self.env.user.name))
-
-        self.message_post(
-            body=_("Margin rejected by <b>%s</b>.", self.env.user.name),
-            message_type='notification',
-            subtype_xmlid='mail.mt_note',
-        )
+        # Open wizard for rejection reason
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Margin Rejection',
+            'res_model': 'margin.reject.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_purchase_id': self.id,
+            }
+        }

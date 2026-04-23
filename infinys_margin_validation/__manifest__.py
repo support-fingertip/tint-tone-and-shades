@@ -13,6 +13,7 @@
         "views/margin_threshold_views.xml",
         "views/purchase_order_views.xml",
         'wizard/purchase_advance_payment_views.xml',
+        'wizard/margin_reject_views.xml',
     ],
     "installable": True,
     "application": False,
