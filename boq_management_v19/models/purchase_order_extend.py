@@ -36,7 +36,6 @@ class PurchaseOrderBoqExtend(models.Model):
         for order in real:
             order.boq_id = mapping.get(order.id, False)
 
-    # ── BOQ description (non-stored display field) ────────────────────────
     total_tax = fields.Monetary(
         string='Total Tax',
         related='amount_tax',
@@ -147,7 +146,6 @@ class PurchaseOrderBoqExtend(models.Model):
     def _compute_show_rate_vendor(self):
         for order in self:
             is_purchase = order.state == 'purchase'
-            # No pickings → service item or stockless product; treat delivery as done
             pickings_done = (
                 all(p.state == 'done' for p in order.picking_ids)
                 if order.picking_ids else True
@@ -191,9 +189,6 @@ class PurchaseOrderBoqExtend(models.Model):
             'context': ctx,
         }
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # 5.  PAYMENT STATUS DISPLAY  (BUG 6)
-    # ══════════════════════════════════════════════════════════════════════════
     payment_status_display = fields.Char(
         string='Payment Status',
         compute='_compute_payment_status_display',
@@ -273,7 +268,6 @@ class PurchaseOrderLineBoqExtend(models.Model):
         for line in self:
             std = line.customer_price or 0.0
             if std > 0:
-                # Savings %: how much cheaper is this vendor vs our standard cost
                 line.margin_percent = (std - line.price_unit) / std * 100.0
             else:
                 line.margin_percent = 0.0

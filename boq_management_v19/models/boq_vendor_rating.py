@@ -46,20 +46,10 @@ class BoqVendorRating(models.Model):
         store=True,
     )
 
-    # ── Details ──────────────────────────────────────────────────────────
     comments = fields.Text(string='Comments / Remarks')
     date = fields.Date(string='Rating Date', default=fields.Date.today)
 
-    # ── Compatibility shim for stale ir.rule ─────────────────────────────
-    # A legacy ir.rule on this model has domain_force [('res_model','=',
-    # 'res.partner')].  Without this field the ORM raises ValueError on every
-    # res.partner read that loads the rating_ids One2many.
-    #
-    # Adding res_model as a non-stored computed field makes the domain VALID:
-    #   • The field always returns 'res.partner' (all ratings belong to partners)
-    #   • _search_res_model maps ('res_model','=','res.partner') → [] (no filter)
-    #     so the stale rule silently becomes a no-op instead of crashing.
-    # No DB column is needed — this fix takes effect on a plain restart (no -u).
+ 
     res_model = fields.Char(
         string='Resource Model',
         compute='_compute_res_model',
@@ -79,10 +69,9 @@ class BoqVendorRating(models.Model):
         which in Odoo domain syntax is an empty list (no restriction).
         """
         if operator == '=' and value == 'res.partner':
-            return []          # no filter → all records visible
-        return [('id', '=', 0)]  # any other combination → no records
+            return []        
+        return [('id', '=', 0)] 
 
-    # ── Partner type (vendor or supplier) ────────────────────────────────
     partner_type = fields.Selection(
         related='partner_id.partner_type',
         string='Partner Type',
@@ -91,14 +80,12 @@ class BoqVendorRating(models.Model):
         help='Mirrors the rated partner\'s type (Vendor or Supplier).',
     )
 
-    # ── Context fields (read-only, from PO) ──────────────────────────────
     company_id = fields.Many2one(
         related='purchase_order_id.company_id',
         store=True,
         index=True,
     )
 
-    # ── Constraints ──────────────────────────────────────────────────────
     _unique_po_rating = models.Constraint(
         'unique(purchase_order_id)',
         'A rating already exists for this Purchase Order. Edit the existing rating.',

@@ -517,11 +517,9 @@ class BoqBoq(models.Model):
         if not self.line_ids:
             raise UserError(_('Cannot create RFQ: the BOQ has no line items.'))
 
-        # ── Build partner_id → [line, …] map ─────────────────────────────
-        partner_lines = {}   # {partner_id: [boq.order.line, …]}
+        partner_lines = {}  
 
         if self.trade_vendor_ids:
-            # Strategy A: BOQ trade-level assignments
             for trade in self.trade_vendor_ids:
                 trade_lines = self.line_ids.filtered(
                     lambda l, cat=trade.category_id: l.category_id == cat
@@ -703,7 +701,6 @@ class BoqBoq(models.Model):
         company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
         boqs = self.search(company_domain)
 
-        # boq_id on purchase.order is non-stored — query M2M table directly
         rfqs = self.env['purchase.order']
         if boqs.ids:
             self.env.cr.execute(
@@ -712,8 +709,7 @@ class BoqBoq(models.Model):
             )
             rfq_ids = [r[0] for r in self.env.cr.fetchall()]
             if rfq_ids:
-                # Use search (not browse) so Odoo's ir.rules + explicit company
-                # filter are both applied — prevents AccessError on company switch.
+               
                 rfqs = self.env['purchase.order'].search([
                     ('id', 'in', rfq_ids),
                     ('company_id', 'in', company_ids),
@@ -728,10 +724,6 @@ class BoqBoq(models.Model):
         total_tax   = sum(boqs.mapped('total_tax'))
         grand_total = sum(boqs.mapped('grand_total'))
 
-        # RFQ value: use vendor-quoted price when available, else fall back to
-        # customer_price (the BOQ-estimated value set at RFQ creation time).
-        # This ensures the stat card always shows a meaningful procurement
-        # scope even before vendors have submitted their prices.
         rfq_total = 0.0
         rfq_tax   = 0.0
         if rfqs.ids:
@@ -774,8 +766,6 @@ class BoqBoq(models.Model):
         company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
         boqs = self.search(company_domain)
 
-        # boq_id on purchase.order is non-stored — query M2M table directly
-        # rfq_boq_map: {purchase_id: boq_id}
         rfq_boq_map = {}
         if boqs.ids:
             self.env.cr.execute(
@@ -794,7 +784,6 @@ class BoqBoq(models.Model):
         else:
             rfqs = self.env['purchase.order']
 
-        # Build boq_id → project info map
         boq_info = {
             b.id: {
                 'project_name': b.project_name or b.project_id.name or '—',
@@ -804,10 +793,7 @@ class BoqBoq(models.Model):
             for b in boqs
         }
 
-        # Pre-compute effective total per RFQ: use vendor-quoted price when
-        # available (price_unit > 0), else fall back to the BOQ customer_price.
-        # This mirrors the same logic used in get_dashboard_stats so that the
-        # vendor card values are consistent with the summary stat card.
+      
         rfq_effective_total = {}
         if rfqs.ids:
             self.env.cr.execute("""
@@ -827,10 +813,7 @@ class BoqBoq(models.Model):
             for oid, eff_total in self.env.cr.fetchall():
                 rfq_effective_total[oid] = float(eff_total)
 
-        # Pre-compute per-order margin data: customer_total (BOQ selling price)
-        # and vendor_cost_total (sum of price_unit × qty, 0 when not yet quoted).
-        # Replaces the old BOQ-line vendor_ids matching which failed when vendors
-        # are assigned via boq.trade.vendor (not boq.order.line.vendor_ids).
+     
         rfq_margin_vs = {}
         if rfqs.ids:
             self.env.cr.execute("""
@@ -996,9 +979,8 @@ class BoqBoq(models.Model):
                         entry['vendor_id_set'].add(vendor.id)
                         entry['vendor_names'].append(vendor.name or '—')
 
-        # Compute RFQ count per trade: count how many POs have at least one line
-        # whose partner is in the trade's vendor set
-        rfq_vendor_map = {}  # vendor_id → list of rfq.id
+       
+        rfq_vendor_map = {} 
         for rfq in rfqs:
             vid = rfq.partner_id.id
             rfq_vendor_map.setdefault(vid, []).append(rfq.id)
@@ -1063,24 +1045,17 @@ class BoqBoq(models.Model):
                 ('id', 'in', list(rfq_boq_map.keys())),
                 ('company_id', 'in', company_ids),
             ])
-            # Drop map entries for records inaccessible in the current company context
             found_ids = set(all_rfqs.ids)
             rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
         else:
             all_rfqs = self.env['purchase.order']
 
-        # All RFQs linked to this BOQ type belong to this dashboard.
-        # boq_type on the BOQ is the authoritative indicator — no secondary
-        # partner_type filter needed (and it broke counts when partner_type
-        # was not explicitly set on the partner record).
         filtered_rfqs = all_rfqs
 
-        # Build: partner_id → [rfq, …]
         partner_rfq_map = {}
         for rfq in filtered_rfqs:
             partner_rfq_map.setdefault(rfq.partner_id.id, []).append(rfq)
 
-        # Pre-compute effective total per RFQ for the tree node values
         rfq_eff_total_tree = {}
         if filtered_rfqs.ids:
             self.env.cr.execute("""
@@ -1100,9 +1075,6 @@ class BoqBoq(models.Model):
             for oid, eff_total in self.env.cr.fetchall():
                 rfq_eff_total_tree[oid] = float(eff_total)
 
-        # Pre-compute per-order: customer_total (BOQ selling price to customer) and
-        # vendor_cost_total (raw vendor quoted cost, 0 when not yet quoted).
-        # Gross margin = (customer_total − vendor_cost_total) / customer_total × 100
         rfq_margin_tree = {}
         if filtered_rfqs.ids:
             self.env.cr.execute("""
@@ -1121,9 +1093,7 @@ class BoqBoq(models.Model):
                     'vendor_cost_total': float(vend_t),
                 }
 
-        # ── Build trade → vendor assignments ─────────────────────────────
-        # Primary: from boq.trade.vendor rows
-        trade_data = {}   # {cat_id: {'category': rec, 'vendors': {vid: partner}}}
+        trade_data = {}   
         trade_rows = self.env['boq.trade.vendor'].search([
             ('boq_id',       'in', boqs.ids),
             ('partner_type', '=',  dashboard_type),
@@ -1140,7 +1110,6 @@ class BoqBoq(models.Model):
             for p in partners:
                 entry['vendors'][p.id] = p
 
-        # Secondary: from line-level vendor_ids (fallback / supplement)
         for boq in boqs:
             for line in boq.line_ids:
                 if not line.category_id:
@@ -1376,7 +1345,6 @@ class BoqBoq(models.Model):
             ('id', 'in', list(rfq_boq_map.keys())),
             ('company_id', 'in', company_ids),
         ])
-        # Drop map entries for records inaccessible in the current company context
         found_ids = set(all_rfqs.ids)
         rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
 
@@ -1384,18 +1352,16 @@ class BoqBoq(models.Model):
             return []
 
 
-        # Filter to pending states only — boq_type already scopes to this dashboard
         pending_rfqs = all_rfqs.filtered(lambda r: r.state in PENDING_STATES)
 
         if not pending_rfqs:
             return []
 
-        # Build bulk trade lookup: (boq_id, partner_id) -> category_name
         trade_vendor_recs = self.env['boq.trade.vendor'].search([
             ('boq_id',       'in', boqs.ids),
             ('partner_type', '=',  dashboard_type),
         ])
-        trade_map = {}   # (boq_id, partner_id) -> category_name
+        trade_map = {}  
         for tv in trade_vendor_recs:
             partners = tv.vendor_ids if dashboard_type == 'vendor' else tv.supplier_ids
             for p in partners:
@@ -1403,11 +1369,6 @@ class BoqBoq(models.Model):
                 if key not in trade_map:
                     trade_map[key] = tv.category_id.name
 
-        # Pre-compute effective total per pending RFQ: use vendor-quoted price if
-        # set (price_unit > 0), else fall back to customer_price (BOQ estimate).
-        # Pending RFQs are in draft/sent state so price_unit is usually 0 — the
-        # fallback makes the "Value" column in the Awaiting Quotation table show
-        # a meaningful procurement estimate instead of $0.00.
         pending_eff_total = {}
         if pending_rfqs.ids:
             self.env.cr.execute("""
@@ -1592,7 +1553,6 @@ class BoqBoq(models.Model):
         recently_cutoff = fields.Datetime.now() - timedelta(days=7)
         PENDING_STATES  = {'draft', 'sent'}
 
-        # ── Fetch all BOQs across allowed companies in one query ──────────
         all_boqs = self.search([
             ('company_id', 'in', company_ids),
             ('boq_type',   '=',  dashboard_type),
@@ -1600,7 +1560,6 @@ class BoqBoq(models.Model):
         if not all_boqs:
             return []
 
-        # ── Get all linked RFQ ids via join table ─────────────────────────
         rfq_boq_map = {}
         if all_boqs.ids:
             self.env.cr.execute(
@@ -1620,10 +1579,7 @@ class BoqBoq(models.Model):
             found_ids  = set(all_rfqs.ids)
             rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
 
-        # boq_type on the BOQ already determines which dashboard these RFQs
-        # belong to — no secondary partner_type filter required.
-
-        # ── Pre-compute effective total per RFQ (vendor price or BOQ estimate) ──
+      
         rfq_effective_total_cs = {}
         if all_rfqs.ids:
             self.env.cr.execute("""
@@ -1692,7 +1648,6 @@ class BoqBoq(models.Model):
         if not boqs:
             return []
 
-        # Collect all linked RFQ IDs
         rfq_ids = []
         if boqs.ids:
             self.env.cr.execute(
@@ -1704,9 +1659,6 @@ class BoqBoq(models.Model):
         if not rfq_ids:
             return []
 
-        # Use search (not browse) — applies ir.rules + explicit company filter
-        # so switching companies never causes an AccessError.
-        # The state filter is pushed into the domain for efficiency.
         pending_pos = self.env['purchase.order'].search([
             ('id', 'in', rfq_ids),
             ('company_id', 'in', company_ids),
@@ -1716,13 +1668,7 @@ class BoqBoq(models.Model):
         current_user = self.env.user
         result = []
         for po in pending_pos:
-            # boq_type already scopes these POs to the correct dashboard —
-            # no secondary partner_type check required.
-
-            # Build approval lines list
-            # Guard: approval_line_ids only exists when infinys_purchase_order_approval
-            # is installed.  Use _fields check so the dashboard works even if that
-            # module is absent (approval section simply shows empty progress).
+           
             approval_lines = []
             has_current_approver = False
             approval_line_recs = (
@@ -1758,7 +1704,6 @@ class BoqBoq(models.Model):
                 'approved_count':      len([a for a in approval_lines if a['status'] == 'approved']),
             })
 
-        # Sort: POs where current user is next approver first, then by amount
         result.sort(key=lambda x: (-x['has_current_approver'], -x['amount_total']))
         return result
 

@@ -101,7 +101,6 @@ class BoqOrderLine(models.Model):
         store=True,
     )
 
-    # ── Preferred Vendors (Many2many → res.partner, filtered to vendors) ──
     vendor_ids = fields.Many2many(
         comodel_name='res.partner',
         relation='boq_order_line_vendor_rel',
@@ -113,10 +112,6 @@ class BoqOrderLine(models.Model):
              '"Create RFQ" will generate a purchase RFQ per vendor.',
     )
 
-    # ── Taxes ─────────────────────────────────────────────────────────────
-    # Relation table boq_order_line_tax_rel is pre-created by migration
-    # 19.0.1.0.2 (CREATE TABLE IF NOT EXISTS), so fresh installs and
-    # upgrades both work without UndefinedTable errors.
     tax_ids = fields.Many2many(
         comodel_name='account.tax',
         relation='boq_order_line_tax_rel',
@@ -127,7 +122,6 @@ class BoqOrderLine(models.Model):
         help='Taxes applied to this line. Affects Tax Amount and Total (incl. Tax).',
     )
 
-    # ── Tax / Total / Margin ──────────────────────────────────────────────
     tax_amount = fields.Float(
         string='Tax Amount',
         compute='_compute_total_value',
@@ -162,7 +156,6 @@ class BoqOrderLine(models.Model):
     # ── Notes ─────────────────────────────────────────────────────────────
     notes = fields.Char(string='Remarks')
 
-    # ── _auto_init: M2M table only (runs on install/upgrade) ─────────────
     def _auto_init(self):
         """
         Create boq_order_line_tax_rel if it does not exist.
@@ -181,7 +174,6 @@ class BoqOrderLine(models.Model):
         """)
         return res
 
-    # ── _register_hook: runs on EVERY server startup ───────────────────────
     def _register_hook(self):
         """
         Odoo calls _register_hook() for every model on every registry build
@@ -194,9 +186,7 @@ class BoqOrderLine(models.Model):
         """
         res = super()._register_hook()
 
-        # ── boq_trade_vendor: add partner_type column + fix unique constraint ─
-        # partner_type column added in v2.1 — safe to add if already exists.
-        # Old unique constraint (boq_id, category_id) renamed to include partner_type.
+       
         self.env.cr.execute("""
             ALTER TABLE boq_trade_vendor
                 ADD COLUMN IF NOT EXISTS partner_type VARCHAR DEFAULT 'vendor';
@@ -262,7 +252,6 @@ class BoqOrderLine(models.Model):
     def _compute_total_value(self):
         for line in self:
             if line.tax_ids:
-                # price_unit after discount — taxes compute per unit × qty
                 price_after_disc = line.unit_price * (1.0 - line.discount / 100.0)
                 taxes = line.tax_ids.compute_all(
                     price_after_disc,
