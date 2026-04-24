@@ -30,13 +30,13 @@ class PurchaseOrder(models.Model):
 
         # If approval lines exist and all approved, final confirm
         if self.approval_line_ids and all(
-            line.status == 'approved' for line in self.approval_line_ids
+                line.status == 'approved' for line in self.approval_line_ids
         ):
             return super(PurchaseOrder, self).button_confirm()
 
         # If approval is already in progress, block
         if self.approval_line_ids and any(
-            line.status in ('pending', 'current') for line in self.approval_line_ids
+                line.status in ('pending', 'current') for line in self.approval_line_ids
         ):
             self.message_post(
                 body="This order is already waiting for approval. "
@@ -47,9 +47,13 @@ class PurchaseOrder(models.Model):
         # First, confirm the order to PO state (RFQ → Purchase Order)
         res = super(PurchaseOrder, self).button_confirm()
 
-        # Now check if approval is required based on amount
+        # Get the approval type from partner
+        approval_type = self._get_approval_type()
+
+        # Now check if approval is required based on amount AND type
         required_levels = self.env['purchase.approval.level'].search([
             ('company_id', '=', self.company_id.id),
+            ('type', '=', approval_type),  # Filter by vendor or supplier type
             ('minimum_amount', '<=', self.amount_total),
             '|',
             ('maximum_amount', '>=', self.amount_total),
@@ -62,11 +66,27 @@ class PurchaseOrder(models.Model):
             self._create_approval_lines(required_levels)
             self._check_approval_status()
             self.message_post(
-                body="Purchase Order created. This order requires approval before it can proceed."
+                body=f"Purchase Order created. This order requires {approval_type} approval before it can proceed."
             )
             return self._get_refresh_action()
 
         return res
+
+    def _get_approval_type(self):
+        """
+        Determine if this purchase order should use vendor or supplier approval levels.
+        Uses the partner_type field from the associated partner.
+        """
+        partner_type = self.partner_id.partner_type
+
+        # Map partner_type to approval level type
+        if partner_type == 'supplier':
+            return 'supplier'
+        elif partner_type == 'vendor':
+            return 'vendor'
+        else:
+            # Default to vendor for other types (employee, customer, etc.)
+            return 'vendor'
 
     def _create_approval_lines(self, levels):
         self.approval_line_ids.unlink()
