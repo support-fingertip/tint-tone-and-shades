@@ -51,9 +51,12 @@
 
             <!-- ── Approval + Margin fields (below partner block) ──────── -->
             <xpath expr="//field[@name='partner_ref']" position="after">
-                <!-- Margin % on PO header -->
+                <!-- Load partner_type so invisible expressions can reference it -->
+                <field name="partner_type" invisible="1"/>
+                <!-- Margin % on PO header — hidden for supplier orders -->
                 <field name="margin_percent" string="Margin %"
-                       widget="percentage" readonly="1"/>
+                       widget="percentage" readonly="1"
+                       invisible="partner_type == 'supplier'"/>
                 <!-- BUG 6 — Payment status display -->
                 <field name="payment_status_display" string="Payment Status" readonly="1"
                        invisible="state not in ('purchase','done')"/>
@@ -67,11 +70,20 @@
 
             <xpath expr="//field[@name='order_line']//field[@name='price_subtotal']"
                    position="after">
-                <field name="customer_price" readonly="1"/>
+                <!-- customer_price and margin columns hidden for supplier orders -->
+                <field name="customer_price" readonly="1"
+                       column_invisible="parent.partner_type == 'supplier'"/>
                 <field name="margin_percent" string="Savings %"
                        widget="percentage"
                        optional="show"
-                       readonly="1"/>
+                       readonly="1"
+                       column_invisible="parent.partner_type == 'supplier'"/>
+            </xpath>
+
+            <!-- Hide margin_percentage column (from infinys_margin_validation) for supplier orders -->
+            <xpath expr="//field[@name='order_line']//list//field[@name='margin_percentage']"
+                   position="attributes">
+                <attribute name="column_invisible">parent.partner_type == 'supplier'</attribute>
             </xpath>
 
         </field>
