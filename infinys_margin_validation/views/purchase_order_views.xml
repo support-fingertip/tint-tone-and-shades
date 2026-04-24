@@ -44,6 +44,13 @@
                     <field name="margin_warning_message" nolabel="1"/>
                     Approval required to confirm this order.
                 </div>
+               <!-- Success alert - shown when waiting for approval (to_approve state) -->
+                <div class="alert alert-info" role="alert"
+                     invisible="margin_approval_status != 'to_approve'">
+                    <strong>Margin Approval. </strong> This order is pending approval.
+                </div>
+
+                <!-- Success alert - shown when approved -->
                 <div class="alert alert-success" role="alert"
                      invisible="margin_approval_status != 'approved'">
                     <strong>Margin Approved. </strong> This order can now be confirmed.
