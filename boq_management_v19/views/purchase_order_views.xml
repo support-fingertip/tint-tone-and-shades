@@ -49,12 +49,18 @@
                        options="{'no_create': True}" invisible="not boq_id"/>
             </xpath>
 
+            <!-- Load partner_type for visibility conditions across this view -->
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="partner_type" invisible="1"/>
+            </xpath>
+
             <!-- ── Approval + Margin fields (below partner block) ──────── -->
             <xpath expr="//field[@name='partner_ref']" position="after">
-                <!-- Margin % on PO header -->
+                <!-- Margin % on PO header — hidden for supplier-type partners -->
                 <field name="margin_percent" string="Margin %"
-                       widget="percentage" readonly="1"/>
-                <!-- BUG 6 — Payment status display -->
+                       widget="percentage" readonly="1"
+                       invisible="partner_type == 'supplier'"/>
+                <!-- Payment status display -->
                 <field name="payment_status_display" string="Payment Status" readonly="1"
                        invisible="state not in ('purchase','done')"/>
             </xpath>
@@ -67,11 +73,14 @@
 
             <xpath expr="//field[@name='order_line']//field[@name='price_subtotal']"
                    position="after">
-                <field name="customer_price" readonly="1"/>
+                <!-- customer_price and Savings % are internal — hide for supplier-type partners -->
+                <field name="customer_price" readonly="1"
+                       column_invisible="parent.partner_type == 'supplier'"/>
                 <field name="margin_percent" string="Savings %"
                        widget="percentage"
                        optional="show"
-                       readonly="1"/>
+                       readonly="1"
+                       column_invisible="parent.partner_type == 'supplier'"/>
             </xpath>
 
         </field>
