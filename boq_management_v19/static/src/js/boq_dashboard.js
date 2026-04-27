@@ -336,12 +336,66 @@ class BoqManagerDashboardBase extends Component {
 export class VendorManagerDashboard extends BoqManagerDashboardBase {
     static DASHBOARD_TYPE = "vendor";
     static template       = "boq_management_v19.VendorManagerDashboard";
+
+    async _loadAll() {
+        try {
+            const dt = this.dashboardType;
+            const companies = await this.orm.call("boq.boq", "get_available_companies", [], {}).catch(() => []);
+            const cids = companies.length > 0 ? companies.map(c => c.id) : null;
+            const extra = cids ? { company_ids: cids } : {};
+            const [stats, tree, vendorSummary, approvalPOs, pendingVendors, recentlySubmitted] = await Promise.all([
+                this.orm.call("boq.boq", "get_dashboard_stats",          [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_dashboard_tree_data",      [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_vendor_summary",           [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_approval_pending_pos",     [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_pending_rfq_vendors",      [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_recently_submitted_rfqs",  [], { dashboard_type: dt, ...extra }),
+            ]);
+            this.state.stats             = stats;
+            this.state.tree              = tree;
+            this.state.vendorSummary     = vendorSummary;
+            this.state.approvalPOs       = approvalPOs;
+            this.state.pendingVendors    = pendingVendors;
+            this.state.recentlySubmitted = recentlySubmitted;
+        } catch (err) {
+            this.state.error = err.message || "Failed to load dashboard data.";
+        } finally {
+            this.state.loading = false;
+        }
+    }
 }
 
 
 export class ProcurementManagerDashboard extends BoqManagerDashboardBase {
     static DASHBOARD_TYPE = "supplier";
     static template       = "boq_management_v19.ProcurementManagerDashboard";
+
+    async _loadAll() {
+        try {
+            const dt = this.dashboardType;
+            const companies = await this.orm.call("boq.boq", "get_available_companies", [], {}).catch(() => []);
+            const cids = companies.length > 0 ? companies.map(c => c.id) : null;
+            const extra = cids ? { company_ids: cids } : {};
+            const [stats, tree, vendorSummary, approvalPOs, pendingVendors, recentlySubmitted] = await Promise.all([
+                this.orm.call("boq.boq", "get_dashboard_stats",          [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_dashboard_tree_data",      [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_vendor_summary",           [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_approval_pending_pos",     [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_pending_rfq_vendors",      [], { dashboard_type: dt, ...extra }),
+                this.orm.call("boq.boq", "get_recently_submitted_rfqs",  [], { dashboard_type: dt, ...extra }),
+            ]);
+            this.state.stats             = stats;
+            this.state.tree              = tree;
+            this.state.vendorSummary     = vendorSummary;
+            this.state.approvalPOs       = approvalPOs;
+            this.state.pendingVendors    = pendingVendors;
+            this.state.recentlySubmitted = recentlySubmitted;
+        } catch (err) {
+            this.state.error = err.message || "Failed to load dashboard data.";
+        } finally {
+            this.state.loading = false;
+        }
+    }
 }
 
 
