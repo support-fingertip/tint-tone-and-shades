@@ -263,11 +263,19 @@ class PurchaseOrderLineBoqExtend(models.Model):
         for line in self:
             line.cost_price = line.product_id.standard_price if line.product_id else 0.0
 
-    @api.depends('price_unit', 'customer_price')
+    @api.depends('price_unit', 'customer_price', 'product_id')
     def _compute_pol_margin(self):
         for line in self:
             std = line.customer_price or 0.0
+            if not std:
+                std = line.product_id.standard_price or 0.0
             if std > 0:
                 line.margin_percent = (std - line.price_unit) / std * 100.0
             else:
                 line.margin_percent = 0.0
+
+    @api.onchange('product_id')
+    def onchange_product_id(self):
+        res = super().onchange_product_id()
+        self.price_unit = 0.0
+        return res
