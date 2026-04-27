@@ -216,6 +216,24 @@ class PurchaseOrderBoqExtend(models.Model):
             else:
                 order.payment_status_display = label_map.get(states[0], 'Not Paid')
 
+    def action_rfq_send(self):
+        for order in self:
+            if not order.order_line:
+                raise UserError(_(
+                    'Cannot send "%s": the RFQ has no order lines. '
+                    'Please add at least one product before sending.'
+                ) % order.name)
+        return super().action_rfq_send()
+
+    def button_confirm(self):
+        for order in self:
+            if not order.order_line:
+                raise UserError(_(
+                    'Cannot confirm "%s": the order has no lines. '
+                    'Please add at least one product before confirming.'
+                ) % order.name)
+        return super().button_confirm()
+
     def action_submit_quotation_portal(self):
         
         self.ensure_one()

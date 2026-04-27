@@ -648,11 +648,10 @@ class BoqBoq(models.Model):
 
   
     def _get_allowed_company_ids(self):
-      
         ctx_ids = self.env.context.get('allowed_company_ids')
         if ctx_ids:
             return list(ctx_ids)
-        return [self.env.company.id]
+        return self.env.user.company_ids.ids or [self.env.company.id]
 
     @staticmethod
     def _vendor_payment_status(rfqs):
