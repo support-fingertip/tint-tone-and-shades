@@ -279,3 +279,12 @@ class PurchaseOrderLineBoqExtend(models.Model):
         res = super().onchange_product_id()
         self.price_unit = 0.0
         return res
+
+    @api.onchange('product_qty', 'product_uom')
+    def _onchange_quantity(self):
+        # Capture price before super() can overwrite it from the vendor pricelist.
+        existing_price = self.price_unit
+        super()._onchange_quantity()
+        # Never pull a pricelist price: keep whatever was already there (0 stays 0,
+        # a vendor-entered price is preserved when the user adjusts qty).
+        self.price_unit = existing_price
