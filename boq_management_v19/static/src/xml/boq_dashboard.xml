@@ -625,7 +625,8 @@
                                             <div class="boq_vc_metric_label">Total Value</div>
                                         </div>
 
-                                        <!-- Margin % — colour-coded when vendor has quoted; "—" when pending -->
+                                        <!-- Margin % — vendor dashboard only -->
+                                        <t t-if="isVendorDashboard">
                                         <div class="boq_vc_metric">
                                             <t t-if="vs.has_vendor_price">
                                                 <div t-attf-class="boq_vc_metric_value {{ marginClass(vs.margin_percent) }}"
@@ -638,6 +639,7 @@
                                             </t>
                                             <div class="boq_vc_metric_label">Margin</div>
                                         </div>
+                                        </t>
 
                                     </div>
 
@@ -821,7 +823,7 @@
                     <i class="fa fa-money me-1"/>
                     <strong><t t-esc="fmtCurrency(treeTotals.value)"/></strong>
                 </span>
-                <t t-if="treeTotals.trades > 0">
+                <t t-if="isVendorDashboard and treeTotals.trades > 0">
                     <span class="boq_totals_chip boq_totals_margin"
                           title="Overall gross margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price × 100">
                         <i class="fa fa-percent me-1"/>
@@ -1026,7 +1028,8 @@
                                         <t t-esc="trade.submitted_count"/> new
                                     </span>
                                 </t>
-                                <!-- Margin — always visible: % when quoted, — when pending -->
+                                <!-- Margin — vendor dashboard only -->
+                                <t t-if="isVendorDashboard">
                                 <span t-attf-class="badge rounded-pill ms-1 {{ (trade.vendor_cost_total || 0) > 0 ? marginClass(trade.margin_percent) : 'boq_badge_neutral' }}"
                                       title="Trade gross margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price × 100">
                                     <i class="fa fa-percent me-1"/>
@@ -1035,6 +1038,7 @@
                                     </t>
                                     <t t-else="">—</t>
                                 </span>
+                                </t>
                             </span>
 
                             <span class="boq_tree_value fw-bold">
@@ -1115,7 +1119,8 @@
                                             </span>
                                         </t>
 
-                                        <!-- Margin — always visible: % when vendor has quoted, — when pending -->
+                                        <!-- Margin — vendor dashboard only -->
+                                        <t t-if="isVendorDashboard">
                                         <span t-attf-class="badge rounded-pill ms-1 {{ (vendor.vendor_cost_total || 0) > 0 ? marginClass(vendor.margin_percent) : 'boq_badge_neutral' }}"
                                               title="Gross Margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price × 100">
                                             <i class="fa fa-percent me-1"/>
@@ -1124,6 +1129,7 @@
                                             </t>
                                             <t t-else="">—</t>
                                         </span>
+                                        </t>
 
                                     </span>
 
@@ -1224,7 +1230,8 @@
                                                     </span>
                                                 </t>
 
-                                                <!-- Margin — always visible: % when quoted, — when pending -->
+                                                <!-- Margin — vendor dashboard only -->
+                                                <t t-if="isVendorDashboard">
                                                 <span t-attf-class="badge rounded-pill ms-1 {{ rfq.has_vendor_price ? marginClass(rfq.margin_percent) : 'boq_badge_neutral' }}"
                                                       title="Gross Margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price × 100">
                                                     <i class="fa fa-percent me-1"/>
@@ -1233,10 +1240,11 @@
                                                     </t>
                                                     <t t-else="">—</t>
                                                 </span>
+                                                </t>
                                             </span>
 
-                                            <!-- Customer Selling Price + Vendor Cost pair -->
-                                            <span class="boq_rfq_prices" t-if="rfq.customer_total > 0">
+                                            <!-- Customer Selling Price + Vendor Cost pair — vendor dashboard only -->
+                                            <span class="boq_rfq_prices" t-if="isVendorDashboard and rfq.customer_total > 0">
                                                 <span class="boq_rfq_price_item">
                                                     <small class="boq_price_label">Sell</small>
                                                     <span class="text-success fw-semibold">
@@ -1284,10 +1292,14 @@
                                                         <span class="boq_line_col_code">Code</span>
                                                         <span class="boq_line_col_product">Product / Material</span>
                                                         <span class="boq_line_col_qty">Qty</span>
+                                                        <t t-if="isVendorDashboard">
                                                         <span class="boq_line_col_sell">Sell Price</span>
+                                                        </t>
                                                         <span class="boq_line_col_cost">Vendor Cost</span>
+                                                        <t t-if="isVendorDashboard">
                                                         <span class="boq_line_col_margin">Margin</span>
                                                         <span class="boq_line_col_total_sell">Sell Total</span>
+                                                        </t>
                                                         <span class="boq_line_col_total_cost">Cost Total</span>
                                                     </div>
 
@@ -1308,10 +1320,12 @@
                                                                 <small class="ms-1"><t t-esc="ln.uom_name"/></small>
                                                             </span>
 
-                                                            <!-- Customer selling price (BOQ estimate) -->
+                                                            <!-- Customer selling price — vendor dashboard only -->
+                                                            <t t-if="isVendorDashboard">
                                                             <span class="boq_line_col_sell text-success fw-semibold">
                                                                 <t t-esc="fmtCurrency(ln.customer_price)"/>
                                                             </span>
+                                                            </t>
 
                                                             <!-- Vendor cost -->
                                                             <span class="boq_line_col_cost">
@@ -1325,7 +1339,8 @@
                                                                 </t>
                                                             </span>
 
-                                                            <!-- Margin % with colour coding -->
+                                                            <!-- Margin % — vendor dashboard only -->
+                                                            <t t-if="isVendorDashboard">
                                                             <span class="boq_line_col_margin">
                                                                 <t t-if="ln.has_vendor_price">
                                                                     <span t-attf-class="badge rounded-pill {{ marginClass(ln.margin_percent) }}">
@@ -1337,10 +1352,11 @@
                                                                 </t>
                                                             </span>
 
-                                                            <!-- Totals -->
+                                                            <!-- Sell Total — vendor dashboard only -->
                                                             <span class="boq_line_col_total_sell text-success">
                                                                 <t t-esc="fmtCurrency(ln.customer_total)"/>
                                                             </span>
+                                                            </t>
 
                                                             <span class="boq_line_col_total_cost">
                                                                 <t t-if="ln.has_vendor_price">
