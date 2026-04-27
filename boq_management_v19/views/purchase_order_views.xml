@@ -80,12 +80,20 @@
                        column_invisible="parent.partner_type == 'supplier'"/>
             </xpath>
 
-            <!-- Hide margin_percentage column (from infinys_margin_validation) for supplier orders -->
-            <xpath expr="//field[@name='order_line']//list//field[@name='margin_percentage']"
-                   position="attributes">
+        </field>
+    </record>
+
+    <!-- Hide margin_percentage column (from infinys_margin_validation) for supplier orders.
+         Inherits from the infinys_margin_validation view directly to avoid xpath-ordering
+         issues that arise when targeting a field added by a sibling inherit view. -->
+    <record id="view_purchase_order_boq_margin_inherit" model="ir.ui.view">
+        <field name="name">purchase.order.form.boq.margin.inherit</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="infinys_margin_validation.purchase_order_form_inherit_margin"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='margin_percentage']" position="attributes">
                 <attribute name="column_invisible">parent.partner_type == 'supplier'</attribute>
             </xpath>
-
         </field>
     </record>
     <record id="action_boq_rfq_list" model="ir.actions.act_window">
