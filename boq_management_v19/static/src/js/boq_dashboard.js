@@ -491,7 +491,12 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         try {
             const dt  = this.dashboardType;
             const cids = this._filterCompanyIds;  // null = all
-            const extra = cids ? { company_ids: cids } : {};
+            // When no filter is active, pass all available company IDs explicitly so
+            // the backend queries every company the user manages — not just the one
+            // currently active in the Odoo company switcher.
+            const allCids = this.state.availableCompanies.map(c => c.id);
+            const companyCids = cids || (allCids.length > 0 ? allCids : null);
+            const extra = companyCids ? { company_ids: companyCids } : {};
 
             const [r0, r1, r2, r3, r4, r5, r6] = await Promise.allSettled([
                 this.orm.call("boq.boq", "get_dashboard_stats",          [], { dashboard_type: dt, ...extra }),

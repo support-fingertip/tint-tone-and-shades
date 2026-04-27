@@ -1,0 +1,9 @@
+<odoo>
+  <template id="portal_my_purchase_order_hide_edi_btn"
+            inherit_id="purchase.portal_my_purchase_order">
+    <xpath expr="//button[@id='portal_connect_software_modal_btn']"
+           position="attributes">
+      <attribute name="t-if">False</attribute>
+    </xpath>
+  </template>
+</odoo>

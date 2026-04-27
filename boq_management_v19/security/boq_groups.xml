@@ -27,13 +27,13 @@
         <!-- Access: Vendor Manager Dashboard only -->
         <record id="group_vendor_manager_dashboard" model="res.groups">
             <field name="name">Vendor Manager Dashboard</field>
-            <field name="implied_ids" eval="[(4, ref('group_boq_user'))]"/>
+            <field name="implied_ids" eval="[(4, ref('group_boq_user')), (4, ref('base.group_partner_manager'))]"/>
         </record>
 
         <!-- Access: Procurement Manager Dashboard only -->
         <record id="group_procurement_manager_dashboard" model="res.groups">
             <field name="name">Procurement Manager Dashboard</field>
-            <field name="implied_ids" eval="[(4, ref('group_boq_user'))]"/>
+            <field name="implied_ids" eval="[(4, ref('group_boq_user')), (4, ref('base.group_partner_manager'))]"/>
         </record>
 
         <!-- Access: Head of Supplier Dashboard (senior/manager view) -->

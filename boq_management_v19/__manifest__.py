@@ -6,7 +6,7 @@
     'description': """
         BOQ Management
     """,
-    'author': 'Senior Odoo Developer',
+    'author': '',
     'category': 'Industries/Construction',
     'license': 'OPL-1',
     'depends': [
@@ -22,7 +22,7 @@
         'project',
         'stock',
         'infinys_purchase_order_approval',
-
+        'infinys_margin_validation',
     ],
     'data': [
         'security/boq_groups.xml',
@@ -37,6 +37,7 @@
         'views/boq_vendor_rating_views.xml',
         'views/res_partner_views.xml',
         'views/purchase_order_views.xml',
+        'views/portal_purchase_hide_button.xml',
         'views/menu_views.xml',
     ],
     'assets': {
