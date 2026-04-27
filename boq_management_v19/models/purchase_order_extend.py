@@ -274,9 +274,17 @@ class PurchaseOrderLineBoqExtend(models.Model):
             else:
                 line.margin_percent = 0.0
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if not vals.get('customer_price'):
+                vals['price_unit'] = 0.0
+        return super().create(vals_list)
+
     @api.onchange('product_id')
     def onchange_product_id(self):
-        res = super().onchange_product_id()
+        parent = super()
+        res = parent.onchange_product_id() if hasattr(parent, 'onchange_product_id') else None
         self.price_unit = 0.0
         return res
 
