@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-<!-- ═══════════════════════════════════════════════════════════════════════
-     BOQ — MAIN FORM VIEW (Odoo 19 Standard UI)
-═══════════════════════════════════════════════════════════════════════ -->
+
 <record id="view_boq_boq_form" model="ir.ui.view">
     <field name="name">boq.boq.form</field>
     <field name="model">boq.boq</field>
@@ -12,24 +10,17 @@
 
             <!-- ── HEADER ──────────────────────────────────────────────── -->
             <header>
-                <!-- Mark Done: available from Draft -->
                 <button name="action_done"
                         string="Mark Done"
                         type="object"
                         class="btn-primary"
                         invisible="state != 'draft'"/>
-                <!-- Reset to Draft: available from Done -->
                 <button name="action_reset_draft"
                         string="Reset to Draft"
                         type="object"
                         class="btn-secondary"
                         invisible="state != 'done'"/>
-                <!--
-                    CREATE RFQ — visible whenever at least 1 line exists.
-                    Uses line_count (Integer) for reliable invisible evaluation
-                    in Odoo 19 form-view expressions.
-                    RFQs are created per-partner based on trade-type assignments.
-                -->
+               
                 <button name="action_create_rfq"
                         string="Create RFQ"
                         type="object"
@@ -149,12 +140,6 @@
                     </field>
                 </group>
 
-                <!-- ═══════════════════════════════════════════════════════
-                     NOTEBOOK — one page per work category.
-                     Each page is hidden when its boolean flag is False.
-                     vendor_ids column on every line lets you map the vendor
-                     that will receive the RFQ when "Create RFQ" is clicked.
-                ═══════════════════════════════════════════════════════ -->
                 <notebook>
 
                     <!-- ─────────────── ELECTRICAL ───────────────────── -->

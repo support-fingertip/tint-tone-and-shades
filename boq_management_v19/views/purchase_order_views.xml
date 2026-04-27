@@ -70,7 +70,6 @@
 
             <xpath expr="//field[@name='order_line']//field[@name='price_subtotal']"
                    position="after">
-                <!-- customer_price and margin columns hidden for supplier orders -->
                 <field name="customer_price" readonly="1"
                        column_invisible="parent.partner_type == 'supplier'"/>
                 <field name="margin_percent" string="Savings %"
@@ -83,9 +82,6 @@
         </field>
     </record>
 
-    <!-- Hide margin_percentage column (from infinys_margin_validation) for supplier orders.
-         Inherits from the infinys_margin_validation view directly to avoid xpath-ordering
-         issues that arise when targeting a field added by a sibling inherit view. -->
     <record id="view_purchase_order_boq_margin_inherit" model="ir.ui.view">
         <field name="name">purchase.order.form.boq.margin.inherit</field>
         <field name="model">purchase.order</field>
