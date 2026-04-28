@@ -42,13 +42,11 @@
 
             </xpath>
 
-            <!-- ── BOQ Reference field after partner ─────────────────── -->
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="boq_id" string="BOQ Reference"
                        options="{'no_create': True}" invisible="not boq_id"/>
             </xpath>
 
-            <!-- ── Approval + Margin fields (below partner block) ──────── -->
             <xpath expr="//field[@name='partner_ref']" position="after">
                 <!-- Load partner_type so invisible expressions can reference it -->
                 <field name="partner_type" invisible="1"/>
@@ -61,7 +59,6 @@
                        invisible="state not in ('purchase','done')"/>
             </xpath>
 
-            <!-- ── PO lines: make name optional + add margin column ────── -->
             <xpath expr="//field[@name='order_line']//field[@name='name']"
                    position="attributes">
                 <attribute name="optional">show</attribute>

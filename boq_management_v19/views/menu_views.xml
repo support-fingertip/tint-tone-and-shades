@@ -138,8 +138,6 @@
               action="action_boq_category"
               sequence="10"/>
 
-
-    <!-- ── Root: Vendor ─────────────────────────────────────── -->
     <menuitem
             id="menu_vendor_purchase_root"
             name="Vendor"
@@ -269,8 +267,6 @@
             groups="boq_management_v19.group_vendor"
     />
 
-
-    <!-- ── Root: Procurement (Supplier) ─────────────────────── -->
     <menuitem
             id="menu_supplier_purchase_root"
             name="Procurement"
