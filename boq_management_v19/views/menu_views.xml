@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-   
+
     <!-- Root app menu -->
     <menuitem id="menu_boq_root"
               name="BOQ"
@@ -11,7 +11,6 @@
 
 
 
-    <!-- ── Home Screen Tile 1: Vendor Manager Dashboard ──────────────────── -->
     <menuitem
         id="menu_vendor_dashboard_app"
         name="Vendor Dashboard"
@@ -27,7 +26,6 @@
         sequence="1"
         groups="boq_management_v19.group_vendor_manager_dashboard"/>
 
-    <!-- ── Home Screen Tile 2: Procurement Manager Dashboard ─────────────── -->
     <menuitem
         id="menu_procurement_dashboard_app"
         name="Procurement Dashboard"
@@ -43,7 +41,6 @@
         sequence="1"
         groups="boq_management_v19.group_procurement_manager_dashboard"/>
 
-    <!-- ── Home Screen Tile 3: Head of Supplier Dashboard ────────────────── -->
     <menuitem
         id="menu_head_dashboard_app"
         name="Head of Supplier"
@@ -59,7 +56,6 @@
         sequence="1"
         groups="boq_management_v19.group_head_supplier_dashboard"/>
 
-    <!-- ── Main BOQ section ── -->
     <menuitem id="menu_boq_main"
               name="BOQ"
               parent="menu_boq_root"
@@ -77,7 +73,6 @@
               action="action_boq_boq"
               sequence="20"/>
 
-    <!-- ── RFQ section (Vendor + Supplier split) ── -->
     <menuitem id="menu_boq_rfq"
               name="RFQ"
               parent="menu_boq_root"
@@ -97,7 +92,6 @@
               sequence="20"
               groups="boq_management_v19.group_boq_user"/>
 
-    <!-- ── Reporting section ── -->
     <menuitem id="menu_boq_report"
               name="Reporting"
               parent="menu_boq_root"
@@ -118,7 +112,6 @@
               sequence="30"
               groups="boq_management_v19.group_boq_manager"/>
 
-    <!-- ── Purchase app — Vendor RFQ / Supplier RFQ sub-menus ── -->
     <menuitem id="menu_purchase_boq_vendor_rfq"
               name="Vendor RFQ"
               parent="purchase.menu_purchase_rfq"
@@ -133,7 +126,6 @@
               sequence="26"
               groups="purchase.group_purchase_user"/>
 
-    <!-- ── Configuration section ── -->
     <menuitem id="menu_boq_config"
               name="Configuration"
               parent="menu_boq_root"
