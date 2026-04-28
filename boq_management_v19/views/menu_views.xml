@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-   
+
+    <!-- Root app menu -->
     <menuitem id="menu_boq_root"
               name="BOQ"
               sequence="85"
@@ -257,7 +258,6 @@
             sequence="4"
             groups="boq_management_v19.group_vendor"
     />
-
 
     <menuitem
             id="menu_supplier_purchase_root"

@@ -5,9 +5,7 @@ from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 from odoo.tools import format_date
 
-
 _CATEGORY_CODES = ['electrical', 'civil', 'lighting', 'plumbing', 'hvac', 'finishing']
-
 
 class BoqBoq(models.Model):
     """
@@ -25,7 +23,6 @@ class BoqBoq(models.Model):
     _rec_name = 'name'
     _check_company_auto = True
 
-    # ── Identity ──────────────────────────────────────────────────────────
     name = fields.Char(
         string='Reference',
         required=True,
@@ -49,7 +46,6 @@ class BoqBoq(models.Model):
         store=True,
     )
 
-    # ── Customer / Project ────────────────────────────────────────────────
     partner_id = fields.Many2one(
         comodel_name='res.partner',
         string='Customer',
@@ -125,7 +121,6 @@ class BoqBoq(models.Model):
         sanitize_overridable=True,
     )
 
-   
     category_ids = fields.Many2many(
         comodel_name='boq.category',
         relation='boq_boq_category_rel',
@@ -188,7 +183,6 @@ class BoqBoq(models.Model):
             rec.hvac_category_id       = cats.get('hvac',       empty)
             rec.finishing_category_id  = cats.get('finishing',  empty)
 
-  
     line_ids = fields.One2many(
         comodel_name='boq.order.line',
         inverse_name='boq_id',
@@ -226,7 +220,6 @@ class BoqBoq(models.Model):
         string='Finishing Lines',
     )
 
-    # ── Totals ────────────────────────────────────────────────────────────
     electrical_total = fields.Monetary(
         compute='_compute_totals', store=False,
         currency_field='currency_id',
@@ -275,7 +268,6 @@ class BoqBoq(models.Model):
         store=False,
     )
 
-    # ── Trade-Level Vendor Assignments ───────────────────────────────────
     trade_vendor_ids = fields.One2many(
         comodel_name='boq.trade.vendor',
         inverse_name='boq_id',
@@ -283,7 +275,6 @@ class BoqBoq(models.Model):
         copy=True,
     )
 
-    # ── Linked Purchase RFQs ──────────────────────────────────────────────
     rfq_ids = fields.Many2many(
         comodel_name='purchase.order',
         relation='boq_boq_purchase_order_rel',
@@ -308,7 +299,6 @@ class BoqBoq(models.Model):
                 rfqs = rfqs.filtered(lambda r: r.partner_id.partner_type == ptype)
             rec.rfq_count = len(rfqs)
 
-  
     @api.depends('line_ids.subtotal', 'line_ids.tax_ids', 'line_ids.qty',
                  'line_ids.unit_price', 'line_ids.discount', 'line_ids.category_id',
                  'partner_id')
@@ -420,7 +410,6 @@ class BoqBoq(models.Model):
             if row.partner_type != self.boq_type:
                 row.partner_type = self.boq_type
 
-    # ── Sequence / Create / Write ─────────────────────────────────────────
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -477,14 +466,12 @@ class BoqBoq(models.Model):
         default['name'] = 'New'
         return super().copy(default)
 
-    # ── Workflow actions ──────────────────────────────────────────────────
     def action_done(self):
         self.write({'state': 'done'})
 
     def action_reset_draft(self):
         self.write({'state': 'draft'})
 
-    # ── Smart button: open all lines ──────────────────────────────────────
     def action_view_lines(self):
         self.ensure_one()
         return {
@@ -496,7 +483,6 @@ class BoqBoq(models.Model):
             'context': {'default_boq_id': self.id},
         }
 
-    # ── Create RFQ ────────────────────────────────────────────────────────
     def action_create_rfq(self):
         """
         Create one RFQ (purchase.order) per partner.
@@ -557,7 +543,6 @@ class BoqBoq(models.Model):
                 'select them at the top of the BOQ form.'
             ))
 
-        # ── Create one PO per partner ─────────────────────────────────────
         PO = self.env['purchase.order']
         POLine = self.env['purchase.order.line']
         today = fields.Datetime.now()
@@ -637,7 +622,6 @@ class BoqBoq(models.Model):
             'domain': domain,
         }
 
-    # ── Model helper ──────────────────────────────────────────────────────
     @api.model
     def _get_category_id(self, code):
         """Return the ID of the category with the given code."""
@@ -646,7 +630,6 @@ class BoqBoq(models.Model):
         )
         return cat.id if cat else False
 
-  
     def _get_allowed_company_ids(self):
         ctx_ids = self.env.context.get('allowed_company_ids')
         if ctx_ids:
@@ -808,7 +791,6 @@ class BoqBoq(models.Model):
             for b in boqs
         }
 
-      
         rfq_effective_total = {}
         if rfqs.ids:
             self.env.cr.execute("""
@@ -828,7 +810,6 @@ class BoqBoq(models.Model):
             for oid, eff_total in self.env.cr.fetchall():
                 rfq_effective_total[oid] = float(eff_total)
 
-     
         rfq_margin_vs = {}
         if rfqs.ids:
             self.env.cr.execute("""
@@ -876,12 +857,13 @@ class BoqBoq(models.Model):
 
             # Payment status: invoice status on PO
             rfq_state_label = {
-                'draft': 'RFQ',
-                'sent': 'Sent',
-                'to approve': 'To Approve',
-                'purchase': 'PO',
-                'done': 'Done',
-                'cancel': 'Cancelled',
+                'draft':      'RFQ',
+                'sent':       'Sent',
+                'submitted':  'Submitted',
+                'to approve': 'Awaiting Approval',
+                'purchase':   'PO',
+                'done':       'Done',
+                'cancel':     'Cancelled',
             }.get(rfq.state, rfq.state)
             if rfq_state_label not in entry['rfq_states']:
                 entry['rfq_states'].append(rfq_state_label)
@@ -994,7 +976,6 @@ class BoqBoq(models.Model):
                         entry['vendor_id_set'].add(vendor.id)
                         entry['vendor_names'].append(vendor.name or '—')
 
-       
         rfq_vendor_map = {} 
         for rfq in rfqs:
             vid = rfq.partner_id.id
@@ -1041,7 +1022,6 @@ class BoqBoq(models.Model):
         if not boqs:
             return []
 
-        # ── Fetch all RFQs linked to these BOQs ──────────────────────────
         rfq_boq_map = {}   # {rfq_id: boq_id}
         if boqs.ids:
             self.env.cr.execute(
@@ -1140,7 +1120,6 @@ class BoqBoq(models.Model):
                         if vtype != 'supplier':
                             entry['vendors'][vendor.id] = vendor
 
-        # ── Assemble tree ────────────────────────────────────────────────
         tree = []
         for cat_id, cat_data in trade_data.items():
             category = cat_data['category']
@@ -1208,7 +1187,6 @@ class BoqBoq(models.Model):
                     'not_paid':  'Not Paid',
                 }.get(pay_status, 'Not Paid')
 
-              
                 _state_counts = {}
                 for rfq in rfqs_for_v:
                     _state_counts[rfq.state] = _state_counts.get(rfq.state, 0) + 1
@@ -1362,7 +1340,6 @@ class BoqBoq(models.Model):
         if not all_rfqs:
             return []
 
-
         pending_rfqs = all_rfqs.filtered(lambda r: r.state in PENDING_STATES)
 
         if not pending_rfqs:
@@ -1441,7 +1418,6 @@ class BoqBoq(models.Model):
         result.sort(key=lambda x: -x['oldest_days'])
         return result
 
-    # ── Notification banner — Recently submitted quotations ───────────────
     @api.model
     def get_recently_submitted_rfqs(self, dashboard_type='vendor', company_ids=None):
         """
@@ -1533,7 +1509,6 @@ class BoqBoq(models.Model):
         result.sort(key=lambda r: r['days_ago'])
         return result
 
-    # ── Head of Supplier Dashboard — per-company consolidated summary ─────
     @api.model
     def get_company_wise_summary(self, dashboard_type='supplier', company_ids=None):
         """
@@ -1588,7 +1563,6 @@ class BoqBoq(models.Model):
             found_ids  = set(all_rfqs.ids)
             rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
 
-      
         rfq_effective_total_cs = {}
         if all_rfqs.ids:
             self.env.cr.execute("""
@@ -1608,7 +1582,6 @@ class BoqBoq(models.Model):
             for oid, eff_total in self.env.cr.fetchall():
                 rfq_effective_total_cs[oid] = float(eff_total)
 
-        # ── Build per-company records ─────────────────────────────────────
         result = []
         for cid in company_ids:
             company      = self.env['res.company'].browse(cid)
@@ -1746,7 +1719,6 @@ class BoqBoq(models.Model):
                 })
         return rows
 
-
 class MailComposeMessage(models.TransientModel):
     _inherit = 'mail.compose.message'
 
@@ -1757,7 +1729,6 @@ class MailComposeMessage(models.TransientModel):
             MailComposeMessage,
             self.with_context(custom_email_cc=self.email_cc)
         ).action_send_mail()
-
 
 class MailMail(models.Model):
     _inherit = 'mail.mail'

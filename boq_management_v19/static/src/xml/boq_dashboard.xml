@@ -1,19 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <templates xml:space="preserve">
 
+<!--
+    BOQ Manager Dashboard Templates
+    ================================
+    Two NAMED templates — one per component class.
+    Both call the shared t-call "boq_management_v19.DashboardBody"
+    so all HTML lives in ONE place (no duplication).
 
+    VendorManagerDashboard       → boq_management_v19.VendorManagerDashboard
+    ProcurementManagerDashboard  → boq_management_v19.ProcurementManagerDashboard
+    Shared body                  → boq_management_v19.DashboardBody  (t-call'd)
+-->
 <t t-name="boq_management_v19.VendorManagerDashboard">
     <t t-call="boq_management_v19.DashboardBody"/>
 </t>
-
 <t t-name="boq_management_v19.ProcurementManagerDashboard">
     <t t-call="boq_management_v19.DashboardBody"/>
 </t>
-
 <t t-name="boq_management_v19.HeadSupplierDashboard">
     <t t-call="boq_management_v19.DashboardBody"/>
 </t>
-
 <t t-name="boq_management_v19.DashboardBody">
 <div class="boq_dashboard o_action"
      data-bs-theme="light"
@@ -43,9 +50,7 @@
     </t>
 
     <t t-else="">
-
-       
-        <div class="boq_dash_header d-flex align-items-center
+<div class="boq_dash_header d-flex align-items-center
                     justify-content-between px-4 py-3 border-bottom">
 
             <div class="d-flex align-items-center gap-3">
@@ -82,10 +87,8 @@
                 </button>
             </div>
         </div>
-
-        <div class="boq_dash_scroll">
-
-           
+<div class="boq_dash_scroll">
+<!-- Head of Supplier — large teal hero with manager KPIs -->
             <t t-if="isHeadDashboard">
                 <div class="boq_hero boq_hero_head">
                     <div class="boq_hero_icons">
@@ -400,10 +403,8 @@
                     </div>
                 </t>
 
-            </div>
-
-
-            <t t-if="isHeadDashboard and state.companySummary.length > 0">
+            </div><!-- /stat cards -->
+<t t-if="isHeadDashboard and state.companySummary.length > 0">
                 <div class="px-4 pb-3">
 
                     <div class="boq_section_header d-flex align-items-center
@@ -486,10 +487,8 @@
                     </div>
 
                 </div>
-            </t>
-
-           
-            <t t-if="state.vendorSummary.length > 0">
+            </t><!-- /company overview -->
+<t t-if="state.vendorSummary.length > 0">
                 <div class="px-4 pb-2">
 
                     <div class="boq_section_header d-flex align-items-center
@@ -732,8 +731,7 @@ s                                    <t t-if="vs.project_names and vs.project_na
                     </span>
                 </t>
             </div>
-
-            <t t-if="state.showRecentPanel and state.recentlySubmitted.length > 0">
+<t t-if="state.showRecentPanel and state.recentlySubmitted.length > 0">
                 <div class="px-4 pb-3">
                     <div class="boq_recent_panel">
 
@@ -813,9 +811,8 @@ s                                    <t t-if="vs.project_names and vs.project_na
 
                     </div>
                 </div>
-            </t>
-
-            <div class="px-4 pb-3">
+            </t><!-- /notification panel -->
+<div class="px-4 pb-3">
 
                 <div class="boq_trade_view_header d-flex align-items-center
                             justify-content-between mb-3">
@@ -910,7 +907,8 @@ s                                    <t t-if="vs.project_names and vs.project_na
                             <span class="boq_tree_value fw-bold">
                                 <t t-esc="fmtCurrency(trade.total_value)"/>
                             </span>
-                        </div>
+                        </div><!-- /trade row -->
+
                         <t t-if="isTradeExpanded(trade.trade_id)">
 
                             <t t-if="trade.vendors.length === 0">
@@ -992,7 +990,8 @@ s                                    <t t-if="vs.project_names and vs.project_na
                                           title="Open all RFQs">
                                         <i class="fa fa-external-link text-muted"/>
                                     </span>
-                                </div>
+                                </div><!-- /vendor row -->
+
                                 <t t-if="isVendorExpanded(vendor.vendor_id)">
 
                                     <t t-if="vendor.state_summary and vendor.state_summary.length > 0">
@@ -1227,7 +1226,6 @@ s                                    <t t-if="vs.project_names and vs.project_na
 
             </div>
 
-      
             <t t-if="state.approvalPOs.length > 0">
                 <div class="px-4 pb-4">
 
@@ -1293,29 +1291,40 @@ s                                    <t t-if="vs.project_names and vs.project_na
                                     </small>
                                 </span>
 
+                                <!-- Approval progress pills — colour-coded by status -->
                                 <span class="boq_approval_col_progress">
                                     <div class="d-flex flex-wrap gap-1 align-items-center">
-                                        <t t-foreach="po.approval_lines" t-as="al"
-                                           t-key="al.level_name">
-                                            <span t-attf-class="badge boq_badge_neutral rounded-pill boq_approval_pill
-                                                                 #{ al.is_mine ? 'boq_approval_pill_mine' : '' }"
-                                                  t-att-title="al.approvers">
-                                                <t t-if="al.is_mine">
-                                                    <i class="fa fa-user me-1"/>
-                                                </t>
-                                                <t t-esc="al.level_name"/>:
-                                                <t t-esc="al.status_label"/>
+                                        <t t-if="po.approval_lines.length > 0">
+                                            <t t-foreach="po.approval_lines" t-as="al"
+                                               t-key="al.level_name">
+                                                <span t-attf-class="badge rounded-pill boq_approval_pill
+                                                                     #{ approvalStatusClass(al.status) }
+                                                                     #{ al.is_mine ? 'boq_approval_pill_mine' : '' }"
+                                                      t-att-title="al.approvers">
+                                                    <t t-if="al.is_mine">
+                                                        <i class="fa fa-user me-1"/>
+                                                    </t>
+                                                    <t t-esc="al.level_name"/>:
+                                                    <t t-esc="al.status_label"/>
+                                                </span>
+                                            </t>
+                                            <!-- Progress fraction -->
+                                            <small class="text-muted ms-1">
+                                                <t t-esc="po.approved_count"/>/<t t-esc="po.approval_count"/> approved
+                                            </small>
+                                        </t>
+                                        <t t-else="">
+                                            <span class="badge bg-warning text-dark rounded-pill">
+                                                <i class="fa fa-hourglass-half me-1"/>Awaiting Approval
                                             </span>
                                         </t>
-                                        <small class="text-muted ms-1">
-                                            <t t-esc="po.approved_count"/>/<t t-esc="po.approval_count"/>
-                                        </small>
                                     </div>
                                 </span>
 
+                                <!-- Action column -->
                                 <span class="boq_approval_col_action">
                                     <t t-if="po.has_current_approver">
-                                        <span class="badge boq_badge_neutral rounded-pill">
+                                        <span class="badge bg-warning text-dark rounded-pill">
                                             <i class="fa fa-bell me-1"/>Your Turn
                                         </span>
                                     </t>

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
 <record id="view_boq_boq_form" model="ir.ui.view">
     <field name="name">boq.boq.form</field>
     <field name="model">boq.boq</field>
@@ -131,9 +130,8 @@
                         </list>
                     </field>
                 </group>
-                <notebook>
-
-                    <page string="Electrical" name="tab_electrical"
+<notebook>
+<page string="Electrical" name="tab_electrical"
                           invisible="not show_electrical">
                         <field name="electrical_line_ids"
                                context="{'default_category_id': electrical_category_id}"
@@ -168,8 +166,7 @@
                             </list>
                         </field>
                     </page>
-
-                    <page string="Civil" name="tab_civil"
+<page string="Civil" name="tab_civil"
                           invisible="not show_civil">
                         <field name="civil_line_ids"
                                context="{'default_category_id': civil_category_id}"
@@ -203,8 +200,7 @@
                             </list>
                         </field>
                     </page>
-
-                    <page string="Lighting" name="tab_lighting"
+<page string="Lighting" name="tab_lighting"
                           invisible="not show_lighting">
                         <field name="lighting_line_ids"
                                context="{'default_category_id': lighting_category_id}"
@@ -238,8 +234,7 @@
                             </list>
                         </field>
                     </page>
-
-                    <page string="Plumbing" name="tab_plumbing"
+<page string="Plumbing" name="tab_plumbing"
                           invisible="not show_plumbing">
                         <field name="plumbing_line_ids"
                                context="{'default_category_id': plumbing_category_id}"
@@ -273,8 +268,7 @@
                             </list>
                         </field>
                     </page>
-
-                    <page string="HVAC" name="tab_hvac"
+<page string="HVAC" name="tab_hvac"
                           invisible="not show_hvac">
                         <field name="hvac_line_ids"
                                context="{'default_category_id': hvac_category_id}"
@@ -308,8 +302,7 @@
                             </list>
                         </field>
                     </page>
-
-                    <page string="Finishing" name="tab_finishing"
+<page string="Finishing" name="tab_finishing"
                           invisible="not show_finishing">
                         <field name="finishing_line_ids"
                                context="{'default_category_id': finishing_category_id}"
@@ -343,8 +336,7 @@
                             </list>
                         </field>
                     </page>
-
-                    <page string="Terms &amp; Notes" name="tab_notes">
+<page string="Terms &amp; Notes" name="tab_notes">
                         <field name="notes"
                                placeholder="Enter terms, conditions, special notes…"/>
                     </page>
@@ -398,7 +390,6 @@
         </form>
     </field>
 </record>
-
 <record id="view_boq_boq_list" model="ir.ui.view">
     <field name="name">boq.boq.list</field>
     <field name="model">boq.boq</field>
@@ -487,7 +478,6 @@
         </kanban>
     </field>
 </record>
-
 <record id="action_boq_boq" model="ir.actions.act_window">
     <field name="name">Bills of Quantities</field>
     <field name="res_model">boq.boq</field>

@@ -3,7 +3,6 @@ import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odo
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
-
 function formatCurrency(value, symbol, position) {
     const n = Number(value || 0).toLocaleString(undefined, {
         minimumFractionDigits: 2,
@@ -31,7 +30,6 @@ function approvalStatusClass(s) {
              approved: "bg-success", rejected: "bg-danger" }[s]
         || "bg-secondary";
 }
-
 
 class BoqManagerDashboardBase extends Component {
    
@@ -69,6 +67,7 @@ class BoqManagerDashboardBase extends Component {
 
         onWillStart(async () => { await this._loadAll(); });
     }
+
     get dashboardType()     { return this.constructor.DASHBOARD_TYPE; }
     get isVendorDashboard() { return this.dashboardType === "vendor"; }
     get isHeadDashboard()   { return false; } 
@@ -186,6 +185,7 @@ class BoqManagerDashboardBase extends Component {
         }
         return null;
     }
+
     get filteredTree() {
         const q = (this.state.filterText || "").toLowerCase().trim();
         if (!q) return this.state.tree;
@@ -217,6 +217,7 @@ class BoqManagerDashboardBase extends Component {
             oldest:  pv.length ? pv[0].oldest_days : 0,  
         };
     }
+
     get approvalTotals() {
         const pos = this.state.approvalPOs || [];
         return {
@@ -225,6 +226,7 @@ class BoqManagerDashboardBase extends Component {
             current: pos.filter(p => p.has_current_approver).length,
         };
     }
+
     get currencySymbol()   { return this.state.stats.currency_symbol   || "$"; }
     get currencyPosition() { return this.state.stats.currency_position || "before"; }
     fmtCurrency(val) { return formatCurrency(val, this.currencySymbol, this.currencyPosition); }
@@ -320,7 +322,6 @@ class BoqManagerDashboardBase extends Component {
     }
 }
 
-// ── Shared private loader — used by both Vendor and Procurement ──────────────
 async function _loadDashboardData(component) {
     const dt   = component.dashboardType;
     const cids = await component.orm.call(
@@ -377,7 +378,6 @@ export class VendorManagerDashboard extends BoqManagerDashboardBase {
     }
 }
 
-
 export class ProcurementManagerDashboard extends BoqManagerDashboardBase {
     static DASHBOARD_TYPE = "supplier";
     static template       = "boq_management_v19.ProcurementManagerDashboard";
@@ -408,7 +408,6 @@ export class ProcurementManagerDashboard extends BoqManagerDashboardBase {
         await this._loadAll();
     }
 }
-
 
 export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     static DASHBOARD_TYPE = "supplier";
@@ -442,6 +441,8 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         onMounted(()       => document.addEventListener("click", this._closeDropdown));
         onWillUnmount(()   => document.removeEventListener("click", this._closeDropdown));
     }
+
+    /** Returns the company_ids kwarg to pass to Python, or null for "all". */
     get _filterCompanyIds() {
         return this.state.selectedCompanyIds.length > 0
             ? this.state.selectedCompanyIds
@@ -504,6 +505,7 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         this.state.expandedVendors = {};
         await this._loadData();
     }
+
     get headTotalCompanies()  { return this.state.companySummary.length; }
     get headTotalSuppliers()  {
         return this.state.vendorSummary ? this.state.vendorSummary.length : 0;
@@ -515,6 +517,7 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     }
     get headTotalValue() { return this.state.stats ? (this.state.stats.rfq_total_value || 0) : 0; }
 
+    /** First load available companies (once), then data. */
     async _loadAll() {
         try {
             if (this.state.availableCompanies.length === 0) {
@@ -596,6 +599,7 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         });
     }
 }
+
 registry.category("actions").add(
     "boq_management_v19.vendor_manager_dashboard_action",
     VendorManagerDashboard

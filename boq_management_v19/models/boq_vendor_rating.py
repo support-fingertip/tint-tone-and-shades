@@ -2,7 +2,6 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 
-
 class BoqVendorRating(models.Model):
     
     _name = 'boq.vendor.rating'
@@ -11,7 +10,6 @@ class BoqVendorRating(models.Model):
     _order = 'date desc, id desc'
     _rec_name = 'partner_id'
 
-    # ── Relations ────────────────────────────────────────────────────────
     purchase_order_id = fields.Many2one(
         comodel_name='purchase.order',
         string='Purchase Order',
@@ -26,7 +24,6 @@ class BoqVendorRating(models.Model):
         index=True,
     )
 
-    # ── Rating ───────────────────────────────────────────────────────────
     rating = fields.Selection(
         selection=[
             ('1', '1 — Poor'),
@@ -49,7 +46,6 @@ class BoqVendorRating(models.Model):
     comments = fields.Text(string='Comments / Remarks')
     date = fields.Date(string='Rating Date', default=fields.Date.today)
 
- 
     res_model = fields.Char(
         string='Resource Model',
         compute='_compute_res_model',

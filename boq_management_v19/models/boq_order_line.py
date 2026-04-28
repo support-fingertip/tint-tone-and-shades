@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
 
-
 class BoqOrderLine(models.Model):
     """
     Individual BOQ line item within a work category.
@@ -11,7 +10,6 @@ class BoqOrderLine(models.Model):
     _description = 'BOQ Order Line'
     _order = 'sequence asc, id asc'
 
-    # ── Relationships ────────────────────────────────────────────────────
     boq_id = fields.Many2one(
         comodel_name='boq.boq',
         string='BOQ',
@@ -32,10 +30,8 @@ class BoqOrderLine(models.Model):
         index=True,
     )
 
-    # ── Sequence / ordering ───────────────────────────────────────────────
     sequence = fields.Integer(string='#', default=10)
 
-    # ── Product ───────────────────────────────────────────────────────────
     product_id = fields.Many2one(
         comodel_name='product.product',
         string='Product / Material',
@@ -63,7 +59,6 @@ class BoqOrderLine(models.Model):
         default='material',
     )
 
-    # ── UoM ───────────────────────────────────────────────────────────────
     uom_id = fields.Many2one(
         comodel_name='uom.uom',
         string='Unit of Measure',
@@ -72,7 +67,6 @@ class BoqOrderLine(models.Model):
         readonly=False,
         precompute=True,
     )
-    # ── Quantity & Price ──────────────────────────────────────────────────
     qty = fields.Float(
         string='Quantity',
         required=True,
@@ -136,7 +130,6 @@ class BoqOrderLine(models.Model):
         help='Subtotal + computed taxes from tax_ids.',
     )
 
-    # ── Cost & Margin ──────────────────────────────────────────────────────
     cost_price = fields.Float(
         string='Cost Price',
         compute='_compute_cost_price',
@@ -153,7 +146,6 @@ class BoqOrderLine(models.Model):
         help='Gross margin percentage: ((Unit Price - Cost) / Unit Price) × 100.',
     )
 
-    # ── Notes ─────────────────────────────────────────────────────────────
     notes = fields.Char(string='Remarks')
 
     def _auto_init(self):
@@ -186,7 +178,6 @@ class BoqOrderLine(models.Model):
         """
         res = super()._register_hook()
 
-       
         self.env.cr.execute("""
             ALTER TABLE boq_trade_vendor
                 ADD COLUMN IF NOT EXISTS partner_type VARCHAR DEFAULT 'vendor';
@@ -194,14 +185,12 @@ class BoqOrderLine(models.Model):
                 DROP CONSTRAINT IF EXISTS boq_trade_vendor_boq_id_category_id_key;
         """)
 
-      
         self.env.cr.execute("""
             ALTER TABLE boq_boq
                 ADD COLUMN IF NOT EXISTS boq_type VARCHAR DEFAULT 'vendor';
             UPDATE boq_boq SET boq_type = 'vendor' WHERE boq_type IS NULL;
         """)
 
-     
         self.env.cr.execute("""
             ALTER TABLE res_partner
                 ADD COLUMN IF NOT EXISTS partner_type VARCHAR,
@@ -209,7 +198,6 @@ class BoqOrderLine(models.Model):
                 ADD COLUMN IF NOT EXISTS rating_count INTEGER       DEFAULT 0;
         """)
 
-      
         try:
             self.env.cr.execute("""
                 DELETE FROM ir_rule
@@ -224,7 +212,6 @@ class BoqOrderLine(models.Model):
 
         return res
 
-    # ── Computes ──────────────────────────────────────────────────────────
     @api.depends('product_id')
     def _compute_product_info(self):
         """Stored fields derived from product_id: product_name and uom_id."""
