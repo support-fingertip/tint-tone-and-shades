@@ -653,6 +653,22 @@ class BoqBoq(models.Model):
             return list(ctx_ids)
         return self.env.user.company_ids.ids or [self.env.company.id]
 
+    def _get_boq_type_domain(self, dashboard_type):
+        """
+        Return an ORM domain fragment that filters boq_type.
+        For 'vendor' we also include NULL rows so that BOQs created before
+        the boq_type field existed (upgrade scenario) still appear.
+        """
+        if dashboard_type == 'vendor':
+            return ['|', ('boq_type', '=', 'vendor'), ('boq_type', '=', False)]
+        return [('boq_type', '=', dashboard_type)]
+
+    def init(self):
+        """Back-fill boq_type for any rows that have NULL (pre-field records)."""
+        self.env.cr.execute(
+            "UPDATE boq_boq SET boq_type = 'vendor' WHERE boq_type IS NULL"
+        )
+
     @staticmethod
     def _vendor_payment_status(rfqs):
         """
@@ -697,7 +713,7 @@ class BoqBoq(models.Model):
        
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
-        company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
+        company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         boqs = self.search(company_domain)
 
         rfqs = self.env['purchase.order']
@@ -762,7 +778,7 @@ class BoqBoq(models.Model):
        
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
-        company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
+        company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         boqs = self.search(company_domain)
 
         rfq_boq_map = {}
@@ -929,7 +945,7 @@ class BoqBoq(models.Model):
     def get_trade_summary(self, dashboard_type='vendor'):
         
         company_ids = self._get_allowed_company_ids()
-        company_domain = [('company_id', 'in', company_ids), ('boq_type', '=', dashboard_type)]
+        company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         boqs = self.search(company_domain)
 
         # Collect rfq_boq_map for vendor→rfq count per trade
@@ -1020,10 +1036,7 @@ class BoqBoq(models.Model):
 
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
-        company_domain = [
-            ('company_id', 'in', company_ids),
-            ('boq_type',   '=',  dashboard_type),
-        ]
+        company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         boqs = self.search(company_domain)
         if not boqs:
             return []
@@ -1320,10 +1333,9 @@ class BoqBoq(models.Model):
 
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
-        boqs = self.search([
-            ('company_id', 'in', company_ids),
-            ('boq_type',   '=',  dashboard_type),
-        ])
+        boqs = self.search(
+            [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
+        )
         if not boqs:
             return []
 
@@ -1451,10 +1463,9 @@ class BoqBoq(models.Model):
         self = self.with_context(allowed_company_ids=company_ids)
         recently_cutoff = fields.Datetime.now() - timedelta(days=7)
 
-        boqs = self.search([
-            ('company_id', 'in', company_ids),
-            ('boq_type',   '=',  dashboard_type),
-        ])
+        boqs = self.search(
+            [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
+        )
         if not boqs:
             return []
 
@@ -1552,10 +1563,9 @@ class BoqBoq(models.Model):
         recently_cutoff = fields.Datetime.now() - timedelta(days=7)
         PENDING_STATES  = {'draft', 'sent'}
 
-        all_boqs = self.search([
-            ('company_id', 'in', company_ids),
-            ('boq_type',   '=',  dashboard_type),
-        ])
+        all_boqs = self.search(
+            [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
+        )
         if not all_boqs:
             return []
 
@@ -1639,10 +1649,7 @@ class BoqBoq(models.Model):
         
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
-        company_domain = [
-            ('company_id', 'in', company_ids),
-            ('boq_type',   '=',  dashboard_type),
-        ]
+        company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         boqs = self.search(company_domain)
         if not boqs:
             return []
