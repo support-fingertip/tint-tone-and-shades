@@ -53,7 +53,7 @@
                 <!-- Success alert - shown when approved -->
                 <div class="alert alert-success" role="alert"
                      invisible="margin_approval_status != 'approved'">
-                    <strong>Margin Approved. </strong> TThe margin for this order has been confirmed.
+                    <strong>Margin Approved. </strong> The margin for this order has been confirmed.
                 </div>
                 <div class="alert alert-danger" role="alert"
                      invisible="margin_approval_status != 'rejected'">
