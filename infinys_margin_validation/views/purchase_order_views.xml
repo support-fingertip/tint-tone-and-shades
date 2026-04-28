@@ -47,17 +47,17 @@
                <!-- Success alert - shown when waiting for approval (to_approve state) -->
                 <div class="alert alert-info" role="alert"
                      invisible="margin_approval_status != 'to_approve'">
-                    <strong>Margin Approval. </strong> This order is pending approval.
+                    <strong>Margin Approval. </strong> This order is pending margin approval.
                 </div>
 
                 <!-- Success alert - shown when approved -->
                 <div class="alert alert-success" role="alert"
                      invisible="margin_approval_status != 'approved'">
-                    <strong>Margin Approved. </strong> This order can now be confirmed.
+                    <strong>Margin Approved. </strong> TThe margin for this order has been confirmed.
                 </div>
                 <div class="alert alert-danger" role="alert"
                      invisible="margin_approval_status != 'rejected'">
-                    <strong>Margin Rejected. </strong> This order's margin was not approved.
+                    <strong>Margin Rejected. </strong> The margin for this order has not been approved.
                 </div>
             </xpath>
 
