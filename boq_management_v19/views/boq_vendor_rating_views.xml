@@ -36,7 +36,6 @@
         </field>
     </record>
 
-    <!-- ── List View ────────────────────────────────────────────────────── -->
     <record id="view_boq_vendor_rating_list" model="ir.ui.view">
         <field name="name">boq.vendor.rating.list</field>
         <field name="model">boq.vendor.rating</field>
@@ -57,7 +56,6 @@
         </field>
     </record>
 
-    <!-- ── Window Action ────────────────────────────────────────────────── -->
     <record id="action_boq_vendor_rating" model="ir.actions.act_window">
         <field name="name">Vendor Ratings</field>
         <field name="res_model">boq.vendor.rating</field>

@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-
 <record id="view_boq_boq_form" model="ir.ui.view">
     <field name="name">boq.boq.form</field>
     <field name="model">boq.boq</field>
     <field name="arch" type="xml">
         <form string="Bill of Quantities" js_class="boq_form">
 
-            <!-- ── HEADER ──────────────────────────────────────────────── -->
             <header>
                 <button name="action_done"
                         string="Mark Done"
@@ -34,7 +32,6 @@
             </header>
 
             <sheet>
-                <!-- ── SMART BUTTONS ──────────────────────────────────── -->
                 <div class="oe_button_box" name="button_box">
                     <button name="action_view_lines"
                             type="object"
@@ -65,10 +62,8 @@
                     </button>
                 </div>
 
-                <!-- ── PRIORITY ───────────────────────────────────────── -->
                 <field name="priority" widget="priority" class="float-start me-3 mt-1"/>
 
-                <!-- ── TITLE ──────────────────────────────────────────── -->
                 <div class="oe_title">
                     <label for="name" string="BOQ Reference"/>
                     <h1>
@@ -76,7 +71,6 @@
                     </h1>
                 </div>
 
-                <!-- ── MAIN FIELDS ────────────────────────────────────── -->
                 <group>
                     <group string="Customer &amp; Project">
                         <field name="partner_id"
@@ -100,7 +94,6 @@
                     </group>
                 </group>
 
-                <!-- ── WORK CATEGORIES ───────────────────────────────── -->
                 <group string="Work Categories">
                     <field name="category_ids"
                            widget="many2many_tags"
@@ -109,7 +102,6 @@
                            nolabel="1"/>
                 </group>
 
-                <!-- ── VENDOR / SUPPLIER ASSIGNMENT ─────────────────── -->
                 <group string="Vendor / Supplier Assignment">
                     <div class="text-muted small mb-2" colspan="2">
                         Rows appear automatically when Work Categories are selected above.
@@ -139,10 +131,8 @@
                         </list>
                     </field>
                 </group>
-
                 <notebook>
 
-                    <!-- ─────────────── ELECTRICAL ───────────────────── -->
                     <page string="Electrical" name="tab_electrical"
                           invisible="not show_electrical">
                         <field name="electrical_line_ids"
@@ -179,7 +169,6 @@
                         </field>
                     </page>
 
-                    <!-- ─────────────── CIVIL ─────────────────────────── -->
                     <page string="Civil" name="tab_civil"
                           invisible="not show_civil">
                         <field name="civil_line_ids"
@@ -215,7 +204,6 @@
                         </field>
                     </page>
 
-                    <!-- ─────────────── LIGHTING ──────────────────────── -->
                     <page string="Lighting" name="tab_lighting"
                           invisible="not show_lighting">
                         <field name="lighting_line_ids"
@@ -251,7 +239,6 @@
                         </field>
                     </page>
 
-                    <!-- ─────────────── PLUMBING ──────────────────────── -->
                     <page string="Plumbing" name="tab_plumbing"
                           invisible="not show_plumbing">
                         <field name="plumbing_line_ids"
@@ -287,7 +274,6 @@
                         </field>
                     </page>
 
-                    <!-- ─────────────── HVAC ───────────────────────────── -->
                     <page string="HVAC" name="tab_hvac"
                           invisible="not show_hvac">
                         <field name="hvac_line_ids"
@@ -323,7 +309,6 @@
                         </field>
                     </page>
 
-                    <!-- ─────────────── FINISHING ─────────────────────── -->
                     <page string="Finishing" name="tab_finishing"
                           invisible="not show_finishing">
                         <field name="finishing_line_ids"
@@ -359,7 +344,6 @@
                         </field>
                     </page>
 
-                    <!-- ─────────────── TERMS &amp; NOTES ─────────────── -->
                     <page string="Terms &amp; Notes" name="tab_notes">
                         <field name="notes"
                                placeholder="Enter terms, conditions, special notes…"/>
@@ -367,7 +351,6 @@
 
                 </notebook>
 
-                <!-- ── TOTALS FOOTER (like purchase order) ───────────── -->
                 <div class="row justify-content-end mt-2 mb-3">
                     <div class="col-sm-6 col-md-5 col-lg-4">
                         <div class="border rounded overflow-hidden">
@@ -399,7 +382,6 @@
                     </div>
                 </div>
 
-                <!-- ── hidden fields required by view expressions ─────── -->
                 <field name="currency_id"     invisible="1"/>
                 <field name="show_electrical" invisible="1"/>
                 <field name="show_civil"      invisible="1"/>
@@ -417,9 +399,6 @@
     </field>
 </record>
 
-<!-- ═══════════════════════════════════════════════════════════════════════
-     BOQ — LIST VIEW
-═══════════════════════════════════════════════════════════════════════ -->
 <record id="view_boq_boq_list" model="ir.ui.view">
     <field name="name">boq.boq.list</field>
     <field name="model">boq.boq</field>
@@ -448,10 +427,6 @@
         </list>
     </field>
 </record>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     BOQ — KANBAN VIEW
-═══════════════════════════════════════════════════════════════════════ -->
 <record id="view_boq_boq_kanban" model="ir.ui.view">
     <field name="name">boq.boq.kanban</field>
     <field name="model">boq.boq</field>
@@ -513,9 +488,6 @@
     </field>
 </record>
 
-<!-- ═══════════════════════════════════════════════════════════════════════
-     BOQ — WINDOW ACTION
-═══════════════════════════════════════════════════════════════════════ -->
 <record id="action_boq_boq" model="ir.actions.act_window">
     <field name="name">Bills of Quantities</field>
     <field name="res_model">boq.boq</field>

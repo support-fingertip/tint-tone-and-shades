@@ -2,7 +2,6 @@
 <odoo>
 
    
-    <!-- Root app menu -->
     <menuitem id="menu_boq_root"
               name="BOQ"
               sequence="85"
@@ -11,7 +10,6 @@
 
 
 
-    <!-- ── Home Screen Tile 1: Vendor Manager Dashboard ──────────────────── -->
     <menuitem
         id="menu_vendor_dashboard_app"
         name="Vendor Dashboard"
@@ -27,7 +25,6 @@
         sequence="1"
         groups="boq_management_v19.group_vendor_manager_dashboard"/>
 
-    <!-- ── Home Screen Tile 2: Procurement Manager Dashboard ─────────────── -->
     <menuitem
         id="menu_procurement_dashboard_app"
         name="Procurement Dashboard"
@@ -43,7 +40,6 @@
         sequence="1"
         groups="boq_management_v19.group_procurement_manager_dashboard"/>
 
-    <!-- ── Home Screen Tile 3: Head of Supplier Dashboard ────────────────── -->
     <menuitem
         id="menu_head_dashboard_app"
         name="Head of Supplier"
@@ -59,7 +55,6 @@
         sequence="1"
         groups="boq_management_v19.group_head_supplier_dashboard"/>
 
-    <!-- ── Main BOQ section ── -->
     <menuitem id="menu_boq_main"
               name="BOQ"
               parent="menu_boq_root"
@@ -77,7 +72,6 @@
               action="action_boq_boq"
               sequence="20"/>
 
-    <!-- ── RFQ section (Vendor + Supplier split) ── -->
     <menuitem id="menu_boq_rfq"
               name="RFQ"
               parent="menu_boq_root"
@@ -97,7 +91,6 @@
               sequence="20"
               groups="boq_management_v19.group_boq_user"/>
 
-    <!-- ── Reporting section ── -->
     <menuitem id="menu_boq_report"
               name="Reporting"
               parent="menu_boq_root"
@@ -118,7 +111,6 @@
               sequence="30"
               groups="boq_management_v19.group_boq_manager"/>
 
-    <!-- ── Purchase app — Vendor RFQ / Supplier RFQ sub-menus ── -->
     <menuitem id="menu_purchase_boq_vendor_rfq"
               name="Vendor RFQ"
               parent="purchase.menu_purchase_rfq"
@@ -133,7 +125,6 @@
               sequence="26"
               groups="purchase.group_purchase_user"/>
 
-    <!-- ── Configuration section ── -->
     <menuitem id="menu_boq_config"
               name="Configuration"
               parent="menu_boq_root"
@@ -146,8 +137,6 @@
               action="action_boq_category"
               sequence="10"/>
 
-
-    <!-- ── Root: Vendor ─────────────────────────────────────── -->
     <menuitem
             id="menu_vendor_purchase_root"
             name="Vendor"
@@ -182,7 +171,6 @@
             groups="boq_management_v19.group_vendor"
     />
 
-     <!-- Vendor Products Root -->
     <menuitem
             id="menu_vendor_products"
             name="Products"
@@ -191,7 +179,6 @@
             groups="boq_management_v19.group_vendor"
     />
 
-    <!-- Products -->
     <menuitem
             id="menu_vendor_product_list"
             name="Products"
@@ -209,7 +196,6 @@
             groups="boq_management_v19.group_vendor"
     />
 
-    <!-- Vendor Reporting -->
     <menuitem
             id="menu_vendor_reporting_purchase"
             name="Purchase"
@@ -228,7 +214,6 @@
             groups="boq_management_v19.group_vendor"
     />
 
-    <!-- Vendor Configuration Root -->
     <menuitem
             id="menu_vendor_configuration"
             name="Configuration"
@@ -237,7 +222,6 @@
             groups="boq_management_v19.group_vendor"
     />
 
-    <!-- Settings -->
     <menuitem
             id="menu_vendor_settings"
             name="Settings"
@@ -247,7 +231,6 @@
             groups="boq_management_v19.group_vendor"
     />
 
-    <!-- Vendor Pricelists -->
     <menuitem
             id="menu_vendor_pricelist"
             name="Vendor Pricelists"
@@ -257,7 +240,6 @@
             groups="boq_management_v19.group_vendor"
     />
 
-    <!-- Approval Levels -->
     <menuitem
             id="menu_vendor_approval_levels"
             name="Approval Levels"
@@ -267,7 +249,6 @@
             groups="boq_management_v19.group_vendor"
     />
 
-    <!-- Product Categories -->
     <menuitem
             id="menu_vendor_categories"
             name="Categories"
@@ -278,7 +259,6 @@
     />
 
 
-    <!-- ── Root: Procurement (Supplier) ─────────────────────── -->
     <menuitem
             id="menu_supplier_purchase_root"
             name="Procurement"
@@ -313,7 +293,6 @@
             groups="boq_management_v19.group_supplier"
     />
 
-    <!-- Supplier Products Root -->
     <menuitem
             id="menu_supplier_products"
             name="Products"
@@ -322,7 +301,6 @@
             groups="boq_management_v19.group_supplier"
     />
 
-    <!-- Products -->
     <menuitem
             id="menu_supplier_product_list"
             name="Products"
@@ -340,7 +318,6 @@
             groups="boq_management_v19.group_supplier"
     />
 
-    <!-- Supplier Reporting -->
     <menuitem
             id="menu_supplier_reporting_purchase"
             name="Purchase"
@@ -359,7 +336,6 @@
             groups="boq_management_v19.group_supplier"
     />
 
-    <!-- Supplier Configuration Root -->
     <menuitem
             id="menu_supplier_configuration"
             name="Configuration"
@@ -368,7 +344,6 @@
             groups="boq_management_v19.group_supplier"
     />
 
-    <!-- Settings -->
     <menuitem
             id="menu_supplier_settings"
             name="Settings"
@@ -378,17 +353,6 @@
             groups="boq_management_v19.group_supplier"
     />
 
-    <!-- Vendor Pricelists -->
-<!--    <menuitem-->
-<!--            id="menu_supplier_pricelist"-->
-<!--            name="Vendor Pricelists"-->
-<!--            parent="menu_supplier_configuration"-->
-<!--            action="product.product_pricelist_vendor_action"-->
-<!--            sequence="2"-->
-<!--            groups="boq_management_v19.group_supplier"-->
-<!--    />-->
-
-    <!-- Approval Levels -->
     <menuitem
             id="menu_supplier_approval_levels"
             name="Approval Levels"
@@ -398,7 +362,6 @@
             groups="boq_management_v19.group_supplier"
     />
 
-    <!-- Product Categories -->
     <menuitem
             id="menu_supplier_categories"
             name="Categories"
@@ -408,13 +371,11 @@
             groups="boq_management_v19.group_supplier"
     />
 
-    <!-- Hide default Purchase app (Invisible) -->
     <record id="purchase.menu_purchase_root" model="ir.ui.menu">
         <field name="active" eval="False"/>
     </record>
 
 
-    <!-- Hide the Dashboards menu item for all users -->
     <record id="spreadsheet_dashboard.spreadsheet_dashboard_menu_root" model="ir.ui.menu">
         <field name="active" eval="False"/>
     </record>

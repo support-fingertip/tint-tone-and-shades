@@ -8,9 +8,7 @@
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
 
-            <!-- Smart buttons -->
             <xpath expr="//div[@name='button_box']" position="inside">
-                <!-- Existing BOQ count button -->
                 <button type="object"
                         name="action_view_boqs"
                         class="oe_stat_button"
@@ -38,7 +36,6 @@
                 <field name="partner_type" string="Partner Type"/>
             </xpath>
 
-            <!-- BOQ Work Category Assignment tab -->
             <xpath expr="//notebook" position="inside">
                 <page string="BOQ Configuration" name="boq_config">
                     <group string="BOQ Partner Settings">
