@@ -3,7 +3,6 @@ import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odo
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
-
 function formatCurrency(value, symbol, position) {
     const n = Number(value || 0).toLocaleString(undefined, {
         minimumFractionDigits: 2,
@@ -31,7 +30,6 @@ function approvalStatusClass(s) {
              approved: "bg-success", rejected: "bg-danger" }[s]
         || "bg-secondary";
 }
-
 
 class BoqManagerDashboardBase extends Component {
    
@@ -70,7 +68,6 @@ class BoqManagerDashboardBase extends Component {
         onWillStart(async () => { await this._loadAll(); });
     }
 
-    // ── Dashboard identity ────────────────────────────────────────────────
     get dashboardType()     { return this.constructor.DASHBOARD_TYPE; }
     get isVendorDashboard() { return this.dashboardType === "vendor"; }
     get isHeadDashboard()   { return false; } 
@@ -129,7 +126,6 @@ class BoqManagerDashboardBase extends Component {
         await this._loadAll();
     }
 
-    // ── Tree expand / collapse ────────────────────────────────────────────
     toggleTrade(tradeId) {
         this.state.expandedTrades = {
             ...this.state.expandedTrades,
@@ -168,7 +164,6 @@ class BoqManagerDashboardBase extends Component {
         this.state.expandedRfqs = { ...this.state.expandedRfqs, [rfqId]: true };
     }
 
-    // ── Margin helpers ────────────────────────────────────────────────────
     fmtPercent(val) {
         return (val || 0).toFixed(1) + "%";
     }
@@ -191,7 +186,6 @@ class BoqManagerDashboardBase extends Component {
         return null;
     }
 
-    // ── Computed: filtered tree ───────────────────────────────────────────
     get filteredTree() {
         const q = (this.state.filterText || "").toLowerCase().trim();
         if (!q) return this.state.tree;
@@ -203,7 +197,6 @@ class BoqManagerDashboardBase extends Component {
         );
     }
 
-    // ── Computed: summary totals ──────────────────────────────────────────
     get treeTotals() {
         const t = this.filteredTree;
         return {
@@ -225,7 +218,6 @@ class BoqManagerDashboardBase extends Component {
         };
     }
 
-    // ── Computed: approval totals ─────────────────────────────────────────
     get approvalTotals() {
         const pos = this.state.approvalPOs || [];
         return {
@@ -235,17 +227,14 @@ class BoqManagerDashboardBase extends Component {
         };
     }
 
-    // ── Currency helpers ──────────────────────────────────────────────────
     get currencySymbol()   { return this.state.stats.currency_symbol   || "$"; }
     get currencyPosition() { return this.state.stats.currency_position || "before"; }
     fmtCurrency(val) { return formatCurrency(val, this.currencySymbol, this.currencyPosition); }
 
-    // ── CSS helpers ───────────────────────────────────────────────────────
     paymentStatusClass(s)  { return paymentStatusClass(s);  }
     rfqStateClass(s)       { return rfqStateClass(s);       }
     approvalStatusClass(s) { return approvalStatusClass(s); }
 
-    // ── Navigation ────────────────────────────────────────────────────────
     openAllBoqs() {
         this.actionSvc.doAction({
             type:      "ir.actions.act_window",
@@ -333,7 +322,6 @@ class BoqManagerDashboardBase extends Component {
     }
 }
 
-// ── Shared private loader — used by both Vendor and Procurement ──────────────
 async function _loadDashboardData(component) {
     const dt   = component.dashboardType;
     const cids = await component.orm.call(
@@ -390,7 +378,6 @@ export class VendorManagerDashboard extends BoqManagerDashboardBase {
     }
 }
 
-
 export class ProcurementManagerDashboard extends BoqManagerDashboardBase {
     static DASHBOARD_TYPE = "supplier";
     static template       = "boq_management_v19.ProcurementManagerDashboard";
@@ -422,12 +409,10 @@ export class ProcurementManagerDashboard extends BoqManagerDashboardBase {
     }
 }
 
-
 export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     static DASHBOARD_TYPE = "supplier";
     static template       = "boq_management_v19.HeadSupplierDashboard";
 
-    // ── Identity overrides ────────────────────────────────────────────────
     get isHeadDashboard()   { return true; }
     get dashboardTitle()    { return "Head of Supplier Dashboard"; }
     get dashboardSubtitle() { return "Consolidated multi-company supplier & procurement view"; }
@@ -435,7 +420,6 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     get partnerLabel()      { return "Supplier"; }
     get dashboardColor()    { return "text-success"; }
 
-    // ── Icon overrides — enterprise / executive theme ─────────────────────
     get iconBoqs()             { return "fa-clipboard"; }
     get iconBOQValue()         { return "fa-tag"; }
     get iconGrandTotal()       { return "fa-pie-chart"; }
@@ -459,8 +443,6 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         onMounted(()       => document.addEventListener("click", this._closeDropdown));
         onWillUnmount(()   => document.removeEventListener("click", this._closeDropdown));
     }
-
-    // ── Company filter helpers ────────────────────────────────────────────
 
     /** Returns the company_ids kwarg to pass to Python, or null for "all". */
     get _filterCompanyIds() {
@@ -533,7 +515,6 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         await this._loadData();
     }
 
-    // ── Head-level KPI helpers for hero banner ────────────────────────────
     get headTotalCompanies()  { return this.state.companySummary.length; }
     get headTotalSuppliers()  {
         return this.state.vendorSummary ? this.state.vendorSummary.length : 0;
@@ -544,8 +525,6 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         return (this.state.pendingVendors || []).reduce((s, v) => s + (v.rfq_count || 0), 0);
     }
     get headTotalValue() { return this.state.stats ? (this.state.stats.rfq_total_value || 0) : 0; }
-
-    // ── Data loading ──────────────────────────────────────────────────────
 
     /** First load available companies (once), then data. */
     async _loadAll() {
@@ -623,7 +602,6 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         await this._loadAll();
     }
 
-    // ── Navigation helpers ────────────────────────────────────────────────
     openCompanyRfqs(companyId, companyName) {
         this.actionSvc.doAction({
             type:      "ir.actions.act_window",
@@ -636,7 +614,6 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     }
 }
 
-// ── Register each under its OWN tag ─────────────────────────────────────────
 registry.category("actions").add(
     "boq_management_v19.vendor_manager_dashboard_action",
     VendorManagerDashboard

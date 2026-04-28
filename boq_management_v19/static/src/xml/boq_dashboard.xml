@@ -12,41 +12,21 @@
     ProcurementManagerDashboard  → boq_management_v19.ProcurementManagerDashboard
     Shared body                  → boq_management_v19.DashboardBody  (t-call'd)
 -->
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     VENDOR MANAGER DASHBOARD template
-════════════════════════════════════════════════════════════════════════ -->
 <t t-name="boq_management_v19.VendorManagerDashboard">
     <t t-call="boq_management_v19.DashboardBody"/>
 </t>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     PROCUREMENT MANAGER DASHBOARD template
-════════════════════════════════════════════════════════════════════════ -->
 <t t-name="boq_management_v19.ProcurementManagerDashboard">
     <t t-call="boq_management_v19.DashboardBody"/>
 </t>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     HEAD OF SUPPLIER DASHBOARD template
-     Consolidated cross-company view.  Calls DashboardBody which checks
-     isHeadDashboard to conditionally render the Company Overview section.
-════════════════════════════════════════════════════════════════════════ -->
 <t t-name="boq_management_v19.HeadSupplierDashboard">
     <t t-call="boq_management_v19.DashboardBody"/>
 </t>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     SHARED DASHBOARD BODY — used by both component templates via t-call
-     (t-call inherits the component's `this` so all helpers work normally)
-════════════════════════════════════════════════════════════════════════ -->
 <t t-name="boq_management_v19.DashboardBody">
 <div class="boq_dashboard o_action"
      data-bs-theme="light"
      style="position:absolute;inset:0;display:flex;flex-direction:column;
             overflow:hidden;color-scheme:light;background:#f8f9fa;color:#212529;">
 
-    <!-- ── LOADING ───────────────────────────────────────────────────── -->
     <t t-if="state.loading">
         <div class="d-flex flex-column align-items-center justify-content-center"
              style="flex:1;min-height:0;">
@@ -60,7 +40,6 @@
         </div>
     </t>
 
-    <!-- ── ERROR ─────────────────────────────────────────────────────── -->
     <t t-elif="state.error">
         <div class="alert alert-danger m-4">
             <i class="fa fa-exclamation-triangle me-2"/>
@@ -70,13 +49,8 @@
         </div>
     </t>
 
-    <!-- ── MAIN ──────────────────────────────────────────────────────── -->
     <t t-else="">
-
-        <!-- ╔════════════════════════════════════════════════════╗
-             ║  PINNED HEADER                                     ║
-             ╚════════════════════════════════════════════════════╝ -->
-        <div class="boq_dash_header d-flex align-items-center
+<div class="boq_dash_header d-flex align-items-center
                     justify-content-between px-4 py-3 border-bottom">
 
             <!-- Title block -->
@@ -115,18 +89,8 @@
                 </button>
             </div>
         </div>
-
-        <!-- ╔════════════════════════════════════════════════════╗
-             ║  SCROLLABLE BODY                                   ║
-             ╚════════════════════════════════════════════════════╝ -->
-        <div class="boq_dash_scroll">
-
-            <!-- ╔════════════════════════════════════════════════════╗
-                 ║  HERO BANNER — visual identity per dashboard       ║
-                 ║  Vendor: blue · Procurement: green · Head: teal   ║
-                 ╚════════════════════════════════════════════════════╝ -->
-
-            <!-- Head of Supplier — large teal hero with manager KPIs -->
+<div class="boq_dash_scroll">
+<!-- Head of Supplier — large teal hero with manager KPIs -->
             <t t-if="isHeadDashboard">
                 <div class="boq_hero boq_hero_head">
                     <!-- Decorative icon trio -->
@@ -266,12 +230,6 @@
                 </div>
             </t>
 
-            <!-- ╔════════════════════════════════════════════════════╗
-                 ║  HEAD DASHBOARD — COMPANY FIELD SELECTOR           ║
-                 ║  Many2many-style field: shows selected companies    ║
-                 ║  as removable tags; dropdown to add/remove.        ║
-                 ║  Only shown when > 1 company is available.         ║
-                 ╚════════════════════════════════════════════════════╝ -->
             <t t-if="isHeadDashboard and state.availableCompanies.length > 0">
                 <div class="boq_cf_wrap px-4 pb-3">
                     <div class="boq_cf_row d-flex align-items-center gap-3">
@@ -377,7 +335,6 @@
                 </div>
             </t>
 
-            <!-- ── STAT CARDS ────────────────────────────── -->
             <div class="boq_dash_stat_row d-flex flex-wrap gap-3 p-4">
 
                 <div class="boq_stat_card flex-fill" t-on-click="openAllBoqs" style="cursor:pointer;">
@@ -466,15 +423,7 @@
                 </t>
 
             </div><!-- /stat cards -->
-
-
-            <!-- ╔════════════════════════════════════════════════════╗
-                 ║  HEAD OF SUPPLIER — COMPANY OVERVIEW               ║
-                 ║  Only rendered on HeadSupplierDashboard.           ║
-                 ║  One card per allowed company showing aggregated   ║
-                 ║  BOQ, RFQ, value, pending, and submitted counts.   ║
-                 ╚════════════════════════════════════════════════════╝ -->
-            <t t-if="isHeadDashboard and state.companySummary.length > 0">
+<t t-if="isHeadDashboard and state.companySummary.length > 0">
                 <div class="px-4 pb-3">
 
                     <!-- Section header -->
@@ -563,13 +512,7 @@
 
                 </div>
             </t><!-- /company overview -->
-
-            <!-- ╔════════════════════════════════════════════════════╗
-                 ║  VENDOR SUMMARY CARDS                              ║
-                 ║  One card per vendor/supplier — flat overview of   ║
-                 ║  RFQ count, total value, margin %                  ║
-                 ╚════════════════════════════════════════════════════╝ -->
-            <t t-if="state.vendorSummary.length > 0">
+<t t-if="state.vendorSummary.length > 0">
                 <div class="px-4 pb-2">
 
                     <div class="boq_section_header d-flex align-items-center
@@ -787,7 +730,6 @@
                 </div><!-- /px-4 -->
             </t><!-- /pending section -->
 
-            <!-- ── SUMMARY CHIPS BAR ─────────────────────── -->
             <div class="boq_tree_summary_bar d-flex flex-wrap gap-2 px-4 pb-3">
                 <span class="boq_totals_chip">
                     <i class="fa fa-wrench me-1"/>
@@ -834,14 +776,7 @@
                     </span>
                 </t>
             </div>
-
-            <!-- ╔════════════════════════════════════════════════════╗
-                 ║  RECENTLY SUBMITTED NOTIFICATION PANEL             ║
-                 ║  Revealed when "Recently Submitted" chip is        ║
-                 ║  clicked.  Lists all submitted RFQs with vendor,   ║
-                 ║  reference, trade, amount, and when submitted.     ║
-                 ╚════════════════════════════════════════════════════╝ -->
-            <t t-if="state.showRecentPanel and state.recentlySubmitted.length > 0">
+<t t-if="state.showRecentPanel and state.recentlySubmitted.length > 0">
                 <div class="px-4 pb-3">
                     <div class="boq_recent_panel">
 
@@ -934,16 +869,8 @@
                     </div><!-- /boq_recent_panel -->
                 </div>
             </t><!-- /notification panel -->
+<div class="px-4 pb-3">
 
-            <!-- ╔════════════════════════════════════════════════════╗
-                 ║  TRADE VIEW ANALYSIS — 3-LEVEL EXPANDABLE TREE    ║
-                 ║  Level 1: Trade rows (always visible)              ║
-                 ║  Level 2: Vendor/Supplier rows (expand from trade) ║
-                 ║  Level 3: RFQ rows (expand from vendor)            ║
-                 ╚════════════════════════════════════════════════════╝ -->
-            <div class="px-4 pb-3">
-
-                <!-- ── TRADE VIEW ANALYSIS section label ─────────── -->
                 <div class="boq_trade_view_header d-flex align-items-center
                             justify-content-between mb-3">
                     <h5 class="mb-0 fw-bold boq_section_title">
@@ -985,7 +912,6 @@
                 <t t-else="">
                 <div class="boq_tree_table">
 
-                    <!-- ── LEVEL 1: TRADE ROWS ──────────────────────── -->
                     <t t-foreach="filteredTree" t-as="trade" t-key="trade.trade_id">
 
                         <!-- Trade header row — boq_trade_has_new added when any vendor
@@ -1046,7 +972,6 @@
                             </span>
                         </div><!-- /trade row -->
 
-                        <!-- ── LEVEL 2: VENDOR ROWS (under trade) ────── -->
                         <t t-if="isTradeExpanded(trade.trade_id)">
 
                             <t t-if="trade.vendors.length === 0">
@@ -1145,7 +1070,6 @@
                                     </span>
                                 </div><!-- /vendor row -->
 
-                                <!-- ── LEVEL 3: RFQ ROWS ──────────────── -->
                                 <t t-if="isVendorExpanded(vendor.vendor_id)">
 
                                     <t t-if="vendor.state_summary and vendor.state_summary.length > 0">
@@ -1397,7 +1321,6 @@
 
             </div><!-- /tree px-4 -->
 
-      
             <t t-if="state.approvalPOs.length > 0">
                 <div class="px-4 pb-4">
 

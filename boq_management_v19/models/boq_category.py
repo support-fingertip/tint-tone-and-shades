@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
 
-
 class BoqCategory(models.Model):
     """
     BOQ Work Category — maps to a notebook tab in the BOQ form.
@@ -12,7 +11,6 @@ class BoqCategory(models.Model):
     _order = 'sequence asc, name asc'
     _rec_name = 'name'
 
-    # ── Identity ─────────────────────────────────────────────────────────
     name = fields.Char(
         string='Category Name',
         required=True,
@@ -33,7 +31,6 @@ class BoqCategory(models.Model):
         translate=True,
     )
 
-    # ── Visual ───────────────────────────────────────────────────────────
     color = fields.Integer(string='Color', default=0)
     icon = fields.Char(
         string='Icon Class',
@@ -46,10 +43,8 @@ class BoqCategory(models.Model):
         store=True,
     )
 
-    # ── Status ───────────────────────────────────────────────────────────
     active = fields.Boolean(default=True)
 
-    # ── Statistics ───────────────────────────────────────────────────────
     boq_count = fields.Integer(
         string='BOQs',
         compute='_compute_boq_count',
@@ -59,11 +54,9 @@ class BoqCategory(models.Model):
         compute='_compute_boq_count',
     )
 
-    # ── Constraints ──────────────────────────────────────────────────────
     _name_uniq = models.Constraint('unique(name)', 'Category name must be unique.')
     _code_uniq = models.Constraint('unique(code)', 'Category code must be unique.')
 
-    # ── Computes ─────────────────────────────────────────────────────────
     @api.depends('color')
     def _compute_tag_color_class(self):
         color_map = {
