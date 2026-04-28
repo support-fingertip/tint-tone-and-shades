@@ -876,12 +876,13 @@ class BoqBoq(models.Model):
 
             # Payment status: invoice status on PO
             rfq_state_label = {
-                'draft': 'RFQ',
-                'sent': 'Sent',
-                'to approve': 'To Approve',
-                'purchase': 'PO',
-                'done': 'Done',
-                'cancel': 'Cancelled',
+                'draft':      'RFQ',
+                'sent':       'Sent',
+                'submitted':  'Submitted',
+                'to approve': 'Awaiting Approval',
+                'purchase':   'PO',
+                'done':       'Done',
+                'cancel':     'Cancelled',
             }.get(rfq.state, rfq.state)
             if rfq_state_label not in entry['rfq_states']:
                 entry['rfq_states'].append(rfq_state_label)

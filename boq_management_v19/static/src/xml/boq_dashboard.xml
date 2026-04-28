@@ -1468,32 +1468,40 @@
                                     </small>
                                 </span>
 
-                                <!-- Approval progress pills — uniform neutral colour -->
+                                <!-- Approval progress pills — colour-coded by status -->
                                 <span class="boq_approval_col_progress">
                                     <div class="d-flex flex-wrap gap-1 align-items-center">
-                                        <t t-foreach="po.approval_lines" t-as="al"
-                                           t-key="al.level_name">
-                                            <span t-attf-class="badge boq_badge_neutral rounded-pill boq_approval_pill
-                                                                 #{ al.is_mine ? 'boq_approval_pill_mine' : '' }"
-                                                  t-att-title="al.approvers">
-                                                <t t-if="al.is_mine">
-                                                    <i class="fa fa-user me-1"/>
-                                                </t>
-                                                <t t-esc="al.level_name"/>:
-                                                <t t-esc="al.status_label"/>
+                                        <t t-if="po.approval_lines.length > 0">
+                                            <t t-foreach="po.approval_lines" t-as="al"
+                                               t-key="al.level_name">
+                                                <span t-attf-class="badge rounded-pill boq_approval_pill
+                                                                     #{ approvalStatusClass(al.status) }
+                                                                     #{ al.is_mine ? 'boq_approval_pill_mine' : '' }"
+                                                      t-att-title="al.approvers">
+                                                    <t t-if="al.is_mine">
+                                                        <i class="fa fa-user me-1"/>
+                                                    </t>
+                                                    <t t-esc="al.level_name"/>:
+                                                    <t t-esc="al.status_label"/>
+                                                </span>
+                                            </t>
+                                            <!-- Progress fraction -->
+                                            <small class="text-muted ms-1">
+                                                <t t-esc="po.approved_count"/>/<t t-esc="po.approval_count"/> approved
+                                            </small>
+                                        </t>
+                                        <t t-else="">
+                                            <span class="badge bg-warning text-dark rounded-pill">
+                                                <i class="fa fa-hourglass-half me-1"/>Awaiting Approval
                                             </span>
                                         </t>
-                                        <!-- Progress fraction -->
-                                        <small class="text-muted ms-1">
-                                            <t t-esc="po.approved_count"/>/<t t-esc="po.approval_count"/>
-                                        </small>
                                     </div>
                                 </span>
 
-                                <!-- Action column — uniform neutral colour for "Your Turn" -->
+                                <!-- Action column -->
                                 <span class="boq_approval_col_action">
                                     <t t-if="po.has_current_approver">
-                                        <span class="badge boq_badge_neutral rounded-pill">
+                                        <span class="badge bg-warning text-dark rounded-pill">
                                             <i class="fa fa-bell me-1"/>Your Turn
                                         </span>
                                     </t>
