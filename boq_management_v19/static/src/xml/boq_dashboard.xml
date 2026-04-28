@@ -53,7 +53,6 @@
 <div class="boq_dash_header d-flex align-items-center
                     justify-content-between px-4 py-3 border-bottom">
 
-            <!-- Title block -->
             <div class="d-flex align-items-center gap-3">
                 <div t-attf-class="boq_dash_header_icon #{ isVendorDashboard ? 'boq_hdr_vendor' : 'boq_hdr_supplier' }">
                     <i t-attf-class="fa #{ dashboardIcon } fa-lg"/>
@@ -64,7 +63,6 @@
                 </div>
             </div>
 
-            <!-- Action bar -->
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 <div class="input-group input-group-sm boq_header_search">
                     <span class="input-group-text bg-white border-end-0">
@@ -93,7 +91,6 @@
 <!-- Head of Supplier — large teal hero with manager KPIs -->
             <t t-if="isHeadDashboard">
                 <div class="boq_hero boq_hero_head">
-                    <!-- Decorative icon trio -->
                     <div class="boq_hero_icons">
                         <div class="boq_hero_icon_wrap boq_hero_ic1">
                             <i class="fa fa-sitemap fa-2x"/>
@@ -106,7 +103,6 @@
                         </div>
                     </div>
 
-                    <!-- Title block -->
                     <div class="boq_hero_body flex-fill">
                         <h3 class="boq_hero_title">Head of Supplier Dashboard</h3>
                         <p class="boq_hero_sub mb-0">
@@ -114,7 +110,6 @@
                         </p>
                     </div>
 
-                    <!-- Manager KPI strip -->
                     <div class="boq_hero_kpis">
                         <div class="boq_hero_kpi">
                             <div class="boq_hero_kpi_val">
@@ -162,7 +157,6 @@
                 </div>
             </t>
 
-            <!-- Vendor Manager hero — blue -->
             <t t-elif="isVendorDashboard">
                 <div class="boq_hero boq_hero_vendor">
                     <div class="boq_hero_icons">
@@ -196,7 +190,6 @@
                 </div>
             </t>
 
-            <!-- Procurement Manager hero — green -->
             <t t-else="">
                 <div class="boq_hero boq_hero_procurement">
                     <div class="boq_hero_icons">
@@ -234,22 +227,16 @@
                 <div class="boq_cf_wrap px-4 pb-3">
                     <div class="boq_cf_row d-flex align-items-center gap-3">
 
-                        <!-- Field label -->
                         <span class="boq_cf_label">
                             <i class="fa fa-building me-1"/>Companies
                         </span>
-
-                        <!-- Field input — shows tags + opens dropdown -->
                         <div class="boq_cf_input" t-on-click="toggleCompanyDropdown"
                              style="position:relative;">
-
-                            <!-- "All companies" placeholder -->
                             <span t-if="state.selectedCompanyIds.length === 0"
                                   class="boq_cf_placeholder">
                                 <i class="fa fa-globe me-1 text-muted"/>All companies
                             </span>
 
-                            <!-- Selected company tags -->
                             <t t-foreach="state.availableCompanies" t-as="ac" t-key="ac.id">
                                 <t t-if="isCompanyTag(ac.id)">
                                     <span class="boq_cf_tag">
@@ -269,15 +256,12 @@
                                 </t>
                             </t>
 
-                            <!-- Caret -->
                             <i t-attf-class="fa boq_cf_caret
                                              #{ state.showCompanyDropdown ? 'fa-caret-up' : 'fa-caret-down' }"/>
 
-                            <!-- Dropdown panel -->
                             <t t-if="state.showCompanyDropdown">
                                 <div class="boq_cf_dropdown" t-on-click.stop="">
 
-                                    <!-- All companies row -->
                                     <div t-attf-class="boq_cf_dd_item boq_cf_dd_all
                                                        #{ state.selectedCompanyIds.length === 0 ? 'boq_cf_dd_active' : '' }"
                                          t-on-click="selectAllCompanies">
@@ -293,7 +277,6 @@
 
                                     <div class="boq_cf_dd_divider"/>
 
-                                    <!-- One row per company -->
                                     <t t-foreach="state.availableCompanies" t-as="ac" t-key="ac.id">
                                         <div t-attf-class="boq_cf_dd_item
                                                            #{ isCompanySelected(ac.id) ? 'boq_cf_dd_active' : '' }"
@@ -313,9 +296,8 @@
 
                                 </div>
                             </t>
-                        </div><!-- /boq_cf_input -->
+                        </div>
 
-                        <!-- "Clear filter" link when subset is active -->
                         <button t-if="state.selectedCompanyIds.length > 0"
                                 class="boq_cf_clear btn btn-sm btn-link text-muted p-0"
                                 type="button"
@@ -323,7 +305,6 @@
                             <i class="fa fa-times-circle me-1"/>Clear filter
                         </button>
 
-                        <!-- Active filter badge -->
                         <span t-if="state.selectedCompanyIds.length > 0"
                               class="boq_cf_badge ms-auto">
                             <i class="fa fa-filter me-1"/>
@@ -426,7 +407,6 @@
 <t t-if="isHeadDashboard and state.companySummary.length > 0">
                 <div class="px-4 pb-3">
 
-                    <!-- Section header -->
                     <div class="boq_section_header d-flex align-items-center
                                 justify-content-between mb-3">
                         <h5 class="mb-0 fw-bold boq_section_title">
@@ -443,14 +423,12 @@
                         </small>
                     </div>
 
-                    <!-- Company cards row -->
                     <div class="d-flex flex-wrap gap-3">
                         <t t-foreach="state.companySummary" t-as="cs" t-key="cs.company_id">
                             <div class="boq_company_card"
                                  t-on-click="() => this.openCompanyRfqs(cs.company_id, cs.company_name)"
                                  style="cursor:pointer;">
 
-                                <!-- Header: avatar + name -->
                                 <div class="boq_cc_header d-flex align-items-center gap-2 mb-3">
                                     <div class="boq_company_avatar">
                                         <t t-esc="cs.company_initial"/>
@@ -464,7 +442,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Key metrics row -->
                                 <div class="d-flex flex-wrap gap-2 mb-3">
 
                                     <div class="boq_vc_metric">
@@ -483,7 +460,6 @@
 
                                 </div>
 
-                                <!-- Status badges footer -->
                                 <div class="d-flex flex-wrap gap-1 align-items-center">
                                     <span t-if="cs.pending_count > 0"
                                           class="badge boq_badge_neutral rounded-pill small">
@@ -506,9 +482,9 @@
                                     </span>
                                 </div>
 
-                            </div><!-- /company card -->
+                            </div>
                         </t>
-                    </div><!-- /company cards row -->
+                    </div>
 
                 </div>
             </t><!-- /company overview -->
@@ -526,7 +502,6 @@
                         </h5>
                     </div>
 
-                    <!-- Horizontally scrollable vendor cards row -->
                     <div class="boq_vendor_cards_scroll">
                         <div class="boq_vendor_cards_row">
 
@@ -535,7 +510,6 @@
                                      t-on-click="() => this.openVendorRfqs(vs.vendor_id, vs.vendor_name)"
                                      style="cursor:pointer;">
 
-                                    <!-- Avatar + name + email -->
                                     <div class="boq_vc_header d-flex align-items-center gap-2 mb-3">
                                         <div class="boq_vendor_avatar">
                                             <t t-esc="(vs.vendor_name || '?').charAt(0).toUpperCase()"/>
@@ -549,10 +523,8 @@
                                         </div>
                                     </div>
 
-                                    <!-- Key metrics -->
                                     <div class="boq_vc_metrics d-flex flex-wrap gap-2 mb-3">
 
-                                        <!-- RFQ count — neutral colour (no payment info shown) -->
                                         <div class="boq_vc_metric">
                                             <div class="boq_vc_metric_value boq_metric_neutral">
                                                 <t t-esc="vs.rfq_count"/>
@@ -560,7 +532,6 @@
                                             <div class="boq_vc_metric_label">RFQs</div>
                                         </div>
 
-                                        <!-- Total value -->
                                         <div class="boq_vc_metric">
                                             <div class="boq_vc_metric_value small boq_metric_neutral">
                                                 <t t-esc="fmtCurrency(vs.total_value)"/>
@@ -568,7 +539,6 @@
                                             <div class="boq_vc_metric_label">Total Value</div>
                                         </div>
 
-                                        <!-- Margin % — vendor dashboard only -->
                                         <t t-if="isVendorDashboard">
                                         <div class="boq_vc_metric">
                                             <t t-if="vs.has_vendor_price">
@@ -586,8 +556,6 @@
 
                                     </div>
 
-                                    <!-- Footer: RFQ states only — payment info (vs.payment_status_label)
-                                         is intentionally excluded from all vendor-wise sections. -->
                                     <div class="boq_vc_footer d-flex align-items-center
                                                 justify-content-between flex-wrap gap-1">
 
@@ -604,22 +572,21 @@
 
                                     </div>
 
-                                    <!-- Projects (if any) -->
-                                    <t t-if="vs.project_names and vs.project_names !== '—'">
+s                                    <t t-if="vs.project_names and vs.project_names !== '—'">
                                         <div class="boq_vc_projects text-muted small mt-2 text-truncate">
                                             <i class="fa fa-briefcase me-1"/>
                                             <t t-esc="vs.project_names"/>
                                         </div>
                                     </t>
 
-                                </div><!-- /vendor card -->
+                                </div>
                             </t>
 
-                        </div><!-- /cards row -->
-                    </div><!-- /scroll wrapper -->
+                        </div>
+                    </div>
 
-                </div><!-- /vendor summary px-4 -->
-            </t><!-- /vendor summary -->
+                </div>
+            </t>
 
             <t t-if="state.pendingVendors.length > 0">
                 <div class="px-4 pb-3">
@@ -644,7 +611,6 @@
 
                     <div class="boq_pending_table">
 
-                        <!-- Table header -->
                         <div class="boq_pending_thead">
                             <span class="boq_pending_col_vendor">
                                 <t t-esc="partnerLabel"/>
@@ -657,14 +623,12 @@
                             <span class="boq_pending_col_value">Value</span>
                         </div>
 
-                        <!-- Vendor + RFQ rows -->
                         <t t-foreach="state.pendingVendors" t-as="pv" t-key="pv.vendor_id">
                             <t t-foreach="pv.rfqs" t-as="prfq" t-key="prfq.rfq_id">
                                 <div class="boq_pending_row"
                                      t-on-click="() => this.openRfq(prfq.rfq_id)"
                                      style="cursor:pointer;">
 
-                                    <!-- Vendor name (only show on first RFQ for this vendor) -->
                                     <span class="boq_pending_col_vendor">
                                         <t t-if="prfq_index === 0">
                                             <span class="boq_vendor_avatar_sm flex-shrink-0">
@@ -681,7 +645,6 @@
                                         </t>
                                     </span>
 
-                                    <!-- RFQ reference -->
                                     <span class="boq_pending_col_rfq">
                                         <i class="fa fa-file-text-o me-1 text-muted"/>
                                         <span class="fw-semibold text-primary">
@@ -689,32 +652,25 @@
                                         </span>
                                     </span>
 
-                                    <!-- Trade -->
                                     <span class="boq_pending_col_trade text-muted small">
                                         <t t-esc="prfq.trade_name"/>
                                     </span>
 
-                                    <!-- Date issued -->
                                     <span class="boq_pending_col_date text-muted small">
                                         <t t-esc="prfq.date_order"/>
                                     </span>
 
-                                    <!-- Days pending -->
                                     <span class="boq_pending_col_days">
                                         <span class="badge boq_badge_neutral rounded-pill">
                                             <i class="fa fa-clock-o me-1"/>
                                             <t t-esc="prfq.days_pending"/>d
                                         </span>
                                     </span>
-
-                                    <!-- RFQ state -->
                                     <span class="boq_pending_col_status">
                                         <span class="badge boq_badge_neutral rounded-pill">
                                             <t t-esc="prfq.state_label"/>
                                         </span>
                                     </span>
-
-                                    <!-- Value -->
                                     <span class="boq_pending_col_value fw-semibold">
                                         <t t-esc="fmtCurrency(prfq.amount_total)"/>
                                         <span class="boq_pending_open_icon ms-1">
@@ -722,13 +678,13 @@
                                         </span>
                                     </span>
 
-                                </div><!-- /pending row -->
+                                </div>
                             </t>
                         </t>
 
-                    </div><!-- /boq_pending_table -->
-                </div><!-- /px-4 -->
-            </t><!-- /pending section -->
+                    </div>
+                </div>
+            </t>
 
             <div class="boq_tree_summary_bar d-flex flex-wrap gap-2 px-4 pb-3">
                 <span class="boq_totals_chip">
@@ -749,7 +705,6 @@
                     <i class="fa fa-clock-o me-1"/>
                     <strong><t t-esc="treeTotals.pending"/></strong> Pending
                 </span>
-                <!-- Clickable notification chip — toggles the recently submitted panel -->
                 <t t-if="treeTotals.submitted > 0">
                     <button t-attf-class="boq_chip_notification boq_chip_notif_btn
                                          #{ state.showRecentPanel ? 'boq_chip_notif_active' : '' }"
@@ -780,7 +735,6 @@
                 <div class="px-4 pb-3">
                     <div class="boq_recent_panel">
 
-                        <!-- Panel header -->
                         <div class="boq_recent_panel_header d-flex align-items-center
                                     justify-content-between">
                             <div class="d-flex align-items-center gap-2">
@@ -803,7 +757,6 @@
                             </button>
                         </div>
 
-                        <!-- Column headers -->
                         <div class="boq_recent_thead">
                             <span class="boq_recent_col_vendor">Vendor</span>
                             <span class="boq_recent_col_ref">RFQ Reference</span>
@@ -811,15 +764,12 @@
                             <span class="boq_recent_col_amount">Amount</span>
                             <span class="boq_recent_col_when">Submitted</span>
                         </div>
-
-                        <!-- One row per submitted quotation -->
                         <t t-foreach="state.recentlySubmitted" t-as="rq" t-key="rq.rfq_id">
                             <div class="boq_recent_row"
                                  t-on-click="() => this.openRfq(rq.rfq_id)"
                                  style="cursor:pointer;"
                                  title="Open quotation">
 
-                                <!-- Vendor -->
                                 <span class="boq_recent_col_vendor d-flex align-items-center gap-2">
                                     <span class="boq_vendor_avatar_sm boq_avatar_new flex-shrink-0">
                                         <t t-esc="rq.vendor_initial"/>
@@ -829,26 +779,20 @@
                                     </span>
                                 </span>
 
-                                <!-- RFQ Reference -->
                                 <span class="boq_recent_col_ref">
                                     <i class="fa fa-file-text-o me-1 text-muted"/>
                                     <span class="fw-semibold text-primary">
                                         <t t-esc="rq.rfq_name"/>
                                     </span>
                                 </span>
-
-                                <!-- Trade -->
                                 <span class="boq_recent_col_trade text-muted small">
                                     <i class="fa fa-wrench me-1"/>
                                     <t t-esc="rq.trade_name"/>
                                 </span>
-
-                                <!-- Amount -->
                                 <span class="boq_recent_col_amount fw-semibold">
                                     <t t-esc="fmtCurrency(rq.amount_total)"/>
                                 </span>
 
-                                <!-- When -->
                                 <span class="boq_recent_col_when">
                                     <span class="badge boq_badge_submitted rounded-pill">
                                         <i class="fa fa-clock-o me-1"/>
@@ -858,7 +802,6 @@
                                     </span>
                                 </span>
 
-                                <!-- Open arrow -->
                                 <span class="boq_recent_open ms-auto">
                                     <i class="fa fa-external-link text-muted"/>
                                 </span>
@@ -866,7 +809,7 @@
                             </div>
                         </t>
 
-                    </div><!-- /boq_recent_panel -->
+                    </div>
                 </div>
             </t><!-- /notification panel -->
 <div class="px-4 pb-3">
@@ -886,8 +829,6 @@
                         Click a trade row to expand vendors and RFQs
                     </small>
                 </div>
-
-                <!-- Empty state -->
                 <t t-if="filteredTree.length === 0">
                     <div class="text-center py-5 text-muted">
                         <i class="fa fa-info-circle fa-3x mb-3 d-block text-primary opacity-50"/>
@@ -914,8 +855,6 @@
 
                     <t t-foreach="filteredTree" t-as="trade" t-key="trade.trade_id">
 
-                        <!-- Trade header row — boq_trade_has_new added when any vendor
-                             submitted a quotation in the last 7 days -->
                         <div t-attf-class="boq_tree_row boq_trade_row
                                            #{ isTradeExpanded(trade.trade_id) ? 'boq_trade_row_open' : '' }
                                            #{ trade.submitted_count > 0 ? 'boq_trade_has_new' : '' }"
@@ -946,7 +885,6 @@
                                         <t t-esc="trade.pending_count"/> pending
                                     </span>
                                 </t>
-                                <!-- Notification badge — amber pulsing bell for recent submissions -->
                                 <t t-if="trade.submitted_count > 0">
                                     <span class="badge boq_badge_submitted rounded-pill ms-1"
                                           title="Quotation submitted in last 7 days">
@@ -954,7 +892,6 @@
                                         <t t-esc="trade.submitted_count"/> new
                                     </span>
                                 </t>
-                                <!-- Margin — vendor dashboard only -->
                                 <t t-if="isVendorDashboard">
                                 <span t-attf-class="badge rounded-pill ms-1 {{ (trade.vendor_cost_total || 0) > 0 ? marginClass(trade.margin_percent) : 'boq_badge_neutral' }}"
                                       title="Trade gross margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price × 100">
@@ -987,8 +924,6 @@
                             <t t-foreach="trade.vendors" t-as="vendor"
                                t-key="vendor.vendor_id">
 
-                                <!-- Vendor row — boq_vendor_has_new added when vendor submitted
-                                     a quotation in the last 7 days (amber left-border accent) -->
                                 <div t-attf-class="boq_tree_row boq_vendor_row
                                                    #{ isVendorExpanded(vendor.vendor_id) ? 'boq_vendor_row_open' : '' }
                                                    #{ vendor.recently_submitted_count > 0 ? 'boq_vendor_has_new' : '' }"
@@ -999,8 +934,6 @@
                                     <span class="boq_tree_expand_icon">
                                         <i t-attf-class="fa #{ isVendorExpanded(vendor.vendor_id) ? 'fa-chevron-down' : 'fa-chevron-right' }"/>
                                     </span>
-
-                                    <!-- Avatar — pulsing ring when vendor has new submissions -->
                                     <span t-attf-class="boq_vendor_avatar_sm #{ vendor.recently_submitted_count > 0 ? 'boq_avatar_new' : '' }">
                                         <t t-esc="(vendor.vendor_name || '?').charAt(0).toUpperCase()"/>
                                     </span>
@@ -1016,17 +949,12 @@
                                         </t>
                                     </span>
 
-                                    <!-- NOTE: payment_status / payment_status_label are intentionally
-                                         NOT shown here — payment info is excluded from the
-                                         vendor-wise expanded section per design requirement. -->
                                     <span class="boq_tree_chips">
-                                        <!-- RFQ count — uniform neutral badge -->
                                         <span class="badge boq_badge_neutral rounded-pill">
                                             <t t-esc="vendor.rfq_count"/>
                                             RFQ<t t-if="vendor.rfq_count !== 1">s</t>
                                         </span>
 
-                                        <!-- Pending indicator — uniform neutral badge -->
                                         <t t-if="vendor.pending_count > 0">
                                             <span class="badge boq_badge_neutral rounded-pill ms-1"
                                                   title="RFQ sent — no quotation yet">
@@ -1034,8 +962,6 @@
                                                 <t t-esc="vendor.pending_count"/> pending
                                             </span>
                                         </t>
-
-                                        <!-- Recently submitted — amber notification badge with pulse -->
                                         <t t-if="vendor.recently_submitted_count > 0">
                                             <span class="badge boq_badge_submitted rounded-pill ms-1"
                                                   title="Quotation submitted in last 7 days">
@@ -1043,8 +969,6 @@
                                                 <t t-esc="vendor.recently_submitted_count"/> new
                                             </span>
                                         </t>
-
-                                        <!-- Margin — vendor dashboard only -->
                                         <t t-if="isVendorDashboard">
                                         <span t-attf-class="badge rounded-pill ms-1 {{ (vendor.vendor_cost_total || 0) > 0 ? marginClass(vendor.margin_percent) : 'boq_badge_neutral' }}"
                                               title="Gross Margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price × 100">
@@ -1061,8 +985,6 @@
                                     <span class="boq_tree_value fw-semibold">
                                         <t t-esc="fmtCurrency(vendor.total_value)"/>
                                     </span>
-
-                                    <!-- Open vendor RFQ list button -->
                                     <span class="boq_tree_action ms-2"
                                           t-on-click.stop="() => this.openVendorRfqs(vendor.vendor_id, vendor.vendor_name)"
                                           title="Open all RFQs">
@@ -1104,7 +1026,7 @@
                                     <t t-foreach="vendor.rfqs" t-as="rfq"
                                        t-key="rfq.rfq_id">
 
-                                        <!-- Level 3: RFQ summary row -->
+                                        
                                         <div t-attf-class="boq_tree_row boq_rfq_row
                                                            #{ rfq.is_recently_submitted ? 'boq_rfq_row_new' : '' }"
                                              t-on-click.stop="() => this.openRfq(rfq.rfq_id)"
@@ -1113,7 +1035,6 @@
                                             <span class="boq_tree_indent"/>
                                             <span class="boq_tree_indent"/>
 
-                                            <!-- Expand / collapse line items (Level 4) -->
                                             <span class="boq_tree_expand_icon"
                                                   t-on-click.stop="(ev) => this.toggleRfqLines(ev, rfq.rfq_id)"
                                                   title="Show / hide line items">
@@ -1133,12 +1054,10 @@
                                             </span>
 
                                             <span class="boq_tree_chips">
-                                                <!-- State label -->
                                                 <span class="badge boq_badge_neutral rounded-pill">
                                                     <t t-esc="rfq.state_label"/>
                                                 </span>
 
-                                                <!-- Pending flag -->
                                                 <t t-if="rfq.is_pending">
                                                     <span class="badge boq_badge_neutral rounded-pill ms-1"
                                                           title="Awaiting quotation">
@@ -1146,7 +1065,6 @@
                                                     </span>
                                                 </t>
 
-                                                <!-- Recently submitted — amber notification badge -->
                                                 <t t-if="rfq.is_recently_submitted">
                                                     <span class="badge boq_badge_submitted rounded-pill ms-1"
                                                           title="Submitted in last 7 days — review needed">
@@ -1154,7 +1072,6 @@
                                                     </span>
                                                 </t>
 
-                                                <!-- Margin — vendor dashboard only -->
                                                 <t t-if="isVendorDashboard">
                                                 <span t-attf-class="badge rounded-pill ms-1 {{ rfq.has_vendor_price ? marginClass(rfq.margin_percent) : 'boq_badge_neutral' }}"
                                                       title="Gross Margin: (Customer Selling Price − Vendor Cost) / Customer Selling Price × 100">
@@ -1167,7 +1084,6 @@
                                                 </t>
                                             </span>
 
-                                            <!-- Customer Selling Price + Vendor Cost pair — vendor dashboard only -->
                                             <span class="boq_rfq_prices" t-if="isVendorDashboard and rfq.customer_total > 0">
                                                 <span class="boq_rfq_price_item">
                                                     <small class="boq_price_label">Sell</small>
@@ -1194,12 +1110,10 @@
                                             <span class="boq_tree_action ms-2">
                                                 <i class="fa fa-external-link text-muted"/>
                                             </span>
-                                        </div><!-- /rfq row -->
+                                        </div>
 
-                                        <!-- Level 4: Per-line margin detail (lazy-loaded) -->
                                         <t t-if="isRfqExpanded(rfq.rfq_id)">
 
-                                            <!-- Loading spinner -->
                                             <t t-if="state.rfqLinesLoading[rfq.rfq_id]">
                                                 <div class="boq_line_loading_row text-muted small">
                                                     <i class="fa fa-spinner fa-spin me-1"/>
@@ -1207,11 +1121,10 @@
                                                 </div>
                                             </t>
 
-                                            <!-- Line items table -->
+                                           
                                             <t t-elif="state.rfqLineItems[rfq.rfq_id] and state.rfqLineItems[rfq.rfq_id].length > 0">
                                                 <div class="boq_line_items_table">
 
-                                                    <!-- Column header row -->
                                                     <div class="boq_line_row boq_line_header">
                                                         <span class="boq_line_col_code">Code</span>
                                                         <span class="boq_line_col_product">Product / Material</span>
@@ -1227,7 +1140,6 @@
                                                         <span class="boq_line_col_total_cost">Cost Total</span>
                                                     </div>
 
-                                                    <!-- One row per product line -->
                                                     <t t-foreach="state.rfqLineItems[rfq.rfq_id]" t-as="ln" t-key="ln.line_id">
                                                         <div class="boq_line_row">
 
@@ -1244,14 +1156,12 @@
                                                                 <small class="ms-1"><t t-esc="ln.uom_name"/></small>
                                                             </span>
 
-                                                            <!-- Customer selling price — vendor dashboard only -->
                                                             <t t-if="isVendorDashboard">
                                                             <span class="boq_line_col_sell text-success fw-semibold">
                                                                 <t t-esc="fmtCurrency(ln.customer_price)"/>
                                                             </span>
                                                             </t>
 
-                                                            <!-- Vendor cost -->
                                                             <span class="boq_line_col_cost">
                                                                 <t t-if="ln.has_vendor_price">
                                                                     <span class="text-primary fw-semibold">
@@ -1263,7 +1173,6 @@
                                                                 </t>
                                                             </span>
 
-                                                            <!-- Margin % — vendor dashboard only -->
                                                             <t t-if="isVendorDashboard">
                                                             <span class="boq_line_col_margin">
                                                                 <t t-if="ln.has_vendor_price">
@@ -1276,7 +1185,6 @@
                                                                 </t>
                                                             </span>
 
-                                                            <!-- Sell Total — vendor dashboard only -->
                                                             <span class="boq_line_col_total_sell text-success">
                                                                 <t t-esc="fmtCurrency(ln.customer_total)"/>
                                                             </span>
@@ -1293,33 +1201,30 @@
                                                                 </t>
                                                             </span>
 
-                                                        </div><!-- /line row -->
+                                                        </div>
                                                     </t>
 
-                                                </div><!-- /boq_line_items_table -->
+                                                </div>
                                             </t>
 
-                                            <!-- Empty state (no product lines) -->
                                             <t t-else="">
                                                 <div class="boq_line_loading_row text-muted small">
                                                     <i class="fa fa-info-circle me-1"/>No product lines found.
                                                 </div>
                                             </t>
 
-                                        </t><!-- /Level 4 -->
+                                        </t>
+                                    </t>
 
-                                    </t><!-- /rfq foreach -->
+                                </t>
 
-                                </t><!-- /rfqs expanded -->
-
-                            </t><!-- /vendor foreach -->
-                        </t><!-- /vendors expanded -->
-
-                    </t><!-- /trade foreach -->
-                </div><!-- /boq_tree_table -->
+                            </t>
+                        </t>
+                    </t>
+                </div>
                 </t>
 
-            </div><!-- /tree px-4 -->
+            </div>
 
             <t t-if="state.approvalPOs.length > 0">
                 <div class="px-4 pb-4">
@@ -1346,7 +1251,6 @@
 
                     <div class="boq_approval_table">
 
-                        <!-- Table header -->
                         <div class="boq_approval_thead">
                             <span class="boq_approval_col_ref">PO Reference</span>
                             <span class="boq_approval_col_partner">
@@ -1357,14 +1261,12 @@
                             <span class="boq_approval_col_action"/>
                         </div>
 
-                        <!-- PO rows -->
                         <t t-foreach="state.approvalPOs" t-as="po" t-key="po.po_id">
                             <div t-attf-class="boq_approval_row
                                                #{ po.has_current_approver ? 'boq_approval_row_mine' : '' }"
                                  t-on-click="() => this.openRfq(po.po_id)"
                                  style="cursor:pointer;">
 
-                                <!-- PO reference + date -->
                                 <span class="boq_approval_col_ref">
                                     <i class="fa fa-file-text-o me-2 text-muted"/>
                                     <span class="fw-semibold text-primary">
@@ -1377,13 +1279,11 @@
                                     </t>
                                 </span>
 
-                                <!-- Partner -->
                                 <span class="boq_approval_col_partner">
                                     <i class="fa fa-building-o me-1 text-muted"/>
                                     <t t-esc="po.partner_name"/>
                                 </span>
 
-                                <!-- Amount -->
                                 <span class="boq_approval_col_amount fw-semibold">
                                     <t t-esc="fmtCurrency(po.amount_total)"/>
                                     <small class="text-muted d-block">
@@ -1431,17 +1331,17 @@
                                     <i class="fa fa-external-link text-muted ms-2"/>
                                 </span>
 
-                            </div><!-- /approval row -->
+                            </div>
                         </t>
 
-                    </div><!-- /boq_approval_table -->
+                    </div>
                 </div>
-            </t><!-- /approval section -->
+            </t>
 
-        </div><!-- /scrollable body -->
-    </t><!-- /main -->
+        </div>
+    </t>
 
-</div><!-- /root -->
-</t><!-- /DashboardBody -->
+</div>
+</t>
 
 </templates>

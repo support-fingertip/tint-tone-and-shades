@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!--   Send Po To Added mail Cc-->
     <record id="view_mail_compose_message_inherit_cc" model="ir.ui.view">
         <field name="name">mail.compose.message.form.inherit.cc</field>
         <field name="model">mail.compose.message</field>
         <field name="inherit_id" ref="mail.email_compose_message_wizard_form"/>
         <field name="arch" type="xml">
 
-            <!-- Add after To field -->
             <xpath expr="//field[@name='subject']" position="after">
                 <field name="email_cc" string="Cc" placeholder="Add CC emails..."/>
             </xpath>
@@ -24,20 +22,17 @@
 
             <xpath expr="//div[@name='button_box']" position="inside">
 
-                <!-- View BOQ (existing) -->
                 <button name="action_open_boq" type="object"
                         class="oe_stat_button" icon="fa-calculator"
                         invisible="not boq_id" string="View BOQ">
                     <field name="boq_id" widget="statinfo" string="BOQ"/>
                 </button>
 
-                <!-- Rate Vendor: visible once PO is confirmed and receipt is done -->
                 <button name="action_rate_vendor" type="object"
                         class="oe_stat_button" icon="fa-star"
                         invisible="not show_rate_vendor"
                         string="Rate Vendor"/>
 
-                <!-- Load computed field used above in invisible expression -->
                 <field name="show_rate_vendor" invisible="1"/>
 
             </xpath>
@@ -48,13 +43,10 @@
             </xpath>
 
             <xpath expr="//field[@name='partner_ref']" position="after">
-                <!-- Load partner_type so invisible expressions can reference it -->
                 <field name="partner_type" invisible="1"/>
-                <!-- Margin % on PO header — hidden for supplier orders -->
                 <field name="margin_percent" string="Margin %"
                        widget="percentage" readonly="1"
                        invisible="partner_type == 'supplier'"/>
-                <!-- BUG 6 — Payment status display -->
                 <field name="payment_status_display" string="Payment Status" readonly="1"
                        invisible="state not in ('purchase','done')"/>
             </xpath>
@@ -66,7 +58,6 @@
 
             <xpath expr="//field[@name='order_line']//field[@name='price_subtotal']"
                    position="after">
-                <!-- customer_price and margin columns hidden for supplier orders -->
                 <field name="customer_price" readonly="1"
                        column_invisible="parent.partner_type == 'supplier'"/>
                 <field name="margin_percent" string="Savings %"
@@ -79,9 +70,6 @@
         </field>
     </record>
 
-    <!-- Hide margin_percentage column (from infinys_margin_validation) for supplier orders.
-         Inherits from the infinys_margin_validation view directly to avoid xpath-ordering
-         issues that arise when targeting a field added by a sibling inherit view. -->
     <record id="view_purchase_order_boq_margin_inherit" model="ir.ui.view">
         <field name="name">purchase.order.form.boq.margin.inherit</field>
         <field name="model">purchase.order</field>
@@ -168,7 +156,6 @@
         <field name="context">{'create': False, 'search_default_my_pending_approvals': 1}</field>
     </record>
 
-    <!-- Vendors list (existing, unchanged) -->
     <record id="action_boq_vendor_list" model="ir.actions.act_window">
         <field name="name">Vendors</field>
         <field name="res_model">res.partner</field>
@@ -181,7 +168,6 @@
         </field>
     </record>
 
-    <!-- Vendor Contacts Action -->
     <record id="action_vendor_contacts" model="ir.actions.act_window">
         <field name="name">Vendor Contacts</field>
         <field name="res_model">res.partner</field>
@@ -189,7 +175,6 @@
         <field name="domain">[('partner_type', '=', 'vendor')]</field>
     </record>
 
-    <!-- Supplier Contacts Action -->
     <record id="action_supplier_contacts" model="ir.actions.act_window">
         <field name="name">Supplier Contacts</field>
         <field name="res_model">res.partner</field>
@@ -197,7 +182,6 @@
         <field name="domain">[('partner_type', '=', 'supplier')]</field>
     </record>
 
-    <!-- Vendor Contacts App -->
     <menuitem
             id="menu_vendor_contacts_app"
             name="Vendor Contacts"
@@ -206,7 +190,6 @@
             groups="boq_management_v19.group_vendor"
     />
 
-    <!-- Supplier Contacts App -->
     <menuitem
             id="menu_supplier_contacts_app"
             name="Supplier Contacts"
@@ -215,7 +198,6 @@
             groups="boq_management_v19.group_supplier"
     />
 
-    <!-- Vendor Contacts Menu -->
     <menuitem
             id="menu_vendor_contacts_root"
             name="Contacts"
@@ -224,7 +206,6 @@
             sequence="1"
     />
 
-    <!-- Supplier Contacts Menu -->
     <menuitem
             id="menu_supplier_contacts_root"
             name="Contacts"

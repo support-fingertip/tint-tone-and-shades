@@ -7,24 +7,17 @@
         <form string="Bill of Quantities" js_class="boq_form">
 
             <header>
-                <!-- Mark Done: available from Draft -->
                 <button name="action_done"
                         string="Mark Done"
                         type="object"
                         class="btn-primary"
                         invisible="state != 'draft'"/>
-                <!-- Reset to Draft: available from Done -->
                 <button name="action_reset_draft"
                         string="Reset to Draft"
                         type="object"
                         class="btn-secondary"
                         invisible="state != 'done'"/>
-                <!--
-                    CREATE RFQ — visible whenever at least 1 line exists.
-                    Uses line_count (Integer) for reliable invisible evaluation
-                    in Odoo 19 form-view expressions.
-                    RFQs are created per-partner based on trade-type assignments.
-                -->
+               
                 <button name="action_create_rfq"
                         string="Create RFQ"
                         type="object"

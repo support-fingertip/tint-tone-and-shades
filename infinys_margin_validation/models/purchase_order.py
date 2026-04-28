@@ -174,7 +174,7 @@ class PurchaseOrder(models.Model):
             threshold = self.env['margin.threshold.config'].search([
                 ('category_id', '=', line.product_id.categ_id.id),
                 ('company_id', '=', self.company_id.id),
-            ], limit=1)
+            ])
             if threshold and threshold.approver_id:
                 approvers |= threshold.approver_id
         if self.env.user not in approvers:
@@ -238,7 +238,7 @@ class PurchaseOrder(models.Model):
             threshold = self.env['margin.threshold.config'].search([
                 ('category_id', '=', line.product_id.categ_id.id),
                 ('company_id', '=', self.company_id.id),
-            ], limit=1)
+            ])
             if threshold and threshold.approver_id:
                 approvers |= threshold.approver_id
 

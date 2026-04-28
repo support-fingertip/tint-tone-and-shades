@@ -1,12 +1,5 @@
 
-/* ── Odoo 19 scroll fix (absolute strategy) ──────────────────────────────────
-   height:100% and flex:1 both fail when the OWL action container wrapper does
-   not have an explicit/computed height of its own.  The ONLY approach that
-   works regardless of the parent chain is position:absolute + inset:0, which
-   anchors the component to the nearest position:relative ancestor — which is
-   always .o_action_manager in Odoo 19.  The inner .boq_dash_scroll then fills
-   the remaining flex space and provides the actual vertical scroll.
-   ────────────────────────────────────────────────────────────────────────── */
+
 .o_action.boq_dashboard {
     position: absolute !important;
     inset: 0 !important;
@@ -15,7 +8,6 @@
     overflow: hidden !important;
 }
 
-/* Scrollable body fills all remaining space below the pinned header */
 .boq_dash_scroll {
     flex: 1 1 0 !important;
     min-height: 0 !important;
@@ -25,7 +17,6 @@
     position: relative;
 }
 
-/* The action manager must be the positioning context */
 .o_action_manager {
     position: relative;
 }
@@ -57,7 +48,6 @@
     --bs-table-hover-bg: rgba(0, 0, 0, 0.075);
 }
 
-/* ── Header bar ─────────────────────────────────────────────── */
 .boq_dash_header {
     background: #fff !important;
     border-bottom: 1px solid #dee2e6 !important;
@@ -70,7 +60,6 @@
     color: inherit !important;
 }
 
-/* ── Stat Cards ─────────────────────────────────────────────── */
 .boq_stat_card {
     background: #fff !important;
     color: #212529 !important;
@@ -113,13 +102,6 @@
     margin-top: 4px;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   HERO BANNERS — visual identity for each dashboard type
-   Three variants: .boq_hero_vendor (blue) · .boq_hero_procurement
-   (green) · .boq_hero_head (teal, taller, more prominent).
-   ══════════════════════════════════════════════════════════════ */
-
-/* ─ Base hero layout ─ */
 .boq_hero {
     display: flex;
     align-items: center;
@@ -130,7 +112,6 @@
     overflow: hidden;
 }
 
-/* Decorative circle(s) in the background */
 .boq_hero::before,
 .boq_hero::after {
     content: '';
@@ -154,7 +135,6 @@
     right: 30px;
 }
 
-/* ─ Icon wrapper circles ─ */
 .boq_hero_icons {
     display: flex;
     gap: 10px;
@@ -171,12 +151,10 @@
     color: #fff;
     backdrop-filter: blur(4px);
 }
-/* Slight scale on the first icon to add depth */
 .boq_hero_ic1 { transform: scale(1.12); }
 .boq_hero_ic2 { opacity: 0.85; }
 .boq_hero_ic3 { opacity: 0.7; }
 
-/* ─ Title block ─ */
 .boq_hero_title {
     color: #fff;
     font-weight: 700;
@@ -189,7 +167,6 @@
     font-size: 0.85rem;
 }
 
-/* ─ KPI strip ─ */
 .boq_hero_kpis {
     display: flex;
     flex-wrap: wrap;
@@ -219,28 +196,24 @@
     margin-top: 2px;
     white-space: nowrap;
 }
-/* Alert/warning KPI chips */
 .boq_hero_kpi_warn  { background: rgba(255, 193, 7,  0.35) !important; }
 .boq_hero_kpi_alert { background: rgba(255, 99,  71,  0.35) !important; }
 .boq_hero_kpi_new   { background: rgba(245, 158, 11, 0.35) !important; }
 
-/* ─ VENDOR MANAGER — Blue gradient ─ */
 .boq_hero_vendor {
     background: linear-gradient(135deg, #1a56db 0%, #0e3fa0 60%, #083080 100%);
     border-bottom: 3px solid rgba(255,255,255,0.12);
 }
 
-/* ─ PROCUREMENT MANAGER — Green gradient ─ */
 .boq_hero_procurement {
     background: linear-gradient(135deg, #0ea271 0%, #0b7a56 60%, #065438 100%);
     border-bottom: 3px solid rgba(255,255,255,0.12);
 }
 
-/* ─ HEAD OF SUPPLIER — Teal gradient, taller, more prominent ─ */
 .boq_hero_head {
     background: linear-gradient(135deg, #0d7377 0%, #095e62 40%, #143d40 100%);
     border-bottom: 4px solid rgba(255,255,255,0.15);
-    padding: 30px 32px;    /* taller than the other two */
+    padding: 30px 32px;  
 }
 .boq_hero_head .boq_hero_icon_wrap {
     width: 60px;
@@ -249,8 +222,6 @@
 }
 .boq_hero_head .boq_hero_title { font-size: 1.45rem; }
 
-/* ── Vendor Summary Cards ────────────────────────────────────── */
-/* Horizontal scroll row so all cards stay on one line           */
 .boq_vendor_cards_scroll {
     overflow-x: auto;
     padding-bottom: 8px;
@@ -342,13 +313,11 @@
     padding-top: 6px;
 }
 
-/* Section title shared style */
 .boq_section_title {
     font-size: 1rem;
     color: #212529;
 }
 
-/* ── Vendor Grid ─────────────────────────────────────────────── */
 .boq_vendor_grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -356,7 +325,6 @@
     margin-top: 16px;
 }
 
-/* ── Vendor Card ─────────────────────────────────────────────── */
 .boq_vendor_card {
     background: #fff !important;
     color: #212529 !important;
@@ -376,7 +344,6 @@
     border-color: #0d6efd;
 }
 
-/* ── Vendor card header ──────────────────────────────────────── */
 .boq_vendor_header {
     display: flex;
     align-items: center;
@@ -417,7 +384,6 @@
     text-overflow: ellipsis;
 }
 
-/* ── Vendor stats row ────────────────────────────────────────── */
 .boq_vendor_stats {
     display: flex;
     gap: 0;
@@ -451,9 +417,8 @@
     word-break: break-all;
 }
 
-/* ── Dark section labels ─────────────────────────────────────── */
 .boq_section_label {
-    color: #343a40 !important;   /* darker than text-muted (#6c757d) */
+    color: #343a40 !important;   
     font-size: 0.85rem;
 }
 
@@ -461,7 +426,6 @@
     color: #212529 !important;
 }
 
-/* ── View Details button inside card ─────────────────────────── */
 .boq_view_details_btn {
     font-size: 0.77rem;
     padding: 2px 10px;
@@ -473,14 +437,11 @@
     background: #0d6efd;
     color: #fff;
 }
-
-/* Margin color helpers */
 .boq_margin_high  { color: #198754; }
 .boq_margin_mid   { color: #0d6efd; }
 .boq_margin_low   { color: #fd7e14; }
 .boq_margin_neg   { color: #dc3545; }
 
-/* ── Vendor footer ───────────────────────────────────────────── */
 .boq_vendor_footer {
     padding-top: 6px;
     border-top: 1px solid #f0f0f0;
@@ -502,12 +463,10 @@
     opacity: 1;
 }
 
-/* ── Loading state ───────────────────────────────────────────── */
 .boq_dash_loading {
     color: #6c757d;
 }
 
-/* ── Selected vendor card ────────────────────────────────────── */
 .boq_vendor_card_active {
     border: 2px solid #0d6efd !important;
     box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.20), 0 8px 28px rgba(0, 0, 0, 0.12) !important;
@@ -516,7 +475,6 @@
     position: relative;
 }
 
-/* Accent stripe along the top of the selected card */
 .boq_vendor_card_active::before {
     content: '';
     position: absolute;
@@ -533,7 +491,6 @@
     color: #0d6efd;
 }
 
-/* Active avatar (shows checkmark) */
 .boq_vendor_avatar_active {
     background: linear-gradient(135deg, #0d6efd, #6610f2) !important;
     box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.3);
@@ -607,12 +564,11 @@
     opacity: 1;
 }
 
-/* ── Vendor notebook panel ───────────────────────────────────── */
 .boq_vendor_notebook {
     border: 1px solid #dee2e6 !important;
     border-radius: 14px;
     overflow: hidden;
-    scroll-margin-top: 80px;   /* clear Odoo's sticky top bar */
+    scroll-margin-top: 80px;  
     background: #fff !important;
     color: #212529 !important;
     animation: boq_notebook_in 0.22s ease;
@@ -633,8 +589,6 @@
     background: #fff !important;
     color: #212529 !important;
 }
-
-/* Title bar inside notebook */
 .boq_vendor_notebook .bg-light {
     background: #f8f9fa !important;
     color: #212529 !important;
@@ -662,7 +616,6 @@
     color: #495057 !important;
 }
 
-/* Stat boxes inside notebook */
 .boq_vendor_notebook .border {
     background: #fff !important;
     color: #212529 !important;
@@ -677,7 +630,6 @@
     color: #212529 !important;
 }
 
-/* ── BOQ lines table in Summary tab ─────────────────────────── */
 .boq_lines_table_wrap {
     overflow-x: auto;
     border: 1px solid #dee2e6;
@@ -721,11 +673,10 @@
     background: #f8f9ff;
 }
 
-/* ── Notebook totals table (like Odoo purchase order footer) ─── */
 .boq_totals_table {
     width: 100%;
     max-width: 440px;
-    margin-left: auto;        /* right-align within card-body */
+    margin-left: auto;        
     border: 1px solid #dee2e6;
     border-radius: 8px;
     overflow: hidden;
@@ -757,7 +708,6 @@
     text-align: right;
 }
 
-/* Grand total row — mimics Odoo's "Total:" row */
 .boq_totals_grand {
     background: #f8f9fa !important;
     border-top: 2px solid #dee2e6 !important;
@@ -772,8 +722,6 @@
 .boq_totals_margin_row .boq_totals_label {
     color: #6c757d;
 }
-
-/* ── Summary tab metric tiles ────────────────────────────────── */
 .boq_summary_metrics {
     border-bottom: 1px solid #f0f2f5;
     padding-bottom: 16px;
@@ -821,7 +769,6 @@
     margin-top: 2px;
 }
 
-/* ── Summary section title ───────────────────────────────────── */
 .boq_summary_section_title {
     font-size: 0.82rem;
     font-weight: 600;
@@ -830,7 +777,6 @@
     letter-spacing: 0.04em;
 }
 
-/* ── Summary BOQ breakdown table ─────────────────────────────── */
 .boq_summary_table_wrap {
     border: 1px solid #dee2e6;
     border-radius: 8px;
@@ -872,16 +818,10 @@
     background: #f8f9ff;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   FORCE LIGHT THEME — comprehensive override of Odoo Enterprise
-   dark-mode for all Bootstrap utilities inside the dashboard.
-   ═══════════════════════════════════════════════════════════════ */
 
-/* Root token reset */
 .boq_dashboard {
     --bs-light: #f8f9fa;
     --bs-light-rgb: 248, 249, 250;
-    /* Bootstrap 5.3 table tokens */
     --bs-table-color: #212529;
     --bs-table-bg: #ffffff;
     --bs-table-border-color: #dee2e6;
@@ -894,11 +834,9 @@
     --bs-table-accent-bg: transparent;
 }
 
-/* bg-light / bg-white utilities */
 .boq_dashboard .bg-light  { background-color: #f8f9fa !important; color: #212529 !important; }
 .boq_dashboard .bg-white  { background-color: #ffffff !important; color: #212529 !important; }
 
-/* Bootstrap -subtle color utilities (very dark in enterprise dark mode) */
 .boq_dashboard .bg-primary-subtle   { background-color: #cfe2ff !important; }
 .boq_dashboard .bg-success-subtle   { background-color: #d1e7dd !important; }
 .boq_dashboard .bg-warning-subtle   { background-color: #fff3cd !important; }
@@ -906,7 +844,6 @@
 .boq_dashboard .bg-secondary-subtle { background-color: #e2e3e5 !important; }
 .boq_dashboard .bg-danger-subtle    { background-color: #f8d7da !important; }
 
-/* Text color utilities */
 .boq_dashboard .text-primary   { color: #0d6efd !important; }
 .boq_dashboard .text-success   { color: #198754 !important; }
 .boq_dashboard .text-warning   { color: #fd7e14 !important; }
@@ -916,9 +853,6 @@
 .boq_dashboard .text-muted     { color: #6c757d !important; }
 .boq_dashboard .text-dark      { color: #212529 !important; }
 
-/* Badge colors — ALL status badges use the single neutral style.
-   Any Bootstrap bg-* badge that slips through is remapped to neutral
-   so the dashboard always shows one uniform light colour. */
 .boq_dashboard .badge.bg-primary,
 .boq_dashboard .badge.bg-secondary,
 .boq_dashboard .badge.bg-success,
@@ -931,29 +865,22 @@
 }
 .boq_dashboard .text-dark.badge { color: #495057 !important; }
 
-/* ── Vendor card metric value — uniform neutral text colour ──── */
 .boq_metric_neutral {
     color: #495057 !important;
     font-weight: 700;
 }
 
-/* ── TABLE — THE KEY FIX ─────────────────────────────────────────
-   Bootstrap 5 applies stripe/hover via box-shadow (not background-
-   color), so overriding background-color alone is insufficient.
-   We must clear box-shadow AND set background-color on every cell. */
 .boq_dashboard table,
 .boq_dashboard .table { color: #212529 !important; background-color: #ffffff; }
 
-/* Every cell in every table section — clears the BS5 box-shadow trick */
 .boq_dashboard .table > :not(caption) > * > * {
     background-color: #ffffff !important;
     color: #212529 !important;
     border-color: #dee2e6 !important;
-    box-shadow: none !important;          /* ← clears hover/stripe accent */
+    box-shadow: none !important;          
     --bs-table-accent-bg: transparent;
 }
 
-/* thead — light grey */
 .boq_dashboard .table > thead > * > * {
     background-color: #f0f2f5 !important;
     color: #495057 !important;
@@ -961,14 +888,12 @@
     box-shadow: none !important;
 }
 
-/* tbody hover row — very subtle blue tint */
 .boq_dashboard .table > tbody > tr:hover > * {
     background-color: #f0f4ff !important;
     color: #212529 !important;
     box-shadow: none !important;
 }
 
-/* tfoot total row */
 .boq_dashboard .table > tfoot > * > * {
     background-color: #f8f9fa !important;
     color: #212529 !important;
@@ -977,16 +902,12 @@
     box-shadow: none !important;
 }
 
-/* table-responsive wrapper */
 .boq_dashboard .table-responsive {
     background: #ffffff !important;
     border-radius: 8px;
     border: 1px solid #dee2e6;
 }
 
-/* ── TOGGLE BUTTONS ──────────────────────────────────────────────
-   Active tab: filled primary blue.
-   Inactive tab: outlined primary (blue border + text, always visible). */
 .boq_dashboard .boq_toggle_btn.btn-primary {
     background-color: #0d6efd !important;
     border-color: #0d6efd !important;
@@ -1003,7 +924,6 @@
     background-color: #e8f0fe !important;
 }
 
-/* ── Responsive tweaks ───────────────────────────────────────── */
 @media (max-width: 768px) {
     .boq_dash_stat_row {
         flex-direction: column !important;
@@ -1026,7 +946,6 @@
     overflow: hidden;
 }
 
-/* ── Generic tree row ───────────────────────────────────────── */
 .boq_tree_row {
     display: flex;
     align-items: center;
@@ -1041,7 +960,6 @@
     border-bottom: none;
 }
 
-/* ── Level 1 — Trade row ────────────────────────────────────── */
 .boq_trade_row {
     background: #f8f9fa;
     cursor: pointer;
@@ -1056,7 +974,6 @@
     border-left: 3px solid #0d6efd;
 }
 
-/* ── Level 2 — Vendor row ───────────────────────────────────── */
 .boq_vendor_row {
     background: #fff;
     cursor: pointer;
@@ -1072,7 +989,6 @@
     border-left-color: #6ea8fe;
 }
 
-/* ── Level 3 — RFQ row ──────────────────────────────────────── */
 .boq_rfq_row {
     background: #fff;
     font-size: 0.84rem;
@@ -1083,7 +999,6 @@
 .boq_rfq_row:hover {
     background: #f8f9fa !important;
 }
-/* ── Recently submitted RFQ row — amber notification highlight ── */
 .boq_rfq_row_new {
     background: #fffbeb !important;
     border-left: 3px solid #f59e0b !important;
@@ -1094,7 +1009,6 @@
     border-left-color: #d97706 !important;
 }
 
-/* ── Empty / informational rows ─────────────────────────────── */
 .boq_empty_row {
     cursor: default !important;
     min-height: 36px;
@@ -1104,7 +1018,6 @@
     background: #fafafa !important;
 }
 
-/* ── Expand chevron icon ────────────────────────────────────── */
 .boq_tree_expand_icon {
     width: 18px;
     flex-shrink: 0;
@@ -1113,7 +1026,6 @@
     transition: transform 0.15s;
 }
 
-/* ── Tree label (main text cell) ────────────────────────────── */
 .boq_tree_label {
     flex: 1;
     min-width: 0;
@@ -1122,7 +1034,6 @@
     text-overflow: ellipsis;
 }
 
-/* ── Chips / badges area ────────────────────────────────────── */
 .boq_tree_chips {
     display: flex;
     align-items: center;
@@ -1131,7 +1042,6 @@
     flex-shrink: 0;
 }
 
-/* ── Value column ───────────────────────────────────────────── */
 .boq_tree_value {
     font-size: 0.875rem;
     white-space: nowrap;
@@ -1140,7 +1050,6 @@
     text-align: right;
 }
 
-/* ── Action icon (external link) ────────────────────────────── */
 .boq_tree_action {
     flex-shrink: 0;
     opacity: 0;
@@ -1150,15 +1059,12 @@
 .boq_tree_row:hover .boq_tree_action {
     opacity: 1;
 }
-
-/* ── Indent spacers ─────────────────────────────────────────── */
 .boq_tree_indent {
     width: 20px;
     flex-shrink: 0;
     display: inline-block;
 }
 
-/* ── Vendor avatar (small, inside tree) ─────────────────────── */
 .boq_vendor_avatar_sm {
     width: 28px;
     height: 28px;
@@ -1174,8 +1080,6 @@
     text-transform: uppercase;
 }
 
-/* ── Single neutral badge — used for ALL status/count badges in the tree ── */
-/* One light uniform colour, no per-state colour coding.                    */
 .boq_badge_neutral {
     background: #f1f3f5 !important;
     color: #495057 !important;
@@ -1183,17 +1087,11 @@
     font-weight: 500;
 }
 
-/* ── Notification pulse keyframe ───────────────────────────────
-   Used by .boq_badge_submitted bell badges and .boq_approval_pill_mine.
-   Soft amber glow: draws the eye without being jarring.              */
 @keyframes boq_pulse {
     0%, 100% { box-shadow: 0 0 0 0   rgba(245, 158, 11, 0.55); }
     50%       { box-shadow: 0 0 0 5px rgba(245, 158, 11, 0);    }
 }
 
-/* ── "Recently submitted" notification badge ────────────────────
-   Amber tint — visually distinct from the neutral status badges
-   so users can instantly spot new quotation submissions.          */
 .boq_badge_submitted {
     background: #fef3c7 !important;
     color: #78350f !important;
@@ -1202,10 +1100,6 @@
     animation: boq_pulse 2.2s ease-in-out infinite;
 }
 
-/* ── Vendor row notification accent ─────────────────────────────
-   Applied when the vendor has at least one recently submitted RFQ.
-   Uses a gentle amber left-border so the row stands out vs normal
-   vendor rows while respecting the open-state blue border.        */
 .boq_vendor_has_new {
     border-left: 3px solid #fcd34d !important;
     background: #fffef7 !important;
@@ -1214,15 +1108,11 @@
     background: #fffbeb !important;
     border-left-color: #f59e0b !important;
 }
-/* When the vendor row is expanded AND has new submissions */
 .boq_vendor_has_new.boq_vendor_row_open {
     background: #fffbeb !important;
     border-left-color: #f59e0b !important;
 }
 
-/* ── Trade row notification dot ─────────────────────────────────
-   Adds a very subtle amber left accent to trade rows that contain
-   recently submitted vendors, without overriding the expand state. */
 .boq_trade_has_new {
     border-left: 3px solid #fde68a;
 }
@@ -1230,11 +1120,6 @@
     border-left-color: #f59e0b !important;
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   MARGIN DISPLAY — badges, price columns, line-items table
-   ══════════════════════════════════════════════════════════════════ */
-
-/* Margin badge variants */
 .boq_badge_margin {
     background: #e8f5e9 !important;
     color: #1b5e20 !important;
@@ -1257,7 +1142,6 @@
     border: 1px solid #f5c6cb !important;
 }
 
-/* Customer / Vendor price pair shown on Level-3 RFQ rows */
 .boq_rfq_prices {
     display: flex;
     align-items: center;
@@ -1285,7 +1169,6 @@
     font-size: 1rem;
 }
 
-/* Overall margin chip in the summary bar */
 .boq_totals_margin {
     background: #d4edda !important;
     border: 1px solid #a5d6a7 !important;
@@ -1293,7 +1176,6 @@
     font-weight: 600;
 }
 
-/* ── Level 4 — Line items table ─────────────────────────────────── */
 .boq_line_items_table {
     background: #f8f9fa;
     border-left: 4px solid #0d6efd;
@@ -1308,7 +1190,7 @@
     grid-template-columns: 80px 1fr 80px 110px 110px 80px 110px 110px;
     align-items: center;
     gap: 8px;
-    padding: 6px 16px 6px 96px; /* deep indent matching L4 nesting */
+    padding: 6px 16px 6px 96px; 
     border-bottom: 1px solid #f0f2f5;
     min-height: 36px;
 }
@@ -1331,7 +1213,6 @@
     background: #f0f4ff;
 }
 
-/* Individual column cells */
 .boq_line_col_code    { color: #6c757d; }
 .boq_line_col_product { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .boq_line_col_qty,
@@ -1341,7 +1222,6 @@
 .boq_line_col_total_sell,
 .boq_line_col_total_cost { text-align: right; }
 
-/* Loading row inside line items panel */
 .boq_line_loading_row {
     padding: 10px 16px 10px 96px;
     color: #6c757d;
@@ -1357,16 +1237,11 @@
         display: none;
     }
 }
-
-/* ── Vendor avatar ring when vendor has new submissions ─────────
-   Amber glow ring around the initials avatar; mirrors the border
-   accent on .boq_vendor_has_new rows.                            */
+                         */
 .boq_avatar_new {
     box-shadow: 0 0 0 2px #f59e0b, 0 0 0 4px rgba(245, 158, 11, 0.25);
 }
 
-/* ── "Recently Submitted" chip in the summary bar ───────────────
-   Amber tint chip to match the notification badge colour palette. */
 .boq_chip_notification {
     background: #fef3c7;
     border: 1px solid #f59e0b;
@@ -1380,13 +1255,6 @@
     font-weight: 600;
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   HEAD OF SUPPLIER DASHBOARD — Company Overview Cards
-   ══════════════════════════════════════════════════════════════════
-   One card per allowed company on the consolidated head dashboard.
-   Reuses the same layout language as .boq_vendor_card but with a
-   green accent to differentiate from the standard vendor cards.   */
-
 .boq_company_card {
     background: #fff;
     border: 1px solid #e9ecef;
@@ -1397,7 +1265,7 @@
     flex: 1 1 220px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
-    border-top: 3px solid #198754;    /* green top accent for head dashboard */
+    border-top: 3px solid #198754;   
 }
 .boq_company_card:hover {
     box-shadow: 0 6px 20px rgba(25, 135, 84, 0.14);
@@ -1405,7 +1273,6 @@
     transform: translateY(-2px);
 }
 
-/* Company initial avatar — green circle */
 .boq_company_avatar {
     width: 40px;
     height: 40px;
@@ -1426,9 +1293,6 @@
     max-width: 160px;
 }
 
-/* ── "Recently Submitted" chip button styles ────────────────────
-   The chip in the summary bar is a real <button> that toggles the
-   notification panel.  Active state gets a darker amber border.  */
 .boq_chip_notif_btn {
     border: none;
     cursor: pointer;
@@ -1443,9 +1307,7 @@
     box-shadow: 0 0 0 2px #f59e0b !important;
 }
 
-/* ── Recently Submitted Notification Panel ───────────────────────
-   Full-width collapsible table revealed when the chip is clicked.
-   Matches the visual style of the "Pending Approvals" section.   */
+
 .boq_recent_panel {
     background: #fffbeb;
     border: 1.5px solid #f59e0b;
@@ -1454,7 +1316,6 @@
     box-shadow: 0 2px 10px rgba(245, 158, 11, 0.12);
 }
 
-/* Panel header bar */
 .boq_recent_panel_header {
     background: #fef3c7;
     border-bottom: 1px solid #fde68a;
@@ -1774,14 +1635,9 @@
 .boq_pending_open_icon { opacity: 0; transition: opacity 0.15s; }
 .boq_pending_row:hover .boq_pending_open_icon { opacity: 1; }
 
-/* ══════════════════════════════════════════════════════════════
-   HEAD DASHBOARD — COMPANY FIELD SELECTOR
-   Many2many-style field for selecting which companies to view.
-   ══════════════════════════════════════════════════════════════ */
 
-/* Outer wrapper row */
 .boq_cf_wrap {
-    /* no extra card box — sits inline with the page */
+    
 }
 
 .boq_cf_row {
@@ -1878,7 +1734,6 @@
 }
 .boq_cf_tag_x:hover { opacity: 1; color: #dc3545; }
 
-/* Dropdown caret */
 .boq_cf_caret {
     margin-left: auto;
     color: #6c757d;
@@ -1886,7 +1741,6 @@
     flex-shrink: 0;
 }
 
-/* Dropdown panel — absolutely positioned below the input */
 .boq_cf_dropdown {
     position: absolute;
     top: calc(100% + 4px);
@@ -1936,10 +1790,8 @@
     margin: 0;
 }
 
-/* "Clear filter" button */
 .boq_cf_clear { font-size: .8rem; flex-shrink: 0; }
 
-/* Active-filter badge on the right */
 .boq_cf_badge {
     font-size: .78rem;
     color: #6c757d;

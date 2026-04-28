@@ -59,9 +59,9 @@ class BoqManagerDashboardBase extends Component {
             showRecentPanel:     false,
             expandedTrades:      {},
             expandedVendors:     {},
-            expandedRfqs:        {},   // {rfq_id: true} — Level 4 line items open
-            rfqLineItems:        {},   // {rfq_id: [{line data}…]}
-            rfqLinesLoading:     {},   // {rfq_id: true} — loading spinner per RFQ
+            expandedRfqs:        {},   
+            rfqLineItems:        {},   
+            rfqLinesLoading:     {},  
             filterText:          "",
         });
 
@@ -433,12 +433,10 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
 
     setup() {
         super.setup();
-        // Company filter state (Head dashboard only)
-        this.state.availableCompanies   = [];   // [{id, name, initial}]
-        this.state.selectedCompanyIds   = [];   // [] = all; non-empty = subset
+        this.state.availableCompanies   = [];   
+        this.state.selectedCompanyIds   = [];  
         this.state.showCompanyDropdown  = false;
 
-        // Close dropdown when user clicks outside the field
         this._closeDropdown = () => { this.state.showCompanyDropdown = false; };
         onMounted(()       => document.addEventListener("click", this._closeDropdown));
         onWillUnmount(()   => document.removeEventListener("click", this._closeDropdown));
@@ -456,7 +454,6 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
             || this.state.selectedCompanyIds.includes(cid);
     }
 
-    /** True when this company is in the explicit subset (not just "all" mode). */
     isCompanyTag(cid) {
         return this.state.selectedCompanyIds.includes(cid);
     }
@@ -466,13 +463,11 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         this.state.showCompanyDropdown = !this.state.showCompanyDropdown;
     }
 
-    /** Remove one company tag (× button). */
     async removeCompany(ev, cid) {
         if (ev) ev.stopPropagation();
         const all = this.state.availableCompanies.map(c => c.id);
         const cur = this.state.selectedCompanyIds;
         if (cur.length === 0) {
-            // "All" mode — remove X → select all except X
             this.state.selectedCompanyIds = all.filter(id => id !== cid);
         } else {
             const next = cur.filter(id => id !== cid);
@@ -481,21 +476,17 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         await this._reloadFiltered();
     }
 
-    /** Toggle a company on/off in the filter and reload data. */
     async toggleCompany(cid) {
         const all   = this.state.availableCompanies.map(c => c.id);
         const cur   = this.state.selectedCompanyIds;
 
         if (cur.length === 0) {
-            // Currently "all" — deselect just this one
             this.state.selectedCompanyIds = all.filter(id => id !== cid);
         } else if (cur.includes(cid)) {
             const next = cur.filter(id => id !== cid);
-            // If none remain, switch back to "all" mode
             this.state.selectedCompanyIds = next.length > 0 ? next : [];
         } else {
             const next = [...cur, cid];
-            // If all are now selected, switch to "all" mode
             this.state.selectedCompanyIds = next.length === all.length ? [] : next;
         }
         await this._reloadFiltered();
@@ -529,7 +520,6 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     /** First load available companies (once), then data. */
     async _loadAll() {
         try {
-            // Load available companies list on first call
             if (this.state.availableCompanies.length === 0) {
                 const companies = await this.orm.call(
                     "boq.boq", "get_available_companies", [], {}
@@ -543,14 +533,10 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         }
     }
 
-    /** Reload all data panels with the current company filter applied. */
     async _loadData() {
         try {
             const dt  = this.dashboardType;
-            const cids = this._filterCompanyIds;  // null = all
-            // When no filter is active, pass all available company IDs explicitly so
-            // the backend queries every company the user manages — not just the one
-            // currently active in the Odoo company switcher.
+            const cids = this._filterCompanyIds;  
             const allCids = this.state.availableCompanies.map(c => c.id);
             const companyCids = cids || (allCids.length > 0 ? allCids : null);
             const extra = companyCids ? { company_ids: companyCids } : {};
