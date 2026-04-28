@@ -14,7 +14,7 @@
     "live_test_url": "https://odoo-ce.atisicloud.com/",
     "license": "LGPL-3",
     "category": "Purchases",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "depends": ["base", "purchase", "mail",],
     # always loaded
     "data": [
