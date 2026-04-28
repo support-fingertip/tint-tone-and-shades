@@ -19,6 +19,43 @@ class PurchaseOrder(models.Model):
         string='Is Admin', compute='_compute_is_admin',
     )
 
+    # Stored computed fields to fix SQL-join ambiguity in dashboard domains.
+    # These always reflect the SINGLE 'current' approval line's data, so
+    # dashboard domains can use direct column lookups instead of chained joins.
+    current_approver_ids = fields.Many2many(
+        'res.users',
+        'purchase_order_current_approver_rel',
+        'order_id', 'user_id',
+        string='Current Approvers',
+        compute='_compute_current_approval_info',
+        store=True,
+    )
+    current_approval_type = fields.Selection(
+        [('vendor', 'Vendor'), ('supplier', 'Supplier')],
+        string='Current Approval Type',
+        compute='_compute_current_approval_info',
+        store=True,
+    )
+
+    @api.depends(
+        'approval_line_ids',
+        'approval_line_ids.status',
+        'approval_line_ids.user_ids',
+        'approval_line_ids.level_id',
+        'approval_line_ids.level_id.type',
+    )
+    def _compute_current_approval_info(self):
+        for order in self:
+            current_line = order.approval_line_ids.filtered(
+                lambda l: l.status == 'current'
+            )
+            if current_line:
+                order.current_approver_ids = current_line[0].user_ids
+                order.current_approval_type = current_line[0].level_id.type
+            else:
+                order.current_approver_ids = [(5, 0, 0)]
+                order.current_approval_type = False
+
     @api.depends_context('uid')
     def _compute_is_admin(self):
         is_admin = self.env.user.has_group('base.group_system')
