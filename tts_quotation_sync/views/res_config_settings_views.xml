@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════
+         CONFIGURATION FORM — Standalone view
+         Matches the screenshot layout exactly:
+         left column = label + helper text,
+         right column = input widget
+    ══════════════════════════════════════════════ -->
+    <record id="view_tts_config_settings_form" model="ir.ui.view">
+        <field name="name">tts.quotation.sync.config.form</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <form string="API Configuration" class="oe_form_configuration">
+                <sheet>
+                    <h2>API Configuration</h2>
+
+                    <!-- ─── Connection Settings ─────────────────────── -->
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label fw-bold">Connection settings</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row o_settings_container">
+                        <!-- API Base URL -->
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <div class="o_form_label">
+                                    <label for="tts_api_base_url" string="API Base URL"/>
+                                </div>
+                                <div class="text-muted">
+                                    Quotation Builder backend endpoint
+                                </div>
+                                <div class="content-group mt4">
+                                    <field name="tts_api_base_url"
+                                           placeholder="https://tts-quotation-dev-backend-app..."
+                                           class="o_field_widget"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- API Key -->
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <div class="o_form_label">
+                                    <label for="tts_api_key" string="API Key (x-api-key)"/>
+                                </div>
+                                <div class="text-muted">
+                                    DEV environment key
+                                </div>
+                                <div class="content-group mt4">
+                                    <field name="tts_api_key"
+                                           password="True"
+                                           placeholder="••••••••••••••••••"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Environment -->
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <div class="o_form_label">
+                                    <label for="tts_environment" string="Environment"/>
+                                </div>
+                                <div class="text-muted">
+                                    Switch before going live
+                                </div>
+                                <div class="content-group mt4">
+                                    <field name="tts_environment"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="o_hr mt16 mb16"/>
+
+                    <!-- ─── Cron / Auto-sync Settings ───────────────── -->
+                    <div class="row o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label fw-bold">Cron / auto-sync settings</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row o_settings_container">
+                        <!-- Sync Interval -->
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <div class="o_form_label">
+                                    <label for="tts_sync_interval" string="Sync interval"/>
+                                </div>
+                                <div class="text-muted">
+                                    How often Odoo polls the API
+                                </div>
+                                <div class="content-group mt4">
+                                    <field name="tts_sync_interval"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Auto-create Sale Order -->
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <div class="o_form_label">
+                                    <label for="tts_auto_create_so" string="Auto-create Sale Order"/>
+                                </div>
+                                <div class="text-muted">
+                                    Automatically create SO on success
+                                </div>
+                                <div class="content-group mt4">
+                                    <field name="tts_auto_create_so"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Failure Notification Email -->
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <div class="o_form_label">
+                                    <label for="tts_failure_notification_email"
+                                           string="Failure notification email"/>
+                                </div>
+                                <div class="text-muted">
+                                    Notify when PUT returns Failure
+                                </div>
+                                <div class="content-group mt4">
+                                    <field name="tts_failure_notification_email"
+                                           placeholder="odoo-admin@company.com"
+                                           widget="email"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Default Customer -->
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <div class="o_form_label">
+                                    <label for="tts_default_customer_id"
+                                           string="Default Customer"/>
+                                </div>
+                                <div class="text-muted">
+                                    Customer used when auto-creating Sale Orders
+                                </div>
+                                <div class="content-group mt4">
+                                    <field name="tts_default_customer_id"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="o_hr mt16 mb16"/>
+
+                    <!-- ─── Action Buttons ──────────────────────────── -->
+                    <div class="row">
+                        <div class="col-12">
+                            <button string="Save Configuration"
+                                    class="btn btn-primary"
+                                    type="object"
+                                    name="execute"/>
+                            <button string="Test Connection"
+                                    class="btn btn-secondary ms-2"
+                                    type="object"
+                                    name="action_test_connection"/>
+                            <button string="Sync Now"
+                                    class="btn btn-secondary ms-2"
+                                    type="object"
+                                    name="action_sync_now"
+                                    icon="fa-refresh"/>
+                        </div>
+                    </div>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ── Action that opens this custom config form ───────────────────── -->
+    <record id="action_tts_config_settings" model="ir.actions.act_window">
+        <field name="name">Configuration</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_tts_config_settings_form"/>
+        <field name="target">inline</field>
+        <field name="context">{'module' : 'tts_quotation_sync'}</field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════
+         Inherit standard res.config.settings view
+         (adds a TTS section in Settings → Technical)
+    ══════════════════════════════════════════════ -->
+    <record id="view_tts_config_settings_inherit" model="ir.ui.view">
+        <field name="name">res.config.settings.tts.inherit</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/sheet" position="inside">
+                <app string="Quotation Sync" name="tts_quotation_sync">
+                    <block title="API Connection" name="tts_api">
+                        <setting string="API Base URL"
+                                 help="Quotation Builder backend endpoint">
+                            <field name="tts_api_base_url"
+                                   placeholder="https://tts-quotation-dev-backend-app..."/>
+                        </setting>
+                        <setting string="API Key (x-api-key)"
+                                 help="DEV environment key">
+                            <field name="tts_api_key" password="True"/>
+                        </setting>
+                        <setting string="Environment"
+                                 help="Switch before going live">
+                            <field name="tts_environment"/>
+                        </setting>
+                    </block>
+                    <block title="Auto-Sync" name="tts_sync">
+                        <setting string="Sync Interval"
+                                 help="How often Odoo polls the API">
+                            <field name="tts_sync_interval"/>
+                        </setting>
+                        <setting string="Auto-create Sale Order"
+                                 help="Automatically create SO on success">
+                            <field name="tts_auto_create_so"/>
+                        </setting>
+                        <setting string="Failure Notification Email"
+                                 help="Notify when PUT returns Failure">
+                            <field name="tts_failure_notification_email"/>
+                        </setting>
+                        <setting string="Default Customer"
+                                 help="Customer for auto-created Sale Orders">
+                            <field name="tts_default_customer_id"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

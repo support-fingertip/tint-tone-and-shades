@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════
+         TOP-LEVEL APP MENU  (appears in the home screen)
+    ══════════════════════════════════════════════ -->
+    <menuitem
+        id="menu_tts_quotation_sync_root"
+        name="Quotation Sync"
+        sequence="80"
+        web_icon="tts_quotation_sync,static/description/icon.png"
+    />
+
+    <!-- ══════════════════════════════════════════════
+         SECOND-LEVEL (tab strip across the top of the app)
+    ══════════════════════════════════════════════ -->
+
+    <!-- Quotations tab -->
+    <menuitem
+        id="menu_tts_quotations"
+        name="Quotations"
+        parent="menu_tts_quotation_sync_root"
+        action="action_tts_quotation"
+        sequence="10"
+    />
+
+    <!-- Sync Logs tab -->
+    <menuitem
+        id="menu_tts_sync_logs"
+        name="Sync Logs"
+        parent="menu_tts_quotation_sync_root"
+        action="action_tts_sync_log"
+        sequence="20"
+    />
+
+    <!-- Configuration tab -->
+    <menuitem
+        id="menu_tts_configuration"
+        name="Configuration"
+        parent="menu_tts_quotation_sync_root"
+        action="action_tts_config_settings"
+        sequence="30"
+    />
+
+</odoo>
