@@ -47,12 +47,15 @@ class PurchaseOrder(models.Model):
 
     def action_submit(self):
         for rec in self:
-            # Only allow from RFQ Sent
             if rec.state != 'sent':
                 return
-            # Validate all prices filled
+            if not rec.order_line:
+                raise UserError(_(
+                    'Cannot submit "%s": the RFQ has no order lines. '
+                    'Please add at least one product before submitting.'
+                ) % rec.name)
             if any(line.price_unit <= 0 for line in rec.order_line if not line.display_type):
-                raise UserError("Please fill Unit Price for all lines.")
+                raise UserError(_("Please fill Unit Price for all lines."))
             rec.state = 'submitted'
 
     @api.depends('order_line.product_id.categ_id')

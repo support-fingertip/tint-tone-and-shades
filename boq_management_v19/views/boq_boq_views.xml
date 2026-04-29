@@ -96,6 +96,7 @@
                 <group string="Work Categories">
                     <field name="category_ids"
                            widget="many2many_tags"
+                           required="1"
                            options="{'color_field': 'color', 'no_create_edit': True}"
                            placeholder="Select work categories to activate their tabs…"
                            nolabel="1"/>
