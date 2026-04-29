@@ -194,7 +194,7 @@
         <field name="res_model">res.config.settings</field>
         <field name="view_mode">form</field>
         <field name="view_id" ref="view_tts_config_settings_form"/>
-        <field name="target">inline</field>
+        <field name="target">current</field>
         <field name="context">{'module' : 'tts_quotation_sync'}</field>
     </record>
 
