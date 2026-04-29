@@ -91,77 +91,37 @@
                         <field name="is_review_message" readonly="1" widget="text"/>
                     </group>
 
-                    <!-- Line Items -->
+                    <!-- Line Items — one tab showing all rows -->
                     <notebook>
                         <page string="Line Items" name="lines">
-                            <list name="line_ids" editable="False">
-                                <field name="sequence" optional="hide"/>
-                                <field name="item_type" widget="badge"
-                                       decoration-info="item_type == 'header'"
-                                       decoration-muted="item_type == 'row'"/>
-                                <field name="category_type" widget="badge"
-                                       decoration-success="category_type == 'wood'"
-                                       decoration-warning="category_type == 'civil'"
-                                       decoration-info="category_type == 'handles'"/>
-                                <field name="title" optional="show"/>
-                                <field name="line_description" string="Description"/>
-                                <field name="product_code" optional="hide"/>
-                                <field name="height" optional="show" string="H(ft)"/>
-                                <field name="width" optional="show" string="W(ft)"/>
-                                <field name="sqft" optional="show" string="Sqft"/>
-                                <field name="unit" optional="show"/>
-                                <field name="price" optional="show" string="Rate"/>
-                                <field name="qty" optional="show"/>
-                                <field name="amount" optional="show"/>
-                                <field name="discount" optional="show"/>
-                                <field name="discount_type" optional="show"/>
-                                <field name="final_amount" string="Final Amount"/>
-                            </list>
-                        </page>
-                        <page string="Wood / Furniture" name="wood_lines">
-                            <list>
-                                <field name="product_name" string="Product"/>
-                                <field name="product_code" string="Code"/>
-                                <field name="category" string="Grade"/>
-                                <field name="subcategory" string="Finish"/>
-                                <field name="height" string="H(ft)"/>
-                                <field name="width" string="W(ft)"/>
-                                <field name="sqft" string="Sqft"/>
-                                <field name="price" string="Rate/sqft"/>
-                                <field name="qty"/>
-                                <field name="amount"/>
-                                <field name="discount"/>
-                                <field name="discount_type"/>
-                                <field name="final_amount"/>
-                            </list>
-                        </page>
-                        <page string="Civil / Services" name="civil_lines">
-                            <list>
-                                <field name="category" string="Category"/>
-                                <field name="subcategory" string="Type"/>
-                                <field name="service_item" string="Service"/>
-                                <field name="unit"/>
-                                <field name="price" string="Rate"/>
-                                <field name="qty"/>
-                                <field name="amount"/>
-                                <field name="discount"/>
-                                <field name="discount_type"/>
-                                <field name="final_amount"/>
-                            </list>
-                        </page>
-                        <page string="Handles / Hardware" name="handles_lines">
-                            <list>
-                                <field name="brand"/>
-                                <field name="article_category" string="Category"/>
-                                <field name="article_description" string="Description"/>
-                                <field name="dimension"/>
-                                <field name="price"/>
-                                <field name="qty"/>
-                                <field name="amount"/>
-                                <field name="discount"/>
-                                <field name="discount_type"/>
-                                <field name="final_amount"/>
-                            </list>
+                            <field name="line_ids" readonly="1">
+                                <list>
+                                    <field name="sequence" optional="hide"/>
+                                    <field name="item_type" widget="badge"
+                                           decoration-info="item_type == 'header'"
+                                           decoration-muted="item_type == 'row'"/>
+                                    <field name="category_type" widget="badge"
+                                           decoration-success="category_type == 'wood'"
+                                           decoration-warning="category_type == 'civil'"
+                                           decoration-info="category_type == 'handles'"/>
+                                    <field name="title" optional="show"/>
+                                    <field name="line_description" string="Description"/>
+                                    <field name="product_code" optional="hide"/>
+                                    <field name="category" optional="hide"/>
+                                    <field name="subcategory" optional="hide"/>
+                                    <field name="brand" optional="hide"/>
+                                    <field name="height" optional="show" string="H(ft)"/>
+                                    <field name="width" optional="show" string="W(ft)"/>
+                                    <field name="sqft" optional="show" string="Sqft"/>
+                                    <field name="unit" optional="show"/>
+                                    <field name="price" optional="show" string="Rate"/>
+                                    <field name="qty" optional="show"/>
+                                    <field name="amount" optional="show"/>
+                                    <field name="discount" optional="show"/>
+                                    <field name="discount_type" optional="show"/>
+                                    <field name="final_amount" string="Final Amount"/>
+                                </list>
+                            </field>
                         </page>
                     </notebook>
                 </sheet>

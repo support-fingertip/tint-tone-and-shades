@@ -52,14 +52,16 @@
                     </group>
                     <notebook>
                         <page string="Quotation Details" name="details">
-                            <list name="log_line_ids" create="false" delete="false">
-                                <field name="quotation_ext_id" string="Quotation ID"/>
-                                <field name="tts_quotation_id" string="Odoo Record"/>
-                                <field name="state" widget="badge"
-                                       decoration-success="state == 'success'"
-                                       decoration-danger="state == 'failure'"/>
-                                <field name="error_message"/>
-                            </list>
+                            <field name="log_line_ids" readonly="1">
+                                <list create="0" delete="0">
+                                    <field name="quotation_ext_id" string="Quotation ID"/>
+                                    <field name="tts_quotation_id" string="Odoo Record"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'success'"
+                                           decoration-danger="state == 'failure'"/>
+                                    <field name="error_message"/>
+                                </list>
+                            </field>
                         </page>
                     </notebook>
                 </sheet>
