@@ -31,7 +31,6 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
         ('fixed', 'Running Bill Payment Amount'),
     ], string='Create Invoice', default='regular')
 
-
     @api.model
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
@@ -57,6 +56,14 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
 
         return res
 
+    def _map_to_base_method(self, method):
+        """
+        Map custom selection keys to the base model's valid selection keys.
+        The base purchase.advance.payment.inv uses 'delivered' for a full/regular
+        invoice, but our custom fields use 'regular' for clarity in the UI.
+        """
+        return 'delivered' if method == 'regular' else method
+
     def _get_total_paid_percentage(self, purchase_orders):
         """
         Returns the total percentage already paid across all payment_invoice_ids.
@@ -78,7 +85,8 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
         purchase_orders = self.env['purchase.order'].browse(self.env.context.get('active_ids', []))
         if self.has_existing_bill:
             # ── Running payment path ──────────────────────────────────────────
-            self.advance_payment_method = self.advance_payment_method_running
+            # FIX: map 'regular' → 'delivered' before assigning to base field
+            self.advance_payment_method = self._map_to_base_method(self.advance_payment_method_running)
             payment_type = 'running'
 
             total_paid = self._get_total_paid_percentage(purchase_orders)
@@ -120,7 +128,8 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
 
         else:
             # ── First / Down payment path ─────────────────────────────────────
-            self.advance_payment_method = self.advance_payment_method_new
+            # FIX: map 'regular' → 'delivered' before assigning to base field
+            self.advance_payment_method = self._map_to_base_method(self.advance_payment_method_new)
             payment_type = 'down'
 
             if self.advance_payment_method_new == 'percentage':
@@ -144,7 +153,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
         ]).ids)
 
         # ── Call Odoo core ────────────────────────────────────────────────────
-        result = super().action_create_purchase_advance_payment()
+        super().action_create_purchase_advance_payment()
 
         # ── Rename "Down Payment" → "Running Payment" for running bills ───────
         if payment_type == 'running':
@@ -228,8 +237,36 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
                     new_attachment_ids.append(new_attach.id)
                 bill.bill_attachment_ids = [(6, 0, new_attachment_ids)]
 
-        return result
+        # ── Always redirect to the newly created draft bill(s) ───────────────
+        new_bills = self.env['account.move'].search([
+            ('move_type', '=', 'in_invoice'),
+            ('invoice_origin', 'in', purchase_orders.mapped('name')),
+            ('id', 'not in', list(existing_bill_ids)),
+        ])
 
+        if not new_bills:
+            # Fallback: nothing new created, just close the wizard
+            return {'type': 'ir.actions.act_window_close'}
+
+        if len(new_bills) == 1:
+            # Open single bill in form view
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'account.move',
+                'view_mode': 'form',
+                'res_id': new_bills[0].id,
+                'target': 'current',
+            }
+
+        # Multiple bills — open list view filtered to them
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Vendor Bills'),
+            'res_model': 'account.move',
+            'view_mode': 'list,form',
+            'domain': [('id', 'in', new_bills.ids)],
+            'target': 'current',
+        }
 
 
 class AccountMove(models.Model):
