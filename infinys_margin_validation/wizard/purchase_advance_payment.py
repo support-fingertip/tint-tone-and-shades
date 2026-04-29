@@ -142,6 +142,25 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
             else:
                 payment_amount = 0.0
 
+        # ── Determine actual price_unit to stamp on the new PO advance line ────
+        # super() does not reliably set price_unit for 'delivered' on all server
+        # versions — works locally but 0.00 on test server. We compute it here
+        # and force-write after super() runs.
+        selected_method = (
+            self.advance_payment_method_running
+            if self.has_existing_bill
+            else self.advance_payment_method_new
+        )
+        price_unit_per_order = {}
+        for order in purchase_orders:
+            if selected_method == 'fixed':
+                price_unit_per_order[order.id] = self.fixed_amount
+            elif selected_method == 'percentage':
+                price_unit_per_order[order.id] = (self.amount / 100.0) * order.amount_total
+            else:
+                # 'regular' → full order total billed as one invoice
+                price_unit_per_order[order.id] = order.amount_total
+
         # ── Snapshot existing PO order lines and bills BEFORE super() ─────────
         existing_line_ids = {}
         for order in purchase_orders:
@@ -154,6 +173,18 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
 
         # ── Call Odoo core ────────────────────────────────────────────────────
         super().action_create_purchase_advance_payment()
+
+        # ── Force price_unit on newly created advance payment PO lines ────────
+        for order in purchase_orders:
+            new_advance_lines = order.order_line.filtered(
+                lambda l, oid=order.id: (
+                    l.id not in existing_line_ids.get(oid, set())
+                    and not l.display_type
+                )
+            )
+            target_price = price_unit_per_order.get(order.id, 0.0)
+            if target_price and new_advance_lines:
+                new_advance_lines.write({'price_unit': target_price})
 
         # ── Rename "Down Payment" → "Running Payment" for running bills ───────
         if payment_type == 'running':
