@@ -1134,10 +1134,12 @@ class BoqBoq(models.Model):
                     'vendor_cost_total': float(vend_t),
                 }
 
-        trade_data = {}   
+        trade_data = {}
+        # Search all trade rows for these BOQs regardless of partner_type —
+        # the BOQ's boq_type (already filtered above) determines which dashboard
+        # owns the data; partner_type only controls which M2M field holds partners.
         trade_rows = self.env['boq.trade.vendor'].search([
-            ('boq_id',       'in', boqs.ids),
-            ('partner_type', '=',  dashboard_type),
+            ('boq_id', 'in', boqs.ids),
         ])
         for row in trade_rows:
             cat_id = row.category_id.id
@@ -1145,9 +1147,9 @@ class BoqBoq(models.Model):
                 'category': row.category_id,
                 'vendors':  {},
             })
-            partners = (
-                row.vendor_ids if dashboard_type == 'vendor' else row.supplier_ids
-            )
+            partners = row.vendor_ids if row.partner_type == 'vendor' else row.supplier_ids
+            if not partners:
+                partners = row.vendor_ids or row.supplier_ids
             for p in partners:
                 entry['vendors'][p.id] = p
 
@@ -1160,14 +1162,10 @@ class BoqBoq(models.Model):
                     'category': line.category_id,
                     'vendors':  {},
                 })
+                # boqs is already scoped to the correct boq_type, so include
+                # all line-level vendors without further partner_type filtering.
                 for vendor in line.vendor_ids:
-                    vtype = vendor.partner_type or 'vendor'
-                    if dashboard_type == 'supplier':
-                        if vtype == 'supplier':
-                            entry['vendors'][vendor.id] = vendor
-                    else:
-                        if vtype != 'supplier':
-                            entry['vendors'][vendor.id] = vendor
+                    entry['vendors'][vendor.id] = vendor
 
         tree = []
         for cat_id, cat_data in trade_data.items():
@@ -1395,12 +1393,13 @@ class BoqBoq(models.Model):
             return []
 
         trade_vendor_recs = self.env['boq.trade.vendor'].search([
-            ('boq_id',       'in', boqs.ids),
-            ('partner_type', '=',  dashboard_type),
+            ('boq_id', 'in', boqs.ids),
         ])
-        trade_map = {}  
+        trade_map = {}
         for tv in trade_vendor_recs:
-            partners = tv.vendor_ids if dashboard_type == 'vendor' else tv.supplier_ids
+            partners = tv.vendor_ids if tv.partner_type == 'vendor' else tv.supplier_ids
+            if not partners:
+                partners = tv.vendor_ids or tv.supplier_ids
             for p in partners:
                 key = (tv.boq_id.id, p.id)
                 if key not in trade_map:
@@ -1525,12 +1524,13 @@ class BoqBoq(models.Model):
 
         # Build trade lookup: (boq_id, partner_id) → category_name
         trade_vendor_recs = self.env['boq.trade.vendor'].search([
-            ('boq_id',       'in', boqs.ids),
-            ('partner_type', '=',  dashboard_type),
+            ('boq_id', 'in', boqs.ids),
         ])
         trade_map = {}
         for tv in trade_vendor_recs:
-            partners = tv.vendor_ids if dashboard_type == 'vendor' else tv.supplier_ids
+            partners = tv.vendor_ids if tv.partner_type == 'vendor' else tv.supplier_ids
+            if not partners:
+                partners = tv.vendor_ids or tv.supplier_ids
             for p in partners:
                 key = (tv.boq_id.id, p.id)
                 if key not in trade_map:

@@ -66,6 +66,21 @@ class BoqManagerDashboardBase extends Component {
         });
 
         onWillStart(async () => { await this._loadAll(); });
+
+        this._refreshTimer = null;
+        onMounted(() => {
+            this._refreshTimer = setInterval(async () => {
+                if (!this.state.loading) {
+                    await this._loadAll();
+                }
+            }, 60000);
+        });
+        onWillUnmount(() => {
+            if (this._refreshTimer) {
+                clearInterval(this._refreshTimer);
+                this._refreshTimer = null;
+            }
+        });
     }
 
     get dashboardType()     { return this.constructor.DASHBOARD_TYPE; }

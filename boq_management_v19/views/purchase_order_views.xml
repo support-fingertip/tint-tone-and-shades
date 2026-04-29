@@ -125,10 +125,8 @@
         <field name="domain">[
             '|',
             '&amp;',
-            '&amp;',
             ('state', '=', 'to approve'),
-            ('approval_line_ids.status', '=', 'current'),
-            ('approval_line_ids.user_ids', 'in', [uid]),
+            ('current_approver_ids', 'in', [uid]),
             '|',
             ('approval_line_ids.approved_by_user_id', '=', uid),
             ('approval_line_ids.rejected_by_user_id', '=', uid)
@@ -144,10 +142,8 @@
         <field name="domain">[
             '|',
             '&amp;',
-            '&amp;',
             ('state', '=', 'to approve'),
-            ('approval_line_ids.status', '=', 'current'),
-            ('approval_line_ids.user_ids', 'in', [uid]),
+            ('current_approver_ids', 'in', [uid]),
             '|',
             ('approval_line_ids.approved_by_user_id', '=', uid),
             ('approval_line_ids.rejected_by_user_id', '=', uid)
