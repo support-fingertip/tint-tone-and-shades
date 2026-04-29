@@ -11,7 +11,7 @@
                     <field name="payment_invoice_ids" context="{'default_order_id': id}">
                         <list editable="bottom">
                             <field name="bill_id"/>
-                            <field name="bill_state"/>
+                            <field name="payment_state"/>
                             <field name="amount"/>
                             <field name="comment"/>
                             <field name="payment_type"/>
