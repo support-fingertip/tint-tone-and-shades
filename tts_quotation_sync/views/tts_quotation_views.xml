@@ -139,7 +139,6 @@
         <field name="arch" type="xml">
             <search string="Search Quotations">
                 <field name="name"/>
-                <field name="external_id" string="Quotation ID"/>
                 <field name="status"/>
                 <filter name="pending" string="Pending"
                         domain="[('sync_state','=','pending')]"/>
@@ -150,12 +149,11 @@
                 <separator/>
                 <filter name="with_so" string="Has Sale Order"
                         domain="[('sale_order_id','!=',False)]"/>
-                <group expand="0" string="Group By">
-                    <filter name="group_sync_state" string="Sync State"
-                            context="{'group_by': 'sync_state'}"/>
-                    <filter name="group_status" string="API Status"
-                            context="{'group_by': 'status'}"/>
-                </group>
+                <separator/>
+                <filter name="group_sync_state" string="Group by Sync State"
+                        context="{'group_by': 'sync_state'}"/>
+                <filter name="group_status" string="Group by API Status"
+                        context="{'group_by': 'status'}"/>
             </search>
         </field>
     </record>
