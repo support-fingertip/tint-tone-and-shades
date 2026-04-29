@@ -467,6 +467,8 @@ class BoqBoq(models.Model):
         return super().copy(default)
 
     def action_done(self):
+        for rec in self:
+            rec._validate_boq_mandatory_fields(require_vendor_assignment=False)
         self.write({'state': 'done'})
 
     def action_reset_draft(self):
@@ -482,6 +484,52 @@ class BoqBoq(models.Model):
             'domain': [('boq_id', '=', self.id)],
             'context': {'default_boq_id': self.id},
         }
+
+    def _validate_boq_mandatory_fields(self, require_vendor_assignment=True):
+        """
+        Central mandatory-field check for BOQ actions.
+        Raises UserError listing ALL missing fields at once.
+
+        require_vendor_assignment=True  → also checks trade_vendor_ids
+                                          (needed before Create RFQ)
+        require_vendor_assignment=False → skips that check (Mark Done)
+        """
+        errors = []
+
+        if not self.partner_id:
+            errors.append(_('• Customer: please select a customer.'))
+
+        if not self.category_ids:
+            errors.append(_('• Work Categories: please select at least one work category.'))
+
+        if not self.line_ids:
+            errors.append(_('• Line Items: please add at least one line item.'))
+
+        if require_vendor_assignment:
+            if not self.trade_vendor_ids:
+                errors.append(_(
+                    '• Vendor / Supplier Assignment: '
+                    'please add at least one assignment row in the '
+                    '"Vendor / Supplier Assignment" section.'
+                ))
+            else:
+                has_any_partner = any(
+                    (trade.vendor_ids if trade.partner_type == 'vendor'
+                     else trade.supplier_ids)
+                    for trade in self.trade_vendor_ids
+                )
+                if not has_any_partner:
+                    errors.append(_(
+                        '• Vendor / Supplier Assignment: '
+                        'please assign at least one Vendor or Supplier '
+                        'to a trade row (fill the Vendors / Suppliers column).'
+                    ))
+
+        if errors:
+            raise UserError(
+                _('The following mandatory fields must be filled before proceeding:\n\n')
+                + '\n'.join(errors)
+            )
 
     def action_create_rfq(self):
         """
@@ -500,10 +548,11 @@ class BoqBoq(models.Model):
         """
         self.ensure_one()
 
-        if not self.line_ids:
-            raise UserError(_('Cannot create RFQ: the BOQ has no line items.'))
+        # Validate all mandatory fields upfront (customer, categories,
+        # lines, and at least one vendor/supplier assignment with partners).
+        self._validate_boq_mandatory_fields(require_vendor_assignment=True)
 
-        partner_lines = {}  
+        partner_lines = {}
 
         if self.trade_vendor_ids:
             for trade in self.trade_vendor_ids:
