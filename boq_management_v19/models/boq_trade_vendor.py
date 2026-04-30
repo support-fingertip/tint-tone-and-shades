@@ -68,10 +68,13 @@ class BoqTradeVendor(models.Model):
         store=False,
     )
 
-    _unique_boq_category_type = models.Constraint(
-        'unique(boq_id, category_id, partner_type)',
-        'Each trade + type combination can only appear once per BOQ.',
-    )
+    _sql_constraints = [
+        (
+            'unique_boq_category_type',
+            'unique(boq_id, category_id, partner_type)',
+            'Each trade + type combination can only appear once per BOQ.',
+        ),
+    ]
 
     @api.depends('boq_id.line_ids', 'category_id')
     def _compute_line_count(self):

@@ -167,36 +167,36 @@ class BoqOrderLine(models.Model):
         return res
 
     def _register_hook(self):
-        """
-        Odoo calls _register_hook() for every model on every registry build
-        (i.e. every server start, with or without -u).  This is the correct
-        place to add DB columns that must exist before the first HTTP request
-        is served — unlike _auto_init() which only runs during install/upgrade.
-
-        All ALTER TABLE statements use ADD COLUMN IF NOT EXISTS so repeated
-        calls on restart are fully idempotent.
-        """
         res = super()._register_hook()
 
-        self.env.cr.execute("""
-            ALTER TABLE boq_trade_vendor
-                ADD COLUMN IF NOT EXISTS partner_type VARCHAR DEFAULT 'vendor';
-            ALTER TABLE boq_trade_vendor
-                DROP CONSTRAINT IF EXISTS boq_trade_vendor_boq_id_category_id_key;
-        """)
+        try:
+            self.env.cr.execute("""
+                ALTER TABLE boq_trade_vendor
+                    ADD COLUMN IF NOT EXISTS partner_type VARCHAR DEFAULT 'vendor';
+                ALTER TABLE boq_trade_vendor
+                    DROP CONSTRAINT IF EXISTS boq_trade_vendor_boq_id_category_id_key;
+            """)
+        except Exception:
+            self.env.cr.rollback()
 
-        self.env.cr.execute("""
-            ALTER TABLE boq_boq
-                ADD COLUMN IF NOT EXISTS boq_type VARCHAR DEFAULT 'vendor';
-            UPDATE boq_boq SET boq_type = 'vendor' WHERE boq_type IS NULL;
-        """)
+        try:
+            self.env.cr.execute("""
+                ALTER TABLE boq_boq
+                    ADD COLUMN IF NOT EXISTS boq_type VARCHAR DEFAULT 'vendor';
+                UPDATE boq_boq SET boq_type = 'vendor' WHERE boq_type IS NULL;
+            """)
+        except Exception:
+            self.env.cr.rollback()
 
-        self.env.cr.execute("""
-            ALTER TABLE res_partner
-                ADD COLUMN IF NOT EXISTS partner_type VARCHAR,
-                ADD COLUMN IF NOT EXISTS avg_rating   NUMERIC(6, 2) DEFAULT 0.0,
-                ADD COLUMN IF NOT EXISTS rating_count INTEGER       DEFAULT 0;
-        """)
+        try:
+            self.env.cr.execute("""
+                ALTER TABLE res_partner
+                    ADD COLUMN IF NOT EXISTS partner_type VARCHAR,
+                    ADD COLUMN IF NOT EXISTS avg_rating   NUMERIC(6, 2) DEFAULT 0.0,
+                    ADD COLUMN IF NOT EXISTS rating_count INTEGER       DEFAULT 0;
+            """)
+        except Exception:
+            self.env.cr.rollback()
 
         try:
             self.env.cr.execute("""
@@ -208,7 +208,7 @@ class BoqOrderLine(models.Model):
                    )
             """, ('%res_model%',))
         except Exception:
-            pass 
+            self.env.cr.rollback()
 
         return res
 
