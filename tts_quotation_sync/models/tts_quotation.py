@@ -150,29 +150,27 @@ class TtsQuotation(models.Model):
             'target': 'current',
         }
 
-    # ── Task 5: Create BOQ from this quotation record ─────────────────────
-    def action_create_boq(self):
-        self.ensure_one()
-        if self.boq_id:
-            return {
-                'type': 'ir.actions.act_window',
-                'res_model': 'boq.boq',
-                'view_mode': 'form',
-                'res_id': self.boq_id.id,
-                'target': 'current',
-            }
+    # ── Task 5: Create BOQ — shared logic (API sync + manual button) ──────
+    def _create_boq_from_api(self, quotation):
+        """
+        Build a boq.boq record from a tts.quotation.
+        Called both during the automatic API sync and from the manual button.
+        Returns the created boq.boq record.
+        """
+        if quotation.boq_id:
+            return quotation.boq_id
 
-        # Resolve a company-type partner for the BOQ (required field with is_company domain)
+        # BOQ partner_id requires is_company=True
         partner = False
-        if self.sale_order_id and self.sale_order_id.partner_id.is_company:
-            partner = self.sale_order_id.partner_id
+        if quotation.sale_order_id and quotation.sale_order_id.partner_id.is_company:
+            partner = quotation.sale_order_id.partner_id
         if not partner:
             partner = self.env.company.partner_id
 
         # Collect which BOQ category codes are needed from the TTS line items
         tts_cat_types = {
             line.category_type
-            for line in self.line_ids
+            for line in quotation.line_ids
             if line.item_type == 'row' and line.category_type
         }
         boq_codes_needed = {
@@ -185,18 +183,16 @@ class TtsQuotation(models.Model):
         )
         cat_by_code = {c.code: c for c in boq_categories}
 
-        # Create the BOQ header
         boq = self.env['boq.boq'].with_context(tts_create_boq=True).create({
             'partner_id': partner.id,
-            'project_name': f'TTS-{self.external_id}',
-            'notes': self.client_notes or '',
+            'project_name': f'TTS-{quotation.external_id}',
+            'notes': quotation.client_notes or '',
             'category_ids': [(6, 0, boq_categories.ids)],
-            'tts_quotation_id': self.id,
+            'tts_quotation_id': quotation.id,
         })
 
-        # Create BOQ lines — one per TTS row line, mapped to BOQ category
         boq_line_vals = []
-        for line in self.line_ids.sorted('sequence'):
+        for line in quotation.line_ids.sorted('sequence'):
             if line.item_type != 'row' or not line.category_type:
                 continue
 
@@ -208,7 +204,6 @@ class TtsQuotation(models.Model):
             product = self._get_or_create_product(line)
             discount_pct = self._compute_discount_pct(line)
 
-            # Wood: price is per sqft — effective qty = sqft × ordered qty
             if line.category_type == 'wood':
                 qty = (line.sqft or 1.0) * (line.qty or 1)
                 product_type = 'material'
@@ -235,8 +230,13 @@ class TtsQuotation(models.Model):
         if boq_line_vals:
             self.env['boq.order.line'].create(boq_line_vals)
 
-        self.boq_id = boq.id
+        quotation.boq_id = boq.id
+        return boq
 
+    def action_create_boq(self):
+        """Manual button on the quotation form — creates or opens the BOQ."""
+        self.ensure_one()
+        boq = self._create_boq_from_api(self)
         return {
             'type': 'ir.actions.act_window',
             'res_model': 'boq.boq',
@@ -328,11 +328,14 @@ class TtsQuotation(models.Model):
             try:
                 with self.env.cr.savepoint():
 
-                    # ── STEP 1 (First API data): upsert + create SO ────────
+                    # ── STEP 1 (First API data): upsert + create SO + BOQ ──
                     quotation = self._upsert_quotation(q_data)
 
                     if config['auto_create_so'] == 'yes' and not quotation.sale_order_id:
                         self._create_sale_order(quotation, config)
+
+                    if config['auto_create_boq'] == 'yes' and not quotation.boq_id:
+                        self._create_boq_from_api(quotation)
 
                     # ── STEP 2 (Second API): mark-reviewed PUT ─────────────
                     # Only reached when Step 1 completes without error.
@@ -462,6 +465,7 @@ class TtsQuotation(models.Model):
             'api_key': get_param('tts_quotation_sync.api_key', '') or '',
             'environment': get_param('tts_quotation_sync.environment', 'development'),
             'auto_create_so': get_param('tts_quotation_sync.auto_create_so', 'yes'),
+            'auto_create_boq': get_param('tts_quotation_sync.auto_create_boq', 'yes'),
             'failure_notification_email': get_param(
                 'tts_quotation_sync.failure_notification_email', ''
             ),
