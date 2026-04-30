@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import logging
 
 import requests
@@ -7,6 +8,15 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
+
+MAX_RETRIES = 3
+
+# Maps TTS category_type → BOQ category code
+_TTS_TO_BOQ_CATEGORY = {
+    'wood':    'finishing',
+    'civil':   'civil',
+    'handles': 'finishing',
+}
 
 
 class TtsQuotation(models.Model):
@@ -59,6 +69,34 @@ class TtsQuotation(models.Model):
     )
     sync_message = fields.Text(string='Sync Message', readonly=True)
 
+    # ── Task 1: Full API response body capture ────────────────────────────
+    api_response_body = fields.Text(
+        string='API Response Body',
+        readonly=True,
+        help='Full JSON payload received from the GET /quotations/approved API for this record',
+    )
+    mark_reviewed_response = fields.Text(
+        string='Mark-Reviewed Response',
+        readonly=True,
+        help='Full JSON response from the PUT /mark-reviewed API call',
+    )
+
+    # ── Task 2: Error reason ──────────────────────────────────────────────
+    error_reason = fields.Text(
+        string='Error Reason',
+        readonly=True,
+        tracking=True,
+        help='Exact error captured when the last processing attempt failed',
+    )
+
+    # ── Task 3: Retry counter ─────────────────────────────────────────────
+    retry_count = fields.Integer(
+        string='Retry Count',
+        default=0,
+        readonly=True,
+        help='Number of retry attempts made (0 = succeeded on first try; 3 = all retries exhausted)',
+    )
+
     # ── Relations ─────────────────────────────────────────────────────────
     line_ids = fields.One2many(
         'tts.quotation.line', 'tts_quotation_id', string='Line Items'
@@ -73,6 +111,17 @@ class TtsQuotation(models.Model):
         string='Sale Orders',
         compute='_compute_sale_order_count',
     )
+    boq_id = fields.Many2one(
+        'boq.boq',
+        string='BOQ',
+        readonly=True,
+        tracking=True,
+        help='Bill of Quantities created from this quotation',
+    )
+    boq_count = fields.Integer(
+        string='BOQs',
+        compute='_compute_boq_count',
+    )
 
     # ── Computed ──────────────────────────────────────────────────────────
     @api.depends('external_id')
@@ -84,7 +133,11 @@ class TtsQuotation(models.Model):
         for rec in self:
             rec.sale_order_count = 1 if rec.sale_order_id else 0
 
-    # ── Smart button action ────────────────────────────────────────────────
+    def _compute_boq_count(self):
+        for rec in self:
+            rec.boq_count = 1 if rec.boq_id else 0
+
+    # ── Smart button actions ───────────────────────────────────────────────
     def action_view_sale_order(self):
         self.ensure_one()
         if not self.sale_order_id:
@@ -94,6 +147,101 @@ class TtsQuotation(models.Model):
             'res_model': 'sale.order',
             'view_mode': 'form',
             'res_id': self.sale_order_id.id,
+            'target': 'current',
+        }
+
+    # ── Task 5: Create BOQ from this quotation record ─────────────────────
+    def action_create_boq(self):
+        self.ensure_one()
+        if self.boq_id:
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'boq.boq',
+                'view_mode': 'form',
+                'res_id': self.boq_id.id,
+                'target': 'current',
+            }
+
+        # Resolve a company-type partner for the BOQ (required field with is_company domain)
+        partner = False
+        if self.sale_order_id and self.sale_order_id.partner_id.is_company:
+            partner = self.sale_order_id.partner_id
+        if not partner:
+            partner = self.env.company.partner_id
+
+        # Collect which BOQ category codes are needed from the TTS line items
+        tts_cat_types = {
+            line.category_type
+            for line in self.line_ids
+            if line.item_type == 'row' and line.category_type
+        }
+        boq_codes_needed = {
+            _TTS_TO_BOQ_CATEGORY[ct]
+            for ct in tts_cat_types
+            if ct in _TTS_TO_BOQ_CATEGORY
+        }
+        boq_categories = self.env['boq.category'].search(
+            [('code', 'in', list(boq_codes_needed))]
+        )
+        cat_by_code = {c.code: c for c in boq_categories}
+
+        # Create the BOQ header
+        boq = self.env['boq.boq'].with_context(tts_create_boq=True).create({
+            'partner_id': partner.id,
+            'project_name': f'TTS-{self.external_id}',
+            'notes': self.client_notes or '',
+            'category_ids': [(6, 0, boq_categories.ids)],
+            'tts_quotation_id': self.id,
+        })
+
+        # Create BOQ lines — one per TTS row line, mapped to BOQ category
+        boq_line_vals = []
+        for line in self.line_ids.sorted('sequence'):
+            if line.item_type != 'row' or not line.category_type:
+                continue
+
+            cat_code = _TTS_TO_BOQ_CATEGORY.get(line.category_type, 'finishing')
+            boq_cat = cat_by_code.get(cat_code)
+            if not boq_cat:
+                continue
+
+            product = self._get_or_create_product(line)
+            discount_pct = self._compute_discount_pct(line)
+
+            # Wood: price is per sqft — effective qty = sqft × ordered qty
+            if line.category_type == 'wood':
+                qty = (line.sqft or 1.0) * (line.qty or 1)
+                product_type = 'material'
+            elif line.category_type == 'civil':
+                qty = float(line.qty or 1)
+                product_type = 'subcontract'
+            else:
+                qty = float(line.qty or 1)
+                product_type = 'material'
+
+            boq_line_vals.append({
+                'boq_id': boq.id,
+                'category_id': boq_cat.id,
+                'product_id': product.id,
+                'product_name': line.line_description or product.name,
+                'product_type': product_type,
+                'qty': qty,
+                'unit_price': line.price or 0.0,
+                'discount': discount_pct,
+                'sequence': line.sequence,
+                'notes': line.line_description or '',
+            })
+
+        if boq_line_vals:
+            self.env['boq.order.line'].create(boq_line_vals)
+
+        self.boq_id = boq.id
+
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'boq.boq',
+            'view_mode': 'form',
+            'res_id': boq.id,
             'target': 'current',
         }
 
@@ -134,21 +282,17 @@ class TtsQuotation(models.Model):
             quotations_data = self._fetch_approved_quotations(config)
             log.quotations_fetched = len(quotations_data)
 
-            success_count = 0
-            failure_count = 0
-
             for q_data in quotations_data:
-                qid = q_data.get('quotation_id')
-                self._process_single_quotation(config, log, q_data, qid)
+                self._process_single_quotation(config, log, q_data,
+                                               q_data.get('quotation_id'))
 
-            # Re-count from log lines — each quotation writes its own line
+            # Count results from log lines (each quotation writes its own entry)
             success_count = self.env['tts.sync.log.line'].search_count(
                 [('log_id', '=', log.id), ('state', '=', 'success')]
             )
             failure_count = self.env['tts.sync.log.line'].search_count(
                 [('log_id', '=', log.id), ('state', '=', 'failure')]
             )
-
             final_state = (
                 'success' if failure_count == 0
                 else ('error' if success_count == 0 else 'partial')
@@ -163,99 +307,145 @@ class TtsQuotation(models.Model):
             _logger.exception('tts_quotation_sync: fatal error during sync run')
             log.write({'state': 'error', 'error_message': str(exc)})
 
+    # ─────────────────────────────────────────────────────────────────────
+    # SINGLE-QUOTATION PROCESSOR  (Tasks 1 + 2 + 3 + 4)
+    # ─────────────────────────────────────────────────────────────────────
+
     def _process_single_quotation(self, config, log, q_data, qid):
         """
-        Process one quotation inside a savepoint so a mid-flight failure does
-        NOT abort the outer transaction — every other quotation can still be
-        processed and the sync log can still be updated.
+        Process one quotation with up to MAX_RETRIES attempts (Task 3).
+
+        Each attempt runs inside a savepoint so a mid-flight DB error does not
+        abort the outer transaction.  The Second API (mark-reviewed PUT) is only
+        called after the First API data has been fully processed and persisted
+        (Task 4 — sequential gate).  The full response body and any error reason
+        are stored on the record (Tasks 1 + 2).
         """
-        try:
-            with self.env.cr.savepoint():
-                quotation = self._upsert_quotation(q_data)
+        last_error = None
+        raw_body = json.dumps(q_data, default=str)
 
-                if config['auto_create_so'] == 'yes' and not quotation.sale_order_id:
-                    self._create_sale_order(quotation, config)
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                with self.env.cr.savepoint():
 
-                # Call external API — inside savepoint so network failure rolls back DB too
-                self._mark_reviewed(
-                    config, qid,
-                    is_reviewed=True,
-                    status='Success',
-                    message=None,
+                    # ── STEP 1 (First API data): upsert + create SO ────────
+                    quotation = self._upsert_quotation(q_data)
+
+                    if config['auto_create_so'] == 'yes' and not quotation.sale_order_id:
+                        self._create_sale_order(quotation, config)
+
+                    # ── STEP 2 (Second API): mark-reviewed PUT ─────────────
+                    # Only reached when Step 1 completes without error.
+                    mark_resp = self._mark_reviewed(
+                        config, qid,
+                        is_reviewed=True,
+                        status='Success',
+                        message=None,
+                    )
+
+                    # Persist success + captured response bodies (Task 1)
+                    quotation.write({
+                        'is_reviewed': True,
+                        'is_review_status': 'Success',
+                        'is_review_message': False,
+                        'sync_state': 'success',
+                        'sync_message': False,
+                        'retry_count': attempt - 1,
+                        'error_reason': False,
+                        'api_response_body': raw_body,
+                        'mark_reviewed_response': json.dumps(mark_resp, default=str),
+                    })
+                    self.env['tts.sync.log.line'].create({
+                        'log_id': log.id,
+                        'quotation_ext_id': qid,
+                        'tts_quotation_id': quotation.id,
+                        'state': 'success',
+                    })
+                # ── savepoint committed ────────────────────────────────────
+                return  # done — exit retry loop
+
+            except Exception as exc:
+                last_error = str(exc)
+                _logger.warning(
+                    'tts_quotation_sync: attempt %d/%d failed for quotation %s: %s',
+                    attempt, MAX_RETRIES, qid, last_error,
                 )
-                quotation.write({
-                    'is_reviewed': True,
-                    'is_review_status': 'Success',
-                    'is_review_message': False,
-                    'sync_state': 'success',
-                    'sync_message': False,
-                })
-                self.env['tts.sync.log.line'].create({
-                    'log_id': log.id,
-                    'quotation_ext_id': qid,
-                    'tts_quotation_id': quotation.id,
-                    'state': 'success',
-                })
-            # ── savepoint committed ────────────────────────────────────────
+                # Savepoint rolled back — outer transaction still healthy.
 
-        except Exception as exc:
-            # Savepoint was rolled back — outer transaction is still healthy.
-            error_msg = str(exc)
+                if attempt < MAX_RETRIES:
+                    # Store intermediate retry state so it's visible in the UI
+                    try:
+                        existing = self.search([('external_id', '=', qid)], limit=1)
+                        if existing:
+                            existing.write({
+                                'retry_count': attempt,
+                                'error_reason': last_error,
+                                'sync_state': 'pending',
+                            })
+                    except Exception:
+                        pass
+                    continue  # → next attempt
+
+        # ── All MAX_RETRIES attempts exhausted ────────────────────────────
+        _logger.error(
+            'tts_quotation_sync: all %d attempts failed for quotation %s: %s',
+            MAX_RETRIES, qid, last_error,
+        )
+
+        # Write final failure record in the healthy outer transaction (Task 2)
+        failure_quotation = None
+        try:
+            existing = self.search([('external_id', '=', qid)], limit=1)
+            failure_vals = {
+                'external_id': qid,
+                'status': q_data.get('status', ''),
+                'total_amount': float(q_data.get('total_amount') or 0),
+                'client_notes': q_data.get('client_notes') or '',
+                'approved_at': q_data.get('approved_at'),
+                'is_reviewed': False,
+                'is_review_status': 'Failure',
+                'is_review_message': last_error,
+                'sync_state': 'failure',
+                'sync_message': last_error,
+                'error_reason': last_error,
+                'retry_count': MAX_RETRIES,
+                'api_response_body': raw_body,
+            }
+            if existing:
+                existing.write(failure_vals)
+                failure_quotation = existing
+            else:
+                failure_quotation = self.create(failure_vals)
+        except Exception:
             _logger.exception(
-                'tts_quotation_sync: error processing quotation %s', qid
+                'tts_quotation_sync: could not write failure record for quotation %s', qid
             )
 
-            # Persist failure state — main transaction is clean after rollback
-            failure_quotation = None
-            try:
-                existing = self.search([('external_id', '=', qid)], limit=1)
-                failure_vals = {
-                    'external_id': qid,
-                    'status': q_data.get('status', ''),
-                    'total_amount': float(q_data.get('total_amount') or 0),
-                    'client_notes': q_data.get('client_notes') or '',
-                    'approved_at': q_data.get('approved_at'),
-                    'is_reviewed': False,
-                    'is_review_status': 'Failure',
-                    'is_review_message': error_msg,
-                    'sync_state': 'failure',
-                    'sync_message': error_msg,
-                }
-                if existing:
-                    existing.write(failure_vals)
-                    failure_quotation = existing
-                else:
-                    failure_quotation = self.create(failure_vals)
-            except Exception:
-                _logger.exception(
-                    'tts_quotation_sync: could not write failure record for quotation %s', qid
-                )
+        # Second API: mark Failure on external system (no DB interaction here)
+        try:
+            self._mark_reviewed(
+                config, qid,
+                is_reviewed=False,
+                status='Failure',
+                message=(last_error or 'Unknown error')[:500],
+            )
+        except Exception:
+            _logger.exception(
+                'tts_quotation_sync: could not call mark-reviewed (Failure) '
+                'for quotation %s', qid,
+            )
 
-            # Call external API to mark as Failure (no DB involvement)
-            try:
-                self._mark_reviewed(
-                    config, qid,
-                    is_reviewed=False,
-                    status='Failure',
-                    message=error_msg[:500],
-                )
-            except Exception:
-                _logger.exception(
-                    'tts_quotation_sync: could not call mark-reviewed (Failure) '
-                    'for quotation %s', qid
-                )
+        self.env['tts.sync.log.line'].create({
+            'log_id': log.id,
+            'quotation_ext_id': qid or 0,
+            'tts_quotation_id': failure_quotation.id if failure_quotation else False,
+            'state': 'failure',
+            'error_message': last_error,
+        })
 
-            self.env['tts.sync.log.line'].create({
-                'log_id': log.id,
-                'quotation_ext_id': qid or 0,
-                'tts_quotation_id': failure_quotation.id if failure_quotation else False,
-                'state': 'failure',
-                'error_message': error_msg,
-            })
-
-            notif_email = config.get('failure_notification_email')
-            if notif_email:
-                self._send_failure_notification(notif_email, q_data, error_msg)
+        notif_email = config.get('failure_notification_email')
+        if notif_email:
+            self._send_failure_notification(notif_email, q_data, last_error)
 
     # ─────────────────────────────────────────────────────────────────────
     # CONFIG HELPER
@@ -437,7 +627,6 @@ class TtsQuotation(models.Model):
                 discount_pct = self._compute_discount_pct(line)
 
                 if line.category_type == 'wood':
-                    # amount = price × sqft × qty  →  unit_price = price, qty = sqft × qty
                     effective_qty = (line.sqft or 1) * (line.qty or 1)
                     price_unit = line.price
                 else:
@@ -462,13 +651,15 @@ class TtsQuotation(models.Model):
 
     @staticmethod
     def _compute_discount_pct(line):
-        """Return a discount percentage for sale.order.line (0–100)."""
+        """Return a discount percentage for sale.order.line / BOQ line (0–100)."""
         if line.discount_type == 'percentage':
             return min(max(line.discount, 0), 100)
         if line.discount_type == 'fixed' and line.price and line.amount:
-            # Convert fixed discount to percentage of base amount
-            base = line.price * (line.sqft or 1) * (line.qty or 1) if line.category_type == 'wood' \
+            base = (
+                line.price * (line.sqft or 1) * (line.qty or 1)
+                if line.category_type == 'wood'
                 else line.price * (line.qty or 1)
+            )
             if base > 0:
                 return min((line.discount / base) * 100, 100)
         return 0.0
@@ -525,7 +716,6 @@ class TtsQuotation(models.Model):
                 })
             return product
 
-        # Fallback: generic consumable
         product = Product.search([], limit=1)
         if not product:
             product = Product.create({'name': 'General Item', 'type': 'consu'})
@@ -545,7 +735,7 @@ class TtsQuotation(models.Model):
                 'email_to': email,
                 'body_html': (
                     f"<p>Quotation <b>TTS-{q_data.get('quotation_id')}</b> "
-                    f"failed to sync into Odoo.</p>"
+                    f"failed to sync into Odoo after {MAX_RETRIES} attempts.</p>"
                     f"<p><b>Error:</b> {error_msg}</p>"
                     f"<p>Please review the Sync Logs in Odoo for details.</p>"
                 ),

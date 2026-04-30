@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Task 5: BOQ must be created only from a TTS Quotation record.
+        Disable the "New" button on the BOQ list view so users cannot
+        create standalone BOQs from the menu.  BOQ creation is available
+        via the "Create BOQ" button on the tts.quotation form.
+    -->
+    <record id="view_boq_boq_list_tts_no_create" model="ir.ui.view">
+        <field name="name">boq.boq.list.tts.no.create</field>
+        <field name="model">boq.boq</field>
+        <field name="inherit_id" ref="boq_management_v19.view_boq_boq_list"/>
+        <field name="arch" type="xml">
+            <list position="attributes">
+                <attribute name="create">0</attribute>
+            </list>
+        </field>
+    </record>
+
+    <!--
+        Show the originating TTS Quotation on the BOQ form (read-only,
+        placed inside the Customer & Project group).
+    -->
+    <record id="view_boq_boq_form_tts_ref" model="ir.ui.view">
+        <field name="name">boq.boq.form.tts.ref</field>
+        <field name="model">boq.boq</field>
+        <field name="inherit_id" ref="boq_management_v19.view_boq_boq_form"/>
+        <field name="arch" type="xml">
+            <field name="project_name" position="after">
+                <field name="tts_quotation_id"
+                       readonly="1"
+                       invisible="not tts_quotation_id"
+                       options="{'no_open': False}"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>
