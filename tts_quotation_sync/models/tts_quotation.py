@@ -539,22 +539,23 @@ class TtsQuotation(models.Model):
             quotation = self.create(vals)
 
         line_vals_list = [
-            self._parse_grid_row(row, quotation.id)
-            for row in q_data.get('grid_rows', [])
+            self._parse_grid_row(row, quotation.id, (idx + 1) * 10)
+            for idx, row in enumerate(q_data.get('grid_rows', []))
         ]
         if line_vals_list:
             self.env['tts.quotation.line'].create(line_vals_list)
 
         return quotation
 
-    def _parse_grid_row(self, row, quotation_id):
+    def _parse_grid_row(self, row, quotation_id, sequence=10):
         item_type = row.get('item_type', 'row')
         category_type = row.get('categoryType', '')
 
         vals = {
             'tts_quotation_id': quotation_id,
-            'external_line_id': row.get('id', 0),
-            'sequence': row.get('id', 0),
+            # Store as Char — API ids are 13-digit longs, beyond PostgreSQL integer range
+            'external_line_id': str(row.get('id', '')),
+            'sequence': sequence,  # safe incrementing counter (10, 20, 30 …)
             'item_type': item_type,
             'category_type': category_type if item_type == 'row' else False,
         }
