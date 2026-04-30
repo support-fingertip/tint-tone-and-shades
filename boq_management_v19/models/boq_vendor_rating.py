@@ -82,10 +82,13 @@ class BoqVendorRating(models.Model):
         index=True,
     )
 
-    _unique_po_rating = models.Constraint(
-        'unique(purchase_order_id)',
-        'A rating already exists for this Purchase Order. Edit the existing rating.',
-    )
+    _sql_constraints = [
+        (
+            'unique_po_rating',
+            'unique(purchase_order_id)',
+            'A rating already exists for this Purchase Order. Edit the existing rating.',
+        ),
+    ]
 
     @api.depends('rating')
     def _compute_rating_int(self):

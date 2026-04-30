@@ -54,8 +54,10 @@ class BoqCategory(models.Model):
         compute='_compute_boq_count',
     )
 
-    _name_uniq = models.Constraint('unique(name)', 'Category name must be unique.')
-    _code_uniq = models.Constraint('unique(code)', 'Category code must be unique.')
+    _sql_constraints = [
+        ('name_uniq', 'unique(name)', 'Category name must be unique.'),
+        ('code_uniq', 'unique(code)', 'Category code must be unique.'),
+    ]
 
     @api.depends('color')
     def _compute_tag_color_class(self):
