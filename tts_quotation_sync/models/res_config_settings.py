@@ -85,14 +85,17 @@ class ResConfigSettings(models.TransientModel):
         param = self.env['ir.config_parameter'].sudo().get_param(
             'tts_quotation_sync.default_customer_id', False
         )
-        partner_id = int(param) if param else False
+        try:
+            partner_id = int(param) if param else False
+        except (ValueError, TypeError):
+            partner_id = False
         for rec in self:
             rec.tts_default_customer_id = partner_id
 
     def _set_tts_default_customer_id(self):
         self.env['ir.config_parameter'].sudo().set_param(
             'tts_quotation_sync.default_customer_id',
-            self.tts_default_customer_id.id or '',
+            self.tts_default_customer_id.id if self.tts_default_customer_id else False,
         )
 
     # ── Override set_values to update cron ────────────────────────────────
