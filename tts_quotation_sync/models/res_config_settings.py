@@ -67,6 +67,16 @@ class ResConfigSettings(models.TransientModel):
         default='yes',
         help='Automatically create SO on success',
     )
+    tts_auto_create_boq = fields.Selection(
+        selection=[
+            ('yes', 'Yes — auto create'),
+            ('no',  'No — manual only'),
+        ],
+        string='Auto-create BOQ',
+        config_parameter='tts_quotation_sync.auto_create_boq',
+        default='yes',
+        help='Automatically create BOQ from the API data during each sync run',
+    )
     tts_failure_notification_email = fields.Char(
         string='Failure notification email',
         config_parameter='tts_quotation_sync.failure_notification_email',

@@ -41,6 +41,10 @@
                                  help="Automatically create SO on success">
                             <field name="tts_auto_create_so"/>
                         </setting>
+                        <setting string="Auto-create BOQ"
+                                 help="Automatically create BOQ from the API data during each sync run">
+                            <field name="tts_auto_create_boq"/>
+                        </setting>
                         <setting string="Failure notification email"
                                  help="Notify when PUT returns Failure">
                             <field name="tts_failure_notification_email"/>
