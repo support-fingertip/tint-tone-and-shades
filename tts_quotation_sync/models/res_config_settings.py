@@ -72,35 +72,35 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='tts_quotation_sync.failure_notification_email',
         help='Notify when PUT returns Failure',
     )
+
+    # Many2one for Default Customer — must use get_values/set_values in Odoo 19
+    # (compute/inverse on TransientModel causes InFailedSqlTransaction on flush)
     tts_default_customer_id = fields.Many2one(
         comodel_name='res.partner',
         string='Default Customer',
-        compute='_compute_tts_default_customer_id',
-        inverse='_set_tts_default_customer_id',
         help='Customer placed on auto-created Sale Orders',
     )
 
-    # ── Compute / inverse for Many2one ─────────────────────────────────────
-    def _compute_tts_default_customer_id(self):
+    # ── get_values: load Many2one from ir.config_parameter ────────────────
+    @api.model
+    def get_values(self):
+        res = super().get_values()
         param = self.env['ir.config_parameter'].sudo().get_param(
-            'tts_quotation_sync.default_customer_id', False
+            'tts_quotation_sync.default_customer_id'
         )
         try:
-            partner_id = int(param) if param else False
+            res['tts_default_customer_id'] = int(param) if param else False
         except (ValueError, TypeError):
-            partner_id = False
-        for rec in self:
-            rec.tts_default_customer_id = partner_id
+            res['tts_default_customer_id'] = False
+        return res
 
-    def _set_tts_default_customer_id(self):
+    # ── set_values: persist Many2one + update cron interval ───────────────
+    def set_values(self):
+        super().set_values()
         self.env['ir.config_parameter'].sudo().set_param(
             'tts_quotation_sync.default_customer_id',
             self.tts_default_customer_id.id if self.tts_default_customer_id else False,
         )
-
-    # ── Override set_values to update cron ────────────────────────────────
-    def set_values(self):
-        super().set_values()
         self._update_cron_interval()
 
     def _update_cron_interval(self):
