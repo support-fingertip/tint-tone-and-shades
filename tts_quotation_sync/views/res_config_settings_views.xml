@@ -207,7 +207,7 @@
         <field name="model">res.config.settings</field>
         <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//form/sheet" position="inside">
+            <xpath expr="//form" position="inside">
                 <app string="Quotation Sync" name="tts_quotation_sync">
                     <block title="API Connection" name="tts_api">
                         <setting string="API Base URL"
