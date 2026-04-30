@@ -138,76 +138,16 @@ class TtsQuotation(models.Model):
             failure_count = 0
 
             for q_data in quotations_data:
-                quotation = None
-                try:
-                    quotation = self._upsert_quotation(q_data)
+                qid = q_data.get('quotation_id')
+                self._process_single_quotation(config, log, q_data, qid)
 
-                    if config['auto_create_so'] == 'yes' and not quotation.sale_order_id:
-                        self._create_sale_order(quotation, config)
-
-                    self._mark_reviewed(
-                        config,
-                        q_data['quotation_id'],
-                        is_reviewed=True,
-                        status='Success',
-                        message=None,
-                    )
-                    quotation.write({
-                        'is_reviewed': True,
-                        'is_review_status': 'Success',
-                        'is_review_message': False,
-                        'sync_state': 'success',
-                        'sync_message': False,
-                    })
-                    success_count += 1
-                    self.env['tts.sync.log.line'].create({
-                        'log_id': log.id,
-                        'quotation_ext_id': q_data['quotation_id'],
-                        'tts_quotation_id': quotation.id,
-                        'state': 'success',
-                    })
-
-                except Exception as exc:
-                    error_msg = str(exc)
-                    _logger.exception(
-                        'tts_quotation_sync: error processing quotation %s',
-                        q_data.get('quotation_id'),
-                    )
-                    # Attempt to mark as Failure on the external API
-                    if quotation:
-                        try:
-                            self._mark_reviewed(
-                                config,
-                                q_data['quotation_id'],
-                                is_reviewed=False,
-                                status='Failure',
-                                message=error_msg,
-                            )
-                            quotation.write({
-                                'is_reviewed': False,
-                                'is_review_status': 'Failure',
-                                'is_review_message': error_msg,
-                                'sync_state': 'failure',
-                                'sync_message': error_msg,
-                            })
-                        except Exception:
-                            _logger.exception(
-                                'tts_quotation_sync: also failed to call mark-reviewed '
-                                'for quotation %s', q_data.get('quotation_id')
-                            )
-
-                    failure_count += 1
-                    self.env['tts.sync.log.line'].create({
-                        'log_id': log.id,
-                        'quotation_ext_id': q_data.get('quotation_id', 0),
-                        'tts_quotation_id': quotation.id if quotation else False,
-                        'state': 'failure',
-                        'error_message': error_msg,
-                    })
-
-                    notif_email = config.get('failure_notification_email')
-                    if notif_email:
-                        self._send_failure_notification(notif_email, q_data, error_msg)
+            # Re-count from log lines — each quotation writes its own line
+            success_count = self.env['tts.sync.log.line'].search_count(
+                [('log_id', '=', log.id), ('state', '=', 'success')]
+            )
+            failure_count = self.env['tts.sync.log.line'].search_count(
+                [('log_id', '=', log.id), ('state', '=', 'failure')]
+            )
 
             final_state = (
                 'success' if failure_count == 0
@@ -222,6 +162,100 @@ class TtsQuotation(models.Model):
         except Exception as exc:
             _logger.exception('tts_quotation_sync: fatal error during sync run')
             log.write({'state': 'error', 'error_message': str(exc)})
+
+    def _process_single_quotation(self, config, log, q_data, qid):
+        """
+        Process one quotation inside a savepoint so a mid-flight failure does
+        NOT abort the outer transaction — every other quotation can still be
+        processed and the sync log can still be updated.
+        """
+        try:
+            with self.env.cr.savepoint():
+                quotation = self._upsert_quotation(q_data)
+
+                if config['auto_create_so'] == 'yes' and not quotation.sale_order_id:
+                    self._create_sale_order(quotation, config)
+
+                # Call external API — inside savepoint so network failure rolls back DB too
+                self._mark_reviewed(
+                    config, qid,
+                    is_reviewed=True,
+                    status='Success',
+                    message=None,
+                )
+                quotation.write({
+                    'is_reviewed': True,
+                    'is_review_status': 'Success',
+                    'is_review_message': False,
+                    'sync_state': 'success',
+                    'sync_message': False,
+                })
+                self.env['tts.sync.log.line'].create({
+                    'log_id': log.id,
+                    'quotation_ext_id': qid,
+                    'tts_quotation_id': quotation.id,
+                    'state': 'success',
+                })
+            # ── savepoint committed ────────────────────────────────────────
+
+        except Exception as exc:
+            # Savepoint was rolled back — outer transaction is still healthy.
+            error_msg = str(exc)
+            _logger.exception(
+                'tts_quotation_sync: error processing quotation %s', qid
+            )
+
+            # Persist failure state — main transaction is clean after rollback
+            failure_quotation = None
+            try:
+                existing = self.search([('external_id', '=', qid)], limit=1)
+                failure_vals = {
+                    'external_id': qid,
+                    'status': q_data.get('status', ''),
+                    'total_amount': float(q_data.get('total_amount') or 0),
+                    'client_notes': q_data.get('client_notes') or '',
+                    'approved_at': q_data.get('approved_at'),
+                    'is_reviewed': False,
+                    'is_review_status': 'Failure',
+                    'is_review_message': error_msg,
+                    'sync_state': 'failure',
+                    'sync_message': error_msg,
+                }
+                if existing:
+                    existing.write(failure_vals)
+                    failure_quotation = existing
+                else:
+                    failure_quotation = self.create(failure_vals)
+            except Exception:
+                _logger.exception(
+                    'tts_quotation_sync: could not write failure record for quotation %s', qid
+                )
+
+            # Call external API to mark as Failure (no DB involvement)
+            try:
+                self._mark_reviewed(
+                    config, qid,
+                    is_reviewed=False,
+                    status='Failure',
+                    message=error_msg[:500],
+                )
+            except Exception:
+                _logger.exception(
+                    'tts_quotation_sync: could not call mark-reviewed (Failure) '
+                    'for quotation %s', qid
+                )
+
+            self.env['tts.sync.log.line'].create({
+                'log_id': log.id,
+                'quotation_ext_id': qid or 0,
+                'tts_quotation_id': failure_quotation.id if failure_quotation else False,
+                'state': 'failure',
+                'error_message': error_msg,
+            })
+
+            notif_email = config.get('failure_notification_email')
+            if notif_email:
+                self._send_failure_notification(notif_email, q_data, error_msg)
 
     # ─────────────────────────────────────────────────────────────────────
     # CONFIG HELPER
