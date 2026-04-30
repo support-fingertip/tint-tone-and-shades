@@ -15,7 +15,8 @@ class TtsQuotationLine(models.Model):
         index=True,
     )
     sequence = fields.Integer(default=10)
-    external_line_id = fields.Integer(string='External Line ID')
+    # Char: API ids are 13-digit longs that overflow PostgreSQL integer (max ~2.1B)
+    external_line_id = fields.Char(string='External Line ID')
 
     item_type = fields.Selection(
         selection=[('header', 'Header'), ('row', 'Row')],
