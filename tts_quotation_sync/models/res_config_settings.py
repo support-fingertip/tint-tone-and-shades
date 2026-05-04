@@ -64,7 +64,7 @@ class ResConfigSettings(models.TransientModel):
         ],
         string='Auto-create Sale Order',
         config_parameter='tts_quotation_sync.auto_create_so',
-        default='yes',
+        default='no',
         help='Automatically create SO on success',
     )
     tts_auto_create_boq = fields.Selection(
