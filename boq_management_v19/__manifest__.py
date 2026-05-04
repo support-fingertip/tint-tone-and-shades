@@ -2,9 +2,6 @@
 {
     'name': 'BOQ Management — Bill of Quantities (Odoo 19)',
     'version': '19.0.3.1.0',
-    
-    
-    
     'summary': 'BOQ with trade-type RFQ creation, vendor+supplier ratings, dual manager dashboards',
     'description': """
         BOQ Management
