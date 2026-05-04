@@ -742,34 +742,29 @@ class BoqBoq(models.Model):
 
     @api.model
     def get_dashboard_stats(self, dashboard_type='vendor', company_ids=None):
-       
+
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
+
+        # BOQ metrics stay BOQ-scoped
         company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         boqs = self.search(company_domain)
-
-        rfqs = self.env['purchase.order']
-        if boqs.ids:
-            self.env.cr.execute(
-                "SELECT purchase_id FROM boq_boq_purchase_order_rel WHERE boq_id IN %s",
-                (tuple(boqs.ids),)
-            )
-            rfq_ids = [r[0] for r in self.env.cr.fetchall()]
-            if rfq_ids:
-               
-                rfqs = self.env['purchase.order'].search([
-                    ('id', 'in', rfq_ids),
-                    ('company_id', 'in', company_ids),
-                ])
 
         state_counts = {
             'draft': len(boqs.filtered(lambda b: b.state == 'draft')),
             'done':  len(boqs.filtered(lambda b: b.state == 'done')),
         }
-
         total_value = sum(boqs.mapped('total_amount'))
         total_tax   = sum(boqs.mapped('total_tax'))
         grand_total = sum(boqs.mapped('grand_total'))
+
+        # RFQ metrics include ALL company purchase orders filtered by partner type
+        rfq_domain = [('company_id', 'in', company_ids)]
+        if dashboard_type == 'vendor':
+            rfq_domain.append(('partner_id.partner_type', '=', 'vendor'))
+        elif dashboard_type == 'supplier':
+            rfq_domain.append(('partner_id.partner_type', '=', 'supplier'))
+        rfqs = self.env['purchase.order'].search(rfq_domain)
 
         rfq_total = 0.0
         rfq_tax   = 0.0
@@ -788,31 +783,34 @@ class BoqBoq(models.Model):
             """, (tuple(rfqs.ids),))
             row = self.env.cr.fetchone()
             rfq_total = float(row[0]) if row else 0.0
-            # Tax: only sum from orders that already have actual vendor prices
             rfq_tax = sum(rfq.amount_tax for rfq in rfqs if rfq.amount_untaxed > 0)
 
         return {
-            'total_boqs': len(boqs),
-            'total_value': total_value,
-            'total_tax': total_tax,
-            'grand_total': grand_total,
-            'state_counts': state_counts,
-            'total_rfqs': len(rfqs),
-            'rfq_draft': len(rfqs.filtered(lambda r: r.state in ('draft', 'sent'))),
-            'rfq_total_value': rfq_total,
-            'rfq_total_tax': rfq_tax,
-            'currency_symbol': self.env.company.currency_id.symbol or '$',
+            'total_boqs':        len(boqs),
+            'total_value':       total_value,
+            'total_tax':         total_tax,
+            'grand_total':       grand_total,
+            'state_counts':      state_counts,
+            'total_rfqs':        len(rfqs),
+            'rfq_draft':         len(rfqs.filtered(lambda r: r.state in ('draft', 'sent'))),
+            'rfq_submitted':     len(rfqs.filtered(lambda r: r.state == 'submitted')),
+            'rfq_to_approve':    len(rfqs.filtered(lambda r: r.state == 'to approve')),
+            'rfq_purchase':      len(rfqs.filtered(lambda r: r.state == 'purchase')),
+            'rfq_total_value':   rfq_total,
+            'rfq_total_tax':     rfq_tax,
+            'currency_symbol':   self.env.company.currency_id.symbol or '$',
             'currency_position': self.env.company.currency_id.position or 'before',
         }
 
     @api.model
     def get_vendor_summary(self, dashboard_type='vendor', company_ids=None):
-       
+
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
+
+        # Build BOQ-project enrichment map (BOQ-linked POs only)
         company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         boqs = self.search(company_domain)
-
         rfq_boq_map = {}
         if boqs.ids:
             self.env.cr.execute(
@@ -820,25 +818,23 @@ class BoqBoq(models.Model):
                 (tuple(boqs.ids),)
             )
             rfq_boq_map = {row[0]: row[1] for row in self.env.cr.fetchall()}
-        if rfq_boq_map:
-            rfqs = self.env['purchase.order'].search([
-                ('id', 'in', list(rfq_boq_map.keys())),
-                ('company_id', 'in', company_ids),
-            ])
-            # Narrow the map to only records accessible in the current company context
-            found_ids = set(rfqs.ids)
-            rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
-        else:
-            rfqs = self.env['purchase.order']
 
         boq_info = {
             b.id: {
                 'project_name': b.project_name or b.project_id.name or '—',
-                'state': b.state,
+                'state':        b.state,
                 'total_amount': b.total_amount,
             }
             for b in boqs
         }
+
+        # ALL company POs for this dashboard type (not just BOQ-linked)
+        rfq_domain = [('company_id', 'in', company_ids)]
+        if dashboard_type == 'vendor':
+            rfq_domain.append(('partner_id.partner_type', '=', 'vendor'))
+        elif dashboard_type == 'supplier':
+            rfq_domain.append(('partner_id.partner_type', '=', 'supplier'))
+        rfqs = self.env['purchase.order'].search(rfq_domain)
 
         rfq_effective_total = {}
         if rfqs.ids:
@@ -1304,6 +1300,155 @@ class BoqBoq(models.Model):
 
         # Sort trades by name
         tree.sort(key=lambda t: t['trade_name'])
+
+        # ------------------------------------------------------------------ #
+        # Fallback: include direct (non-BOQ) POs that are not already in tree #
+        # ------------------------------------------------------------------ #
+        # Collect partner IDs already represented in the BOQ-centric tree
+        tree_partner_ids = set()
+        for trade_node in tree:
+            for v in trade_node['vendors']:
+                tree_partner_ids.add(v['vendor_id'])
+
+        # Find all company POs whose partner is NOT already in the tree
+        direct_domain = [('company_id', 'in', company_ids)]
+        if dashboard_type == 'vendor':
+            direct_domain.append(('partner_id.partner_type', '=', 'vendor'))
+        elif dashboard_type == 'supplier':
+            direct_domain.append(('partner_id.partner_type', '=', 'supplier'))
+        all_company_rfqs = self.env['purchase.order'].search(direct_domain)
+        direct_rfqs = all_company_rfqs.filtered(
+            lambda r: r.partner_id.id not in tree_partner_ids
+        )
+
+        if direct_rfqs:
+            # Compute effective totals for direct RFQs
+            direct_eff = {}
+            if direct_rfqs.ids:
+                self.env.cr.execute("""
+                    SELECT
+                        pol.order_id,
+                        COALESCE(SUM(
+                            CASE WHEN pol.price_unit > 0
+                                 THEN pol.price_unit * pol.product_qty
+                                 ELSE COALESCE(pol.customer_price, 0) * pol.product_qty
+                            END
+                        ), 0)
+                    FROM purchase_order_line pol
+                    WHERE pol.order_id IN %s
+                      AND (pol.display_type IS NULL OR pol.display_type = '')
+                    GROUP BY pol.order_id
+                """, (tuple(direct_rfqs.ids),))
+                for oid, eff in self.env.cr.fetchall():
+                    direct_eff[oid] = float(eff)
+
+            # Group direct RFQs by partner
+            direct_partner_map = {}
+            for rfq in direct_rfqs:
+                vid = rfq.partner_id.id
+                if vid not in direct_partner_map:
+                    direct_partner_map[vid] = {
+                        'partner': rfq.partner_id,
+                        'rfqs':    [],
+                    }
+                direct_partner_map[vid]['rfqs'].append(rfq)
+
+            direct_trade_node = {
+                'trade_id':          -1,
+                'trade_name':        'Direct Orders',
+                'trade_icon':        'fa-shopping-bag',
+                'trade_code':        'direct',
+                'rfq_count':         0,
+                'pending_count':     0,
+                'submitted_count':   0,
+                'total_value':       0.0,
+                'customer_total':    0.0,
+                'vendor_cost_total': 0.0,
+                'margin_percent':    0.0,
+                'vendor_count':      len(direct_partner_map),
+                'vendors':           [],
+            }
+
+            for vid, pdata in direct_partner_map.items():
+                partner   = pdata['partner']
+                rfqs_list = pdata['rfqs']
+                pending_rfqs_d   = [r for r in rfqs_list if r.state in PENDING_STATES]
+                submitted_rfqs_d = [
+                    r for r in rfqs_list
+                    if r.state == 'submitted'
+                    and r.write_date and r.write_date >= recently_cutoff
+                ]
+
+                rfq_entries = []
+                for rfq in rfqs_list:
+                    rfq_entries.append({
+                        'rfq_id':                rfq.id,
+                        'rfq_name':              rfq.name,
+                        'state':                 rfq.state,
+                        'state_label':           RFQ_STATE_LABELS.get(rfq.state, rfq.state),
+                        'amount_untaxed':        rfq.amount_untaxed,
+                        'amount_total':          direct_eff.get(rfq.id, rfq.amount_total),
+                        'customer_total':        0.0,
+                        'vendor_cost_total':     0.0,
+                        'margin_percent':        0.0,
+                        'has_vendor_price':      rfq.amount_untaxed > 0,
+                        'is_pending':            rfq.state in PENDING_STATES,
+                        'is_recently_submitted': rfq in submitted_rfqs_d,
+                        'date_order': (
+                            rfq.date_order.strftime('%d %b %Y')
+                            if rfq.date_order else ''
+                        ),
+                    })
+
+                pay_status = self._vendor_payment_status(rfqs_list)
+                pay_label  = {
+                    'paid':      'Fully Paid',
+                    'partial':   'Partially Paid',
+                    'in_payment':'In Payment',
+                    'not_paid':  'Not Paid',
+                }.get(pay_status, 'Not Paid')
+
+                _state_counts = {}
+                for rfq in rfqs_list:
+                    _state_counts[rfq.state] = _state_counts.get(rfq.state, 0) + 1
+                _state_order = ['draft', 'sent', 'submitted', 'to approve', 'purchase', 'done', 'cancel']
+                state_summary = [
+                    {
+                        'state':       s,
+                        'state_label': RFQ_STATE_LABELS.get(s, s),
+                        'count':       _state_counts[s],
+                    }
+                    for s in _state_order if s in _state_counts
+                ]
+
+                v_total = sum(direct_eff.get(r.id, r.amount_total) for r in rfqs_list)
+                vendor_node = {
+                    'vendor_id':               vid,
+                    'vendor_name':             partner.name,
+                    'vendor_email':            partner.email or '',
+                    'rfq_count':               len(rfqs_list),
+                    'pending_count':           len(pending_rfqs_d),
+                    'recently_submitted_count': len(submitted_rfqs_d),
+                    'total_value':             v_total,
+                    'customer_total':          0.0,
+                    'vendor_cost_total':       0.0,
+                    'margin_percent':          0.0,
+                    'payment_status':          pay_status,
+                    'payment_status_label':    pay_label,
+                    'state_summary':           state_summary,
+                    'rfqs':                    rfq_entries,
+                }
+                direct_trade_node['vendors'].append(vendor_node)
+                direct_trade_node['rfq_count']    += vendor_node['rfq_count']
+                direct_trade_node['pending_count'] += vendor_node['pending_count']
+                direct_trade_node['submitted_count'] += vendor_node['recently_submitted_count']
+                direct_trade_node['total_value']  += vendor_node['total_value']
+
+            direct_trade_node['vendors'].sort(
+                key=lambda v: (-v['recently_submitted_count'], v['vendor_name'])
+            )
+            tree.append(direct_trade_node)
+
         return tree
 
     @api.model
@@ -1349,7 +1494,7 @@ class BoqBoq(models.Model):
 
     @api.model
     def get_pending_rfq_vendors(self, dashboard_type='vendor', company_ids=None):
-        
+
         PENDING_STATES = {'draft', 'sent'}
         RFQ_STATE_LABELS = {
             'draft': 'Quote Requested',
@@ -1358,14 +1503,13 @@ class BoqBoq(models.Model):
 
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
+
+        # Build BOQ trade map for enrichment (used to show trade name where available)
         boqs = self.search(
             [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         )
-        if not boqs:
-            return []
-
-        # Get all linked RFQ ids
         rfq_boq_map = {}
+        trade_map = {}
         if boqs.ids:
             self.env.cr.execute(
                 "SELECT purchase_id, boq_id FROM boq_boq_purchase_order_rel WHERE boq_id IN %s",
@@ -1373,37 +1517,31 @@ class BoqBoq(models.Model):
             )
             for row in self.env.cr.fetchall():
                 rfq_boq_map[row[0]] = row[1]
+            trade_vendor_recs = self.env['boq.trade.vendor'].search([
+                ('boq_id', 'in', boqs.ids),
+            ])
+            for tv in trade_vendor_recs:
+                partners = tv.vendor_ids if tv.partner_type == 'vendor' else tv.supplier_ids
+                if not partners:
+                    partners = tv.vendor_ids or tv.supplier_ids
+                for p in partners:
+                    key = (tv.boq_id.id, p.id)
+                    if key not in trade_map:
+                        trade_map[key] = tv.category_id.name
 
-        if not rfq_boq_map:
-            return []
-
-        all_rfqs = self.env['purchase.order'].search([
-            ('id', 'in', list(rfq_boq_map.keys())),
+        # ALL company pending POs (not just BOQ-linked)
+        rfq_domain = [
             ('company_id', 'in', company_ids),
-        ])
-        found_ids = set(all_rfqs.ids)
-        rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
-
-        if not all_rfqs:
-            return []
-
-        pending_rfqs = all_rfqs.filtered(lambda r: r.state in PENDING_STATES)
+            ('state', 'in', list(PENDING_STATES)),
+        ]
+        if dashboard_type == 'vendor':
+            rfq_domain.append(('partner_id.partner_type', '=', 'vendor'))
+        elif dashboard_type == 'supplier':
+            rfq_domain.append(('partner_id.partner_type', '=', 'supplier'))
+        pending_rfqs = self.env['purchase.order'].search(rfq_domain)
 
         if not pending_rfqs:
             return []
-
-        trade_vendor_recs = self.env['boq.trade.vendor'].search([
-            ('boq_id', 'in', boqs.ids),
-        ])
-        trade_map = {}
-        for tv in trade_vendor_recs:
-            partners = tv.vendor_ids if tv.partner_type == 'vendor' else tv.supplier_ids
-            if not partners:
-                partners = tv.vendor_ids or tv.supplier_ids
-            for p in partners:
-                key = (tv.boq_id.id, p.id)
-                if key not in trade_map:
-                    trade_map[key] = tv.category_id.name
 
         pending_eff_total = {}
         if pending_rfqs.ids:
@@ -1487,14 +1625,12 @@ class BoqBoq(models.Model):
         self = self.with_context(allowed_company_ids=company_ids)
         recently_cutoff = fields.Datetime.now() - timedelta(days=7)
 
+        # Build BOQ trade map for enrichment (trade name lookup)
         boqs = self.search(
             [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         )
-        if not boqs:
-            return []
-
-        # Collect linked RFQ → BOQ mapping
         rfq_boq_map = {}
+        trade_map = {}
         if boqs.ids:
             self.env.cr.execute(
                 "SELECT purchase_id, boq_id FROM boq_boq_purchase_order_rel WHERE boq_id IN %s",
@@ -1502,39 +1638,32 @@ class BoqBoq(models.Model):
             )
             for row in self.env.cr.fetchall():
                 rfq_boq_map[row[0]] = row[1]
+            trade_vendor_recs = self.env['boq.trade.vendor'].search([
+                ('boq_id', 'in', boqs.ids),
+            ])
+            for tv in trade_vendor_recs:
+                partners = tv.vendor_ids if tv.partner_type == 'vendor' else tv.supplier_ids
+                if not partners:
+                    partners = tv.vendor_ids or tv.supplier_ids
+                for p in partners:
+                    key = (tv.boq_id.id, p.id)
+                    if key not in trade_map:
+                        trade_map[key] = tv.category_id.name
 
-        if not rfq_boq_map:
-            return []
-
-        # Fetch recently submitted — multi-company safe via search()
-        submitted_rfqs = self.env['purchase.order'].search([
-            ('id',          'in', list(rfq_boq_map.keys())),
-            ('company_id',  'in', company_ids),
-            ('state',       '=',  'submitted'),
-            ('write_date',  '>=', recently_cutoff),
-        ])
+        # ALL company submitted POs in last 7 days (not just BOQ-linked)
+        rfq_domain = [
+            ('company_id', 'in', company_ids),
+            ('state',      '=',  'submitted'),
+            ('write_date', '>=', recently_cutoff),
+        ]
+        if dashboard_type == 'vendor':
+            rfq_domain.append(('partner_id.partner_type', '=', 'vendor'))
+        elif dashboard_type == 'supplier':
+            rfq_domain.append(('partner_id.partner_type', '=', 'supplier'))
+        submitted_rfqs = self.env['purchase.order'].search(rfq_domain)
 
         if not submitted_rfqs:
             return []
-
-        # boq_type already scopes submitted RFQs to the correct dashboard.
-
-        if not submitted_rfqs:
-            return []
-
-        # Build trade lookup: (boq_id, partner_id) → category_name
-        trade_vendor_recs = self.env['boq.trade.vendor'].search([
-            ('boq_id', 'in', boqs.ids),
-        ])
-        trade_map = {}
-        for tv in trade_vendor_recs:
-            partners = tv.vendor_ids if tv.partner_type == 'vendor' else tv.supplier_ids
-            if not partners:
-                partners = tv.vendor_ids or tv.supplier_ids
-            for p in partners:
-                key = (tv.boq_id.id, p.id)
-                if key not in trade_map:
-                    trade_map[key] = tv.category_id.name
 
         now = fields.Datetime.now()
         result = []
@@ -1587,30 +1716,18 @@ class BoqBoq(models.Model):
         recently_cutoff = fields.Datetime.now() - timedelta(days=7)
         PENDING_STATES  = {'draft', 'sent'}
 
+        # BOQs for BOQ-level metrics per company
         all_boqs = self.search(
             [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         )
-        if not all_boqs:
-            return []
 
-        rfq_boq_map = {}
-        if all_boqs.ids:
-            self.env.cr.execute(
-                "SELECT purchase_id, boq_id FROM boq_boq_purchase_order_rel "
-                "WHERE boq_id IN %s",
-                (tuple(all_boqs.ids),)
-            )
-            for row in self.env.cr.fetchall():
-                rfq_boq_map[row[0]] = row[1]
-
-        all_rfqs = self.env['purchase.order']
-        if rfq_boq_map:
-            all_rfqs = self.env['purchase.order'].search([
-                ('id',         'in', list(rfq_boq_map.keys())),
-                ('company_id', 'in', company_ids),
-            ])
-            found_ids  = set(all_rfqs.ids)
-            rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
+        # ALL company POs filtered by partner type (not just BOQ-linked)
+        rfq_domain = [('company_id', 'in', company_ids)]
+        if dashboard_type == 'vendor':
+            rfq_domain.append(('partner_id.partner_type', '=', 'vendor'))
+        elif dashboard_type == 'supplier':
+            rfq_domain.append(('partner_id.partner_type', '=', 'supplier'))
+        all_rfqs = self.env['purchase.order'].search(rfq_domain)
 
         rfq_effective_total_cs = {}
         if all_rfqs.ids:
@@ -1668,30 +1785,21 @@ class BoqBoq(models.Model):
 
     @api.model
     def get_approval_pending_pos(self, dashboard_type='vendor', company_ids=None):
-        
+
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
-        company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
-        boqs = self.search(company_domain)
-        if not boqs:
-            return []
 
-        rfq_ids = []
-        if boqs.ids:
-            self.env.cr.execute(
-                "SELECT purchase_id FROM boq_boq_purchase_order_rel WHERE boq_id IN %s",
-                (tuple(boqs.ids),)
-            )
-            rfq_ids = [r[0] for r in self.env.cr.fetchall()]
-
-        if not rfq_ids:
-            return []
-
-        pending_pos = self.env['purchase.order'].search([
-            ('id', 'in', rfq_ids),
+        # Include ALL company POs in 'to approve' state — not just BOQ-linked ones.
+        po_domain = [
             ('company_id', 'in', company_ids),
             ('state', '=', 'to approve'),
-        ])
+        ]
+        if dashboard_type == 'vendor':
+            po_domain.append(('partner_id.partner_type', '=', 'vendor'))
+        elif dashboard_type == 'supplier':
+            po_domain.append(('partner_id.partner_type', '=', 'supplier'))
+
+        pending_pos = self.env['purchase.order'].search(po_domain)
 
         current_user = self.env.user
         result = []
