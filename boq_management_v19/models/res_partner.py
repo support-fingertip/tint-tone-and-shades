@@ -65,14 +65,14 @@ class ResPartner(models.Model):
     avg_rating = fields.Float(
         string='Average Rating',
         compute='_compute_avg_rating',
-        store=False,
+        store=True,
         digits=(2, 1),
         help='Average of all vendor ratings (1–5 scale).',
     )
     rating_count = fields.Integer(
         string='Rating Count',
         compute='_compute_avg_rating',
-        store=False,
+        store=True,
     )
 
     @api.depends('rating_ids', 'rating_ids.rating_int')

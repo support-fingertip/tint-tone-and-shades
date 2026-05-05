@@ -145,9 +145,9 @@ class BoqVendorRating(models.Model):
         return res
 
     def action_save_and_close(self):
-        """Save and close the dialog; returning act_window_close causes the
-        parent form to reload, which refreshes avg_rating / rating_count."""
-        return {'type': 'ir.actions.act_window_close'}
+        """Save and close the dialog; reload the page so the parent form
+        picks up the freshly stored avg_rating / rating_count values."""
+        return {'type': 'ir.actions.client', 'tag': 'reload'}
 
     @api.model_create_multi
     def create(self, vals_list):
