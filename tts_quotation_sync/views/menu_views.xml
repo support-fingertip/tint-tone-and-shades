@@ -39,7 +39,7 @@
         id="menu_tts_configuration"
         name="Configuration"
         parent="menu_tts_quotation_sync_root"
-        action="base_setup.action_general_configuration"
+        action="action_tts_config_settings"
         sequence="30"
     />
 
