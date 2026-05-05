@@ -145,9 +145,23 @@ class BoqVendorRating(models.Model):
         return res
 
     def action_save_and_close(self):
-        """Save and close the dialog; reload the page so the parent form
-        picks up the freshly stored avg_rating / rating_count values."""
-        return {'type': 'ir.actions.client', 'tag': 'reload'}
+        """Save the rating and navigate to the partner form so the parent view
+        loads fresh data (One2many list + avg_rating / rating_count).
+
+        When opened from the vendor master (show_rating_tab in context) we
+        navigate the main window back to that partner — this gives a guaranteed
+        fresh load.  When opened from a PO we just close the dialog so the user
+        stays on the PO.
+        """
+        if self.env.context.get('show_rating_tab') and self.partner_id:
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'res.partner',
+                'res_id': self.partner_id.id,
+                'view_mode': 'form',
+                'target': 'current',
+            }
+        return {'type': 'ir.actions.act_window_close'}
 
     @api.model_create_multi
     def create(self, vals_list):
