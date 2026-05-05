@@ -680,10 +680,22 @@ class BoqBoq(models.Model):
         return cat.id if cat else False
 
     def _get_allowed_company_ids(self):
-        ctx_ids = self.env.context.get('allowed_company_ids')
-        if ctx_ids:
-            return list(ctx_ids)
-        return self.env.user.company_ids.ids or [self.env.company.id]
+        """
+        Return the list of company IDs accessible to the current user.
+
+        Priority:
+        1. Explicitly passed company_ids (handled by callers, not here)
+        2. All companies the user is allowed to switch to (user.company_ids)
+           — includes the current company and all granted multi-company access
+        3. Fallback to the single active company
+
+        Note: We intentionally do NOT restrict to context.allowed_company_ids
+        here because that reflects only the ACTIVE switcher selection, not the
+        full set of companies the user can manage.  Dashboard methods that
+        receive an explicit company_ids argument use that list directly.
+        """
+        cids = self.env.user.sudo().company_ids.ids
+        return cids if cids else [self.env.company.id]
 
     def _get_boq_type_domain(self, dashboard_type):
         """
@@ -780,10 +792,10 @@ class BoqBoq(models.Model):
         in the company filter, even when only one is active in the switcher.
         Returns: [{id, name, initial}] sorted by name.
         """
-        company_set = self.env.user.company_ids | self.env.company
+        company_set = self.env.user.sudo().company_ids | self.env.company
         ctx_ids = self.env.context.get('allowed_company_ids', [])
         if ctx_ids:
-            company_set = company_set | self.env['res.company'].browse(ctx_ids)
+            company_set = company_set | self.env['res.company'].sudo().browse(ctx_ids)
 
         result = []
         for company in company_set.sorted('name'):
@@ -798,7 +810,7 @@ class BoqBoq(models.Model):
     def get_dashboard_stats(self, dashboard_type='vendor', company_ids=None):
 
         company_ids = company_ids or self._get_allowed_company_ids()
-        self = self.with_context(allowed_company_ids=company_ids)
+        self = self.sudo().with_context(allowed_company_ids=company_ids)
 
         # BOQ metrics — scoped by boq_type
         company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
@@ -862,7 +874,7 @@ class BoqBoq(models.Model):
     def get_vendor_summary(self, dashboard_type='vendor', company_ids=None):
 
         company_ids = company_ids or self._get_allowed_company_ids()
-        self = self.with_context(allowed_company_ids=company_ids)
+        self = self.sudo().with_context(allowed_company_ids=company_ids)
 
         # Build BOQ-project enrichment map (BOQ-linked POs only)
         company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
@@ -1030,6 +1042,7 @@ class BoqBoq(models.Model):
     def get_trade_summary(self, dashboard_type='vendor'):
         
         company_ids = self._get_allowed_company_ids()
+        self = self.sudo().with_context(allowed_company_ids=company_ids)
         company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         boqs = self.search(company_domain)
 
@@ -1119,11 +1132,9 @@ class BoqBoq(models.Model):
         recently_cutoff = fields.Datetime.now() - timedelta(days=7)
 
         company_ids = company_ids or self._get_allowed_company_ids()
-        self = self.with_context(allowed_company_ids=company_ids)
+        self = self.sudo().with_context(allowed_company_ids=company_ids)
         company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         boqs = self.search(company_domain)
-        if not boqs:
-            return []
 
         rfq_boq_map = {}   # {rfq_id: boq_id}
         if boqs.ids:
@@ -1570,7 +1581,7 @@ class BoqBoq(models.Model):
         }
 
         company_ids = company_ids or self._get_allowed_company_ids()
-        self = self.with_context(allowed_company_ids=company_ids)
+        self = self.sudo().with_context(allowed_company_ids=company_ids)
 
         # Build BOQ trade map for enrichment (used to show trade name where available)
         boqs = self.search(
@@ -1689,7 +1700,7 @@ class BoqBoq(models.Model):
         Sorted: most recent first (smallest days_ago first).
         """
         company_ids = company_ids or self._get_allowed_company_ids()
-        self = self.with_context(allowed_company_ids=company_ids)
+        self = self.sudo().with_context(allowed_company_ids=company_ids)
         recently_cutoff = fields.Datetime.now() - timedelta(days=7)
 
         # Build BOQ trade map for enrichment (trade name lookup)
@@ -1775,7 +1786,7 @@ class BoqBoq(models.Model):
         company_ids: optional subset from the Head dashboard company filter.
         """
         company_ids = company_ids or self._get_allowed_company_ids()
-        self = self.with_context(allowed_company_ids=company_ids)
+        self = self.sudo().with_context(allowed_company_ids=company_ids)
         if not company_ids:
             return []
 
@@ -1854,7 +1865,7 @@ class BoqBoq(models.Model):
     def get_approval_pending_pos(self, dashboard_type='vendor', company_ids=None):
 
         company_ids = company_ids or self._get_allowed_company_ids()
-        self = self.with_context(allowed_company_ids=company_ids)
+        self = self.sudo().with_context(allowed_company_ids=company_ids)
 
         # Union of BOQ-linked + partner_type-filtered POs, then state-filtered.
         # This ensures all 'to approve' POs appear — both BOQ-generated and direct.
