@@ -4,72 +4,74 @@
     <!--
         Inherit the main Settings form so "Quotation Sync" appears in the
         Settings sidebar alongside Sales, Purchase, Inventory, etc.
-        base_setup is declared in __manifest__.py depends to guarantee this
-        external ID is available when the module loads.
+
+        The <app> block must be a DIRECT child of <arch type="xml"> — no
+        xpath wrapper. This matches how sale, purchase, stock etc. inject
+        their sidebar entries (see sale/views/res_config_settings_views.xml).
+
+        base_setup is declared in __manifest__.py depends so the ref resolves.
     -->
     <record id="res_config_settings_view_form" model="ir.ui.view">
         <field name="name">tts.quotation.sync.config.settings</field>
         <field name="model">res.config.settings</field>
         <field name="inherit_id" ref="base_setup.view_general_configuration"/>
         <field name="arch" type="xml">
-            <xpath expr="//form" position="inside">
 
-                <app string="Quotation Sync" name="tts_quotation_sync">
+            <app string="Quotation Sync" name="tts_quotation_sync">
 
-                    <block title="Connection settings" name="tts_connection">
-                        <setting string="API Base URL"
-                                 help="Quotation Builder backend endpoint">
-                            <field name="tts_api_base_url"
-                                   placeholder="https://tts-quotation-dev-backend-app..."/>
-                        </setting>
-                        <setting string="API Key (x-api-key)"
-                                 help="DEV environment key">
-                            <field name="tts_api_key" password="True"
-                                   placeholder="••••••••••••••••••"/>
-                        </setting>
-                        <setting string="Environment"
-                                 help="Switch before going live">
-                            <field name="tts_environment"/>
-                        </setting>
-                    </block>
+                <block title="Connection settings" name="tts_connection">
+                    <setting string="API Base URL"
+                             help="Quotation Builder backend endpoint">
+                        <field name="tts_api_base_url"
+                               placeholder="https://tts-quotation-dev-backend-app..."/>
+                    </setting>
+                    <setting string="API Key (x-api-key)"
+                             help="DEV environment key">
+                        <field name="tts_api_key" password="True"
+                               placeholder="••••••••••••••••••"/>
+                    </setting>
+                    <setting string="Environment"
+                             help="Switch before going live">
+                        <field name="tts_environment"/>
+                    </setting>
+                </block>
 
-                    <block title="Cron / auto-sync settings" name="tts_sync">
-                        <setting string="Sync interval"
-                                 help="How often Odoo polls the API">
-                            <field name="tts_sync_interval"/>
-                        </setting>
-                        <setting string="Auto-create BOQ"
-                                 help="Automatically create BOQ from the API data during each sync run">
-                            <field name="tts_auto_create_boq"/>
-                        </setting>
-                        <setting string="Failure notification email"
-                                 help="Notify when PUT returns Failure">
-                            <field name="tts_failure_notification_email"/>
-                        </setting>
-                        <setting string="Default Customer"
-                                 help="Customer placed on auto-created BOQs">
-                            <field name="tts_default_customer_id"/>
-                        </setting>
-                    </block>
+                <block title="Cron / auto-sync settings" name="tts_sync">
+                    <setting string="Sync interval"
+                             help="How often Odoo polls the API">
+                        <field name="tts_sync_interval"/>
+                    </setting>
+                    <setting string="Auto-create BOQ"
+                             help="Automatically create BOQ from the API data during each sync run">
+                        <field name="tts_auto_create_boq"/>
+                    </setting>
+                    <setting string="Failure notification email"
+                             help="Notify when PUT returns Failure">
+                        <field name="tts_failure_notification_email"/>
+                    </setting>
+                    <setting string="Default Customer"
+                             help="Customer placed on auto-created BOQs">
+                        <field name="tts_default_customer_id"/>
+                    </setting>
+                </block>
 
-                    <block title="Actions" name="tts_actions">
-                        <setting help="Verify the API connection is reachable">
-                            <button type="object"
-                                    name="action_test_connection"
-                                    string="Test Connection"
-                                    class="btn-secondary"/>
-                        </setting>
-                        <setting help="Fetch and process approved quotations now">
-                            <button type="object"
-                                    name="action_sync_now"
-                                    string="Sync Now"
-                                    class="btn-secondary"/>
-                        </setting>
-                    </block>
+                <block title="Actions" name="tts_actions">
+                    <setting help="Verify the API connection is reachable">
+                        <button type="object"
+                                name="action_test_connection"
+                                string="Test Connection"
+                                class="btn-secondary"/>
+                    </setting>
+                    <setting help="Fetch and process approved quotations now">
+                        <button type="object"
+                                name="action_sync_now"
+                                string="Sync Now"
+                                class="btn-secondary"/>
+                    </setting>
+                </block>
 
-                </app>
+            </app>
 
-            </xpath>
         </field>
     </record>
 
