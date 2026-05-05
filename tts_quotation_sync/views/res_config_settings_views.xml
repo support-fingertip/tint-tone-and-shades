@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- ══════════════════════════════════════════════
-         STANDALONE CONFIGURATION FORM
-         Uses the proper Odoo 19 settings structure:
-         <app> → <block> → <setting>
-         No <sheet> — SettingsFormView handles layout.
-    ══════════════════════════════════════════════ -->
-    <record id="view_tts_config_settings_form" model="ir.ui.view">
-        <field name="name">tts.quotation.sync.config.form</field>
+    <!--
+        Inherit the standard Odoo Settings form view.
+        This makes "Quotation Sync" appear in the Settings left sidebar
+        (alongside Sales, Purchase, etc.) and ensures get_values() is
+        called properly on every page load — fixing blank fields on reload.
+    -->
+    <record id="view_tts_config_settings" model="ir.ui.view">
+        <field name="name">tts.quotation.sync.config</field>
         <field name="model">res.config.settings</field>
-        <field name="priority">100</field>
+        <field name="inherit_id" ref="base_setup.view_general_configuration"/>
         <field name="arch" type="xml">
-            <form string="API Configuration">
+            <xpath expr="//form" position="inside">
+
                 <app string="Quotation Sync" name="tts_quotation_sync">
 
                     <block title="Connection settings" name="tts_connection">
@@ -50,7 +51,7 @@
                             <field name="tts_failure_notification_email"/>
                         </setting>
                         <setting string="Default Customer"
-                                 help="Customer used when auto-creating Sale Orders">
+                                 help="Customer placed on auto-created Sale Orders / BOQs">
                             <field name="tts_default_customer_id"/>
                         </setting>
                     </block>
@@ -71,18 +72,9 @@
                     </block>
 
                 </app>
-            </form>
-        </field>
-    </record>
 
-    <!-- ── Action that opens the config form ──────────────────────────────── -->
-    <record id="action_tts_config_settings" model="ir.actions.act_window">
-        <field name="name">Configuration</field>
-        <field name="res_model">res.config.settings</field>
-        <field name="view_mode">form</field>
-        <field name="view_id" ref="view_tts_config_settings_form"/>
-        <field name="target">current</field>
-        <field name="context">{'module': 'tts_quotation_sync'}</field>
+            </xpath>
+        </field>
     </record>
 
 </odoo>
