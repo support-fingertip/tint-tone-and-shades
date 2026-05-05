@@ -5,11 +5,11 @@
         Inherit the main Settings form so "Quotation Sync" appears in the
         Settings sidebar alongside Sales, Purchase, Inventory, etc.
 
-        The <app> block must be a DIRECT child of <arch type="xml"> — no
-        xpath wrapper. This matches how sale, purchase, stock etc. inject
-        their sidebar entries (see sale/views/res_config_settings_views.xml).
-
-        base_setup is declared in __manifest__.py depends so the ref resolves.
+        Rules that make this work:
+        1. base_setup must be in __manifest__.py depends (so the ref resolves)
+        2. <app> must be a DIRECT child of <arch type="xml"> — no xpath wrapper
+           (same pattern used by sale, purchase, stock, etc.)
+        3. application=False in manifest so no separate home-screen icon appears
     -->
     <record id="res_config_settings_view_form" model="ir.ui.view">
         <field name="name">tts.quotation.sync.config.settings</field>
@@ -66,6 +66,21 @@
                         <button type="object"
                                 name="action_sync_now"
                                 string="Sync Now"
+                                class="btn-secondary"/>
+                    </setting>
+                </block>
+
+                <block title="Records" name="tts_records">
+                    <setting help="Open the list of all synced quotations">
+                        <button type="object"
+                                name="action_view_quotations"
+                                string="View Quotations"
+                                class="btn-secondary"/>
+                    </setting>
+                    <setting help="Open sync history and error logs">
+                        <button type="object"
+                                name="action_view_sync_logs"
+                                string="View Sync Logs"
                                 class="btn-secondary"/>
                     </setting>
                 </block>
