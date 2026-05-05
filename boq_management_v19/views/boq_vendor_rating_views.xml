@@ -11,18 +11,19 @@
                         <h1>
                             <field name="partner_id" readonly="1" options="{'no_open': True}"/>
                         </h1>
-                        <h2 class="text-muted">
-                            <field name="purchase_order_id" readonly="1" options="{'no_open': True}"/>
-                        </h2>
                     </div>
                     <group>
                         <group string="Rating">
                             <field name="rating" widget="radio"/>
                             <field name="date"/>
                         </group>
-                        <group string="Order Details">
-                            <field name="company_id" readonly="1"/>
-                            <field name="partner_type" readonly="1"/>
+                        <group string="Details">
+                            <field name="purchase_order_id"
+                                   domain="[('partner_id', '=', partner_id)]"
+                                   options="{'no_create': True}"
+                                   placeholder="Select linked PO (optional)"/>
+                            <field name="partner_type" readonly="1" invisible="not partner_type"/>
+                            <field name="company_id" readonly="1" invisible="not company_id"/>
                         </group>
                     </group>
                     <group string="Comments">

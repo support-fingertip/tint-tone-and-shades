@@ -911,6 +911,14 @@ class BoqBoq(models.Model):
         else:
             rfqs = self.env['purchase.order']
 
+        # Filter by partner_type so each dashboard shows only its own partner type.
+        # Without this, a vendor partner linked to a supplier BOQ would leak into
+        # the supplier summary (and vice versa) via the BOQ-union query.
+        if dashboard_type == 'vendor':
+            rfqs = rfqs.filtered(lambda r: r.partner_id.partner_type in ('vendor', False))
+        elif dashboard_type == 'supplier':
+            rfqs = rfqs.filtered(lambda r: r.partner_id.partner_type == 'supplier')
+
         rfq_effective_total = {}
         if rfqs.ids:
             self.env.cr.execute("""

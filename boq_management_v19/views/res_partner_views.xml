@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-   
     <record id="view_res_partner_boq_v19" model="ir.ui.view">
         <field name="name">res.partner.form.boq.v19</field>
         <field name="model">res.partner</field>
@@ -17,17 +16,29 @@
                     <field name="boq_count" widget="statinfo" string="BOQs"/>
                 </button>
 
+                <!-- Avg rating button — navigates to rating list, shows X.X / 5 -->
                 <button type="object"
-                        name="action_view_boqs"
+                        name="action_view_ratings"
                         class="oe_stat_button"
                         icon="fa-star"
                         invisible="rating_count == 0">
                     <div class="o_stat_info">
                         <span class="o_stat_value">
-                            <field name="avg_rating" widget="float" digits="[2,1]"/>
-                            / 5
+                            <field name="avg_rating" widget="float" digits="[2,1]"/> / 5
                         </span>
                         <span class="o_stat_text">Avg Rating</span>
+                    </div>
+                </button>
+
+                <!-- Rate button — always visible for vendor/supplier, opens dialog -->
+                <button type="object"
+                        name="action_rate_vendor"
+                        class="oe_stat_button"
+                        icon="fa-star-o"
+                        invisible="partner_type not in ('vendor', 'supplier')">
+                    <div class="o_stat_info">
+                        <span class="o_stat_value">Rate</span>
+                        <span class="o_stat_text">Vendor</span>
                     </div>
                 </button>
             </xpath>
@@ -51,13 +62,21 @@
             </xpath>
 
             <xpath expr="//notebook" position="inside">
+                <!-- Tab always visible for vendor/supplier partners -->
                 <page string="Vendor Ratings" name="vendor_ratings"
-                      invisible="rating_count == 0 and not context.get('show_rating_tab')">
+                      invisible="partner_type not in ('vendor', 'supplier')">
                     <group>
                         <group string="Rating Summary">
                             <field name="avg_rating" string="Average Rating" readonly="1"
                                    widget="float" digits="[2,1]"/>
                             <field name="rating_count" string="Total Ratings" readonly="1"/>
+                        </group>
+                        <group>
+                            <button type="object"
+                                    name="action_rate_vendor"
+                                    string="Add Rating"
+                                    class="btn btn-primary"
+                                    icon="fa-star-o"/>
                         </group>
                     </group>
                     <field name="rating_ids" nolabel="1">

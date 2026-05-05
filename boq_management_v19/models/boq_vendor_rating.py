@@ -13,7 +13,7 @@ class BoqVendorRating(models.Model):
     purchase_order_id = fields.Many2one(
         comodel_name='purchase.order',
         string='Purchase Order',
-        required=True,
+        required=False,
         ondelete='cascade',
         index=True,
     )
@@ -147,10 +147,36 @@ class BoqVendorRating(models.Model):
     def create(self, vals_list):
         records = super().create(vals_list)
         for rec in records:
-            rec.purchase_order_id.message_post(
-                body=_('Vendor rated: %s/5 — %s') % (
-                    rec.rating, rec.comments or _('No comment.')
-                ),
-                subtype_xmlid='mail.mt_note',
-            )
+            rating_label = dict(rec._fields['rating'].selection).get(rec.rating, rec.rating)
+            body = _('<b>Vendor Rated: %s / 5</b>') % rating_label
+            if rec.comments:
+                body += '<br/>%s' % rec.comments
+            if rec.partner_id:
+                rec.partner_id.message_post(body=body, subtype_xmlid='mail.mt_note')
+            if rec.purchase_order_id:
+                rec.purchase_order_id.message_post(body=body, subtype_xmlid='mail.mt_note')
         return records
+
+    def write(self, vals):
+        before = {
+            rec.id: {'rating': rec.rating, 'comments': rec.comments}
+            for rec in self
+        }
+        result = super().write(vals)
+        for rec in self:
+            b = before.get(rec.id, {})
+            msgs = []
+            if 'rating' in vals and b.get('rating') != rec.rating:
+                sel = dict(rec._fields['rating'].selection)
+                old_lbl = sel.get(b.get('rating'), b.get('rating') or '—')
+                new_lbl = sel.get(rec.rating, rec.rating or '—')
+                msgs.append(_('Rating updated: <b>%s → %s</b> / 5') % (old_lbl, new_lbl))
+            if 'comments' in vals and b.get('comments') != rec.comments:
+                msgs.append(_('Comments updated: %s') % (rec.comments or _('(cleared)')))
+            if msgs:
+                body = '<br/>'.join(msgs)
+                if rec.partner_id:
+                    rec.partner_id.message_post(body=body, subtype_xmlid='mail.mt_note')
+                if rec.purchase_order_id:
+                    rec.purchase_order_id.message_post(body=body, subtype_xmlid='mail.mt_note')
+        return result
