@@ -60,11 +60,11 @@
                    position="after">
                 <field name="customer_price" readonly="1"
                        column_invisible="parent.partner_type == 'supplier'"/>
-                <field name="margin_percent" string="Savings %"
-                       widget="percentage"
-                       optional="show"
-                       readonly="1"
-                       column_invisible="parent.partner_type == 'supplier'"/>
+<!--                <field name="margin_percent" string="Savings %"-->
+<!--                       widget="percentage"-->
+<!--                       optional="show"-->
+<!--                       readonly="1"-->
+<!--                       column_invisible="parent.partner_type == 'supplier'"/>-->
             </xpath>
 
         </field>
