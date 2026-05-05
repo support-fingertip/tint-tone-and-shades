@@ -86,3 +86,33 @@ class ResPartner(models.Model):
             else:
                 partner.avg_rating = 0.0
                 partner.rating_count = 0
+
+    def action_rate_vendor(self):
+        """Open rating dialog directly from the vendor/partner form."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Rate — %s') % self.name,
+            'res_model': 'boq.vendor.rating',
+            'view_mode': 'form',
+            'view_id': self.env.ref('boq_management_v19.view_boq_vendor_rating_form').id,
+            'target': 'new',
+            'context': {
+                'default_partner_id': self.id,
+                'show_rating_tab': True,
+            },
+        }
+
+    def action_view_ratings(self):
+        """Open the list of ratings for this partner."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Ratings — %s') % self.name,
+            'res_model': 'boq.vendor.rating',
+            'view_mode': 'list,form',
+            'domain': [('partner_id', '=', self.id)],
+            'context': {
+                'default_partner_id': self.id,
+            },
+        }
