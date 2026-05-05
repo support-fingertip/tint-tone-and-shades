@@ -86,25 +86,42 @@ class PurchaseOrderBoqExtend(models.Model):
         string='Margin %',
         compute='_compute_po_margin',
         store=False,
-        digits=(16, 4),
+        digits='Discount',
         help='Average margin % computed from BOQ lines assigned to this vendor.',
     )
 
-    @api.depends(
-        'order_line',
-        'order_line.margin_percent',
-        'order_line.display_type',
-    )
+    @api.depends('order_line', 'order_line.price_unit', 'order_line.product_id',
+                 'order_line.product_qty')
     def _compute_po_margin(self):
         for order in self:
-            lines = order.order_line.filtered(
-                lambda l: not l.display_type and not getattr(l, 'is_downpayment', False)
-            )
-            if lines:
-                avg = sum(lines.mapped('margin_percent')) / len(lines)
-                order.margin_percent = avg / 100
-            else:
-                order.margin_percent = 0.0
+            if order.boq_id:
+                total_sell = 0.0
+                total_cost = 0.0
+                for line in order.boq_id.line_ids:
+                    if order.partner_id in line.vendor_ids:
+                        sell = line.unit_price * line.qty * (
+                            1.0 - (line.discount or 0.0) / 100.0
+                        )
+                        cost = (line.cost_price or 0.0) * line.qty
+                        total_sell += sell
+                        total_cost += cost
+                if total_sell > 0:
+                    order.margin_percent = (
+                        (total_sell - total_cost) / total_sell * 100.0
+                    )
+                    continue
+          
+            total_std = 0.0
+            total_po = 0.0
+            for line in order.order_line:
+                std = (line.product_id.standard_price or 0.0) * line.product_qty
+                po = line.price_unit * line.product_qty
+                total_std += std
+                total_po += po
+            order.margin_percent = (
+                (total_std - total_po) / total_std * 100.0
+            ) if total_std > 0 else 0.0
+
    
     partner_type = fields.Selection(
         related='partner_id.partner_type',
