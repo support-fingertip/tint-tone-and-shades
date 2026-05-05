@@ -33,12 +33,13 @@
         sequence="20"
     />
 
-    <!-- Configuration tab -->
+    <!-- Configuration tab — opens the standard Odoo Settings page
+         where "Quotation Sync" appears in the left sidebar -->
     <menuitem
         id="menu_tts_configuration"
         name="Configuration"
         parent="menu_tts_quotation_sync_root"
-        action="action_tts_config_settings"
+        action="base_setup.action_general_configuration"
         sequence="30"
     />
 
