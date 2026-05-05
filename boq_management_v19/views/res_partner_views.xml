@@ -78,21 +78,12 @@
                                     class="btn btn-primary"
                                     icon="fa-star-o"/>
                             <button type="object"
-                                    name="action_reload_ratings"
-                                    string="Refresh Ratings"
+                                    name="action_view_ratings"
+                                    string="View All Ratings"
                                     class="btn btn-secondary"
-                                    icon="fa-refresh"/>
+                                    icon="fa-list"/>
                         </group>
                     </group>
-                    <field name="rating_ids" nolabel="1">
-                        <list string="Ratings" editable="bottom">
-                            <field name="date"/>
-                            <field name="purchase_order_id"/>
-                            <field name="rating" widget="priority"/>
-                            <field name="rating_int" column_invisible="1"/>
-                            <field name="comments"/>
-                        </list>
-                    </field>
                 </page>
             </xpath>
 
