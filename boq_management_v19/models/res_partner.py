@@ -103,6 +103,18 @@ class ResPartner(models.Model):
             },
         }
 
+    def action_reload_ratings(self):
+        """Reload the vendor master form fresh so the rating_ids list reflects
+        any ratings added from POs since the page was last loaded."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'res.partner',
+            'res_id': self.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
+
     def action_view_ratings(self):
         """Open the list of ratings for this partner."""
         self.ensure_one()

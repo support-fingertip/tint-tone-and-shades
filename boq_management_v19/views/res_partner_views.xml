@@ -77,6 +77,11 @@
                                     string="Add Rating"
                                     class="btn btn-primary"
                                     icon="fa-star-o"/>
+                            <button type="object"
+                                    name="action_reload_ratings"
+                                    string="Refresh Ratings"
+                                    class="btn btn-secondary"
+                                    icon="fa-refresh"/>
                         </group>
                     </group>
                     <field name="rating_ids" nolabel="1">
