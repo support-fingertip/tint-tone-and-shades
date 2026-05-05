@@ -97,14 +97,14 @@ class PurchaseOrder(models.Model):
             # ── Warn if any line has qty_on_hand=0 or unit_price=0 ──
             warning_parts = []
 
-            zero_stock_lines = self.order_line.filtered(
+            zero_qty_lines = self.order_line.filtered(
                 lambda l: not l.display_type
                           and not getattr(l, 'is_downpayment', False)
-                          and l.product_qty > 0
-                          and l.product_id.qty_available == 0.0
+                          and l.product_qty == 0
             )
-            if zero_stock_lines:
-                warning_parts.append(_('product have 0 quantity on hand.'))
+
+            if zero_qty_lines:
+                warning_parts.append(_('Product quantity cannot be zero.'))
 
             zero_price_lines = self.order_line.filtered(
                 lambda l: not l.display_type
@@ -152,14 +152,14 @@ class PurchaseOrder(models.Model):
         # ── Warn if any line has qty_on_hand=0 or unit_price=0 ──
         warning_parts = []
 
-        zero_stock_lines = self.order_line.filtered(
+        zero_qty_lines = self.order_line.filtered(
             lambda l: not l.display_type
                       and not getattr(l, 'is_downpayment', False)
-                      and l.product_qty > 0
-                      and l.product_id.qty_available == 0.0
+                      and l.product_qty == 0
         )
-        if zero_stock_lines:
-            warning_parts.append(_('product have 0 quantity on hand.'))
+
+        if zero_qty_lines:
+            warning_parts.append(_('Product quantity cannot be zero.'))
 
         zero_price_lines = self.order_line.filtered(
             lambda l: not l.display_type
