@@ -695,6 +695,51 @@ class BoqBoq(models.Model):
             return ['|', ('boq_type', '=', 'vendor'), ('boq_type', '=', False)]
         return [('boq_type', '=', dashboard_type)]
 
+    @api.model
+    def _get_dashboard_rfq_ids(self, dashboard_type, company_ids, boq_ids=None):
+        """
+        Return a set of purchase.order IDs relevant to the given dashboard.
+
+        Uses the UNION of:
+        1. RFQs linked to BOQs of the matching boq_type (via the M2M relation
+           table) — these are BOQs created through the BOQ workflow.
+        2. Direct purchase orders where partner_id.partner_type matches
+           dashboard_type — these are non-BOQ supplier/vendor POs.
+
+        This union ensures that:
+        - BOQ-generated RFQs show even when the partner has no partner_type set
+        - Direct (non-BOQ) POs show on the correct dashboard
+        - Stat-card counts match the tree view totals
+        """
+        rfq_ids = set()
+
+        # 1. BOQ-linked RFQs via relation table
+        if boq_ids is None:
+            boqs = self.search(
+                [('company_id', 'in', company_ids)]
+                + self._get_boq_type_domain(dashboard_type)
+            )
+            boq_ids = boqs.ids
+
+        if boq_ids:
+            self.env.cr.execute(
+                "SELECT purchase_id FROM boq_boq_purchase_order_rel "
+                "WHERE boq_id IN %s",
+                (tuple(boq_ids),)
+            )
+            rfq_ids.update(row[0] for row in self.env.cr.fetchall())
+
+        # 2. Direct partner_type-filtered RFQs
+        direct_domain = [('company_id', 'in', company_ids)]
+        if dashboard_type == 'vendor':
+            direct_domain.append(('partner_id.partner_type', '=', 'vendor'))
+        elif dashboard_type == 'supplier':
+            direct_domain.append(('partner_id.partner_type', '=', 'supplier'))
+        direct_rfqs = self.env['purchase.order'].search(direct_domain)
+        rfq_ids.update(direct_rfqs.ids)
+
+        return rfq_ids
+
     def init(self):
         """Back-fill boq_type for any rows that have NULL (pre-field records)."""
         self.env.cr.execute(
@@ -724,15 +769,24 @@ class BoqBoq(models.Model):
     def get_available_companies(self):
         """
         Head of Supplier Dashboard — returns ALL companies the current user
-        has access to (user.company_ids), NOT just the ones currently active
-        in the Odoo company switcher.
+        has access to.
 
-        This allows the Head dashboard company filter to list every company
-        the user can manage, even if only one is active in the switcher.
+        Includes:
+        - user.company_ids  (all companies the user is allowed to switch to)
+        - env.company       (currently active company, in case not in company_ids)
+        - context allowed_company_ids (any companies active in the session switcher)
+
+        This ensures that all companies the user can potentially see are listed
+        in the company filter, even when only one is active in the switcher.
         Returns: [{id, name, initial}] sorted by name.
         """
+        company_set = self.env.user.company_ids | self.env.company
+        ctx_ids = self.env.context.get('allowed_company_ids', [])
+        if ctx_ids:
+            company_set = company_set | self.env['res.company'].browse(ctx_ids)
+
         result = []
-        for company in self.env.user.company_ids.sorted('name'):
+        for company in company_set.sorted('name'):
             result.append({
                 'id':      company.id,
                 'name':    company.name,
@@ -746,7 +800,7 @@ class BoqBoq(models.Model):
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
 
-        # BOQ metrics stay BOQ-scoped
+        # BOQ metrics — scoped by boq_type
         company_domain = [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         boqs = self.search(company_domain)
 
@@ -758,13 +812,15 @@ class BoqBoq(models.Model):
         total_tax   = sum(boqs.mapped('total_tax'))
         grand_total = sum(boqs.mapped('grand_total'))
 
-        # RFQ metrics include ALL company purchase orders filtered by partner type
-        rfq_domain = [('company_id', 'in', company_ids)]
-        if dashboard_type == 'vendor':
-            rfq_domain.append(('partner_id.partner_type', '=', 'vendor'))
-        elif dashboard_type == 'supplier':
-            rfq_domain.append(('partner_id.partner_type', '=', 'supplier'))
-        rfqs = self.env['purchase.order'].search(rfq_domain)
+        # RFQ metrics — union of BOQ-linked RFQs + partner_type-filtered direct POs
+        # so that stat cards match the tree view totals exactly.
+        all_rfq_ids = self._get_dashboard_rfq_ids(dashboard_type, company_ids, boqs.ids)
+        if all_rfq_ids:
+            rfqs = self.env['purchase.order'].browse(list(all_rfq_ids)).filtered(
+                lambda r: r.company_id.id in set(company_ids)
+            )
+        else:
+            rfqs = self.env['purchase.order']
 
         rfq_total = 0.0
         rfq_tax   = 0.0
@@ -828,13 +884,15 @@ class BoqBoq(models.Model):
             for b in boqs
         }
 
-        # ALL company POs for this dashboard type (not just BOQ-linked)
-        rfq_domain = [('company_id', 'in', company_ids)]
-        if dashboard_type == 'vendor':
-            rfq_domain.append(('partner_id.partner_type', '=', 'vendor'))
-        elif dashboard_type == 'supplier':
-            rfq_domain.append(('partner_id.partner_type', '=', 'supplier'))
-        rfqs = self.env['purchase.order'].search(rfq_domain)
+        # Union of BOQ-linked + partner_type-filtered POs so vendor cards
+        # appear for all relevant partners regardless of partner_type setting.
+        all_rfq_ids = self._get_dashboard_rfq_ids(dashboard_type, company_ids, boqs.ids)
+        if all_rfq_ids:
+            rfqs = self.env['purchase.order'].browse(list(all_rfq_ids)).filtered(
+                lambda r: r.company_id.id in set(company_ids)
+            )
+        else:
+            rfqs = self.env['purchase.order']
 
         rfq_effective_total = {}
         if rfqs.ids:
@@ -1078,16 +1136,31 @@ class BoqBoq(models.Model):
                 rfq_boq_map[row[0]] = row[1]
 
         if rfq_boq_map:
-            all_rfqs = self.env['purchase.order'].search([
+            boq_linked_rfqs = self.env['purchase.order'].search([
                 ('id', 'in', list(rfq_boq_map.keys())),
                 ('company_id', 'in', company_ids),
             ])
-            found_ids = set(all_rfqs.ids)
+            found_ids = set(boq_linked_rfqs.ids)
             rfq_boq_map = {k: v for k, v in rfq_boq_map.items() if k in found_ids}
         else:
-            all_rfqs = self.env['purchase.order']
+            boq_linked_rfqs = self.env['purchase.order']
 
-        filtered_rfqs = all_rfqs
+        # Union: BOQ-linked RFQs + direct partner_type-filtered RFQs so that
+        # partners' full RFQ history appears in the trade tree (not just BOQ-originated ones).
+        direct_domain = [('company_id', 'in', company_ids)]
+        if dashboard_type == 'vendor':
+            direct_domain.append(('partner_id.partner_type', '=', 'vendor'))
+        elif dashboard_type == 'supplier':
+            direct_domain.append(('partner_id.partner_type', '=', 'supplier'))
+        all_company_rfqs = self.env['purchase.order'].search(direct_domain)
+
+        combined_ids = set(boq_linked_rfqs.ids) | set(all_company_rfqs.ids)
+        if combined_ids:
+            filtered_rfqs = self.env['purchase.order'].browse(list(combined_ids)).filtered(
+                lambda r: r.company_id.id in set(company_ids)
+            )
+        else:
+            filtered_rfqs = self.env['purchase.order']
 
         partner_rfq_map = {}
         for rfq in filtered_rfqs:
@@ -1310,13 +1383,8 @@ class BoqBoq(models.Model):
             for v in trade_node['vendors']:
                 tree_partner_ids.add(v['vendor_id'])
 
-        # Find all company POs whose partner is NOT already in the tree
-        direct_domain = [('company_id', 'in', company_ids)]
-        if dashboard_type == 'vendor':
-            direct_domain.append(('partner_id.partner_type', '=', 'vendor'))
-        elif dashboard_type == 'supplier':
-            direct_domain.append(('partner_id.partner_type', '=', 'supplier'))
-        all_company_rfqs = self.env['purchase.order'].search(direct_domain)
+        # Reuse all_company_rfqs fetched earlier (partner_type filtered).
+        # Only show partners NOT already covered by a trade assignment.
         direct_rfqs = all_company_rfqs.filtered(
             lambda r: r.partner_id.id not in tree_partner_ids
         )
@@ -1529,16 +1597,15 @@ class BoqBoq(models.Model):
                     if key not in trade_map:
                         trade_map[key] = tv.category_id.name
 
-        # ALL company pending POs (not just BOQ-linked)
-        rfq_domain = [
-            ('company_id', 'in', company_ids),
-            ('state', 'in', list(PENDING_STATES)),
-        ]
-        if dashboard_type == 'vendor':
-            rfq_domain.append(('partner_id.partner_type', '=', 'vendor'))
-        elif dashboard_type == 'supplier':
-            rfq_domain.append(('partner_id.partner_type', '=', 'supplier'))
-        pending_rfqs = self.env['purchase.order'].search(rfq_domain)
+        # Union of BOQ-linked + partner_type-filtered POs, then state-filtered
+        all_rfq_ids = self._get_dashboard_rfq_ids(dashboard_type, company_ids, boqs.ids)
+        if all_rfq_ids:
+            pending_rfqs = self.env['purchase.order'].browse(list(all_rfq_ids)).filtered(
+                lambda r: r.company_id.id in set(company_ids)
+                and r.state in PENDING_STATES
+            )
+        else:
+            pending_rfqs = self.env['purchase.order']
 
         if not pending_rfqs:
             return []
@@ -1650,17 +1717,16 @@ class BoqBoq(models.Model):
                     if key not in trade_map:
                         trade_map[key] = tv.category_id.name
 
-        # ALL company submitted POs in last 7 days (not just BOQ-linked)
-        rfq_domain = [
-            ('company_id', 'in', company_ids),
-            ('state',      '=',  'submitted'),
-            ('write_date', '>=', recently_cutoff),
-        ]
-        if dashboard_type == 'vendor':
-            rfq_domain.append(('partner_id.partner_type', '=', 'vendor'))
-        elif dashboard_type == 'supplier':
-            rfq_domain.append(('partner_id.partner_type', '=', 'supplier'))
-        submitted_rfqs = self.env['purchase.order'].search(rfq_domain)
+        # Union of BOQ-linked + partner_type-filtered POs, then state+date filtered
+        all_rfq_ids = self._get_dashboard_rfq_ids(dashboard_type, company_ids, boqs.ids)
+        if all_rfq_ids:
+            submitted_rfqs = self.env['purchase.order'].browse(list(all_rfq_ids)).filtered(
+                lambda r: r.company_id.id in set(company_ids)
+                and r.state == 'submitted'
+                and r.write_date and r.write_date >= recently_cutoff
+            )
+        else:
+            submitted_rfqs = self.env['purchase.order']
 
         if not submitted_rfqs:
             return []
@@ -1721,13 +1787,14 @@ class BoqBoq(models.Model):
             [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
         )
 
-        # ALL company POs filtered by partner type (not just BOQ-linked)
-        rfq_domain = [('company_id', 'in', company_ids)]
-        if dashboard_type == 'vendor':
-            rfq_domain.append(('partner_id.partner_type', '=', 'vendor'))
-        elif dashboard_type == 'supplier':
-            rfq_domain.append(('partner_id.partner_type', '=', 'supplier'))
-        all_rfqs = self.env['purchase.order'].search(rfq_domain)
+        # Union of BOQ-linked + partner_type-filtered POs across all companies
+        all_rfq_ids = self._get_dashboard_rfq_ids(dashboard_type, company_ids, all_boqs.ids)
+        if all_rfq_ids:
+            all_rfqs = self.env['purchase.order'].browse(list(all_rfq_ids)).filtered(
+                lambda r: r.company_id.id in set(company_ids)
+            )
+        else:
+            all_rfqs = self.env['purchase.order']
 
         rfq_effective_total_cs = {}
         if all_rfqs.ids:
@@ -1789,17 +1856,19 @@ class BoqBoq(models.Model):
         company_ids = company_ids or self._get_allowed_company_ids()
         self = self.with_context(allowed_company_ids=company_ids)
 
-        # Include ALL company POs in 'to approve' state — not just BOQ-linked ones.
-        po_domain = [
-            ('company_id', 'in', company_ids),
-            ('state', '=', 'to approve'),
-        ]
-        if dashboard_type == 'vendor':
-            po_domain.append(('partner_id.partner_type', '=', 'vendor'))
-        elif dashboard_type == 'supplier':
-            po_domain.append(('partner_id.partner_type', '=', 'supplier'))
-
-        pending_pos = self.env['purchase.order'].search(po_domain)
+        # Union of BOQ-linked + partner_type-filtered POs, then state-filtered.
+        # This ensures all 'to approve' POs appear — both BOQ-generated and direct.
+        boqs = self.search(
+            [('company_id', 'in', company_ids)] + self._get_boq_type_domain(dashboard_type)
+        )
+        all_rfq_ids = self._get_dashboard_rfq_ids(dashboard_type, company_ids, boqs.ids)
+        if all_rfq_ids:
+            pending_pos = self.env['purchase.order'].browse(list(all_rfq_ids)).filtered(
+                lambda r: r.company_id.id in set(company_ids)
+                and r.state == 'to approve'
+            )
+        else:
+            pending_pos = self.env['purchase.order']
 
         current_user = self.env.user
         result = []

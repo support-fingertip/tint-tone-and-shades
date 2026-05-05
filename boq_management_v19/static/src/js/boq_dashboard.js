@@ -262,11 +262,14 @@ class BoqManagerDashboardBase extends Component {
     }
 
     openRfqs() {
+        // Filter the list by partner_type so the count matches the dashboard stats.
+        const ptype = this.isVendorDashboard ? "vendor" : "supplier";
         this.actionSvc.doAction({
             type:      "ir.actions.act_window",
             name:      this.isVendorDashboard ? "Vendor RFQs" : "Supplier RFQs",
             res_model: "purchase.order",
             views:     [[false, "list"], [false, "form"]],
+            domain:    [["partner_id.partner_type", "=", ptype]],
             target:    "current",
         });
     }
@@ -294,12 +297,17 @@ class BoqManagerDashboardBase extends Component {
     }
 
     openApprovalPos() {
+        // Filter by state AND partner_type so the count matches the dashboard card.
+        const ptype = this.isVendorDashboard ? "vendor" : "supplier";
         this.actionSvc.doAction({
             type:      "ir.actions.act_window",
             name:      "POs Awaiting Approval",
             res_model: "purchase.order",
             views:     [[false, "list"], [false, "form"]],
-            domain:    [["state", "=", "to approve"]],
+            domain:    [
+                ["state", "=", "to approve"],
+                ["partner_id.partner_type", "=", ptype],
+            ],
             target:    "current",
         });
     }
@@ -604,12 +612,16 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
     }
 
     openCompanyRfqs(companyId, companyName) {
+        // Filter by company AND supplier partner_type to match dashboard numbers.
         this.actionSvc.doAction({
             type:      "ir.actions.act_window",
             name:      `RFQs — ${companyName}`,
             res_model: "purchase.order",
             views:     [[false, "list"], [false, "form"]],
-            domain:    [["company_id", "=", companyId]],
+            domain:    [
+                ["company_id", "=", companyId],
+                ["partner_id.partner_type", "=", "supplier"],
+            ],
             target:    "current",
         });
     }
