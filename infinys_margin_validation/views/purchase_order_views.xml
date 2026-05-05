@@ -29,7 +29,7 @@
 
             <!-- Margin (%) column on order lines -->
             <xpath expr="//field[@name='order_line']//list//field[@name='price_subtotal']" position="after">
-                <field name="margin_percentage" string="Margin (%)" widget="float" options="{'digits': [16, 2]}" readonly="1"/>
+                <field name="margin_percentage" string="Margin (%)" widget="float" options="{'digits': [16, 2]}" readonly="1" groups="boq_management_v19.group_vendor"/>
                 <field name="is_margin_below_threshold" column_invisible="1"/>
             </xpath>
 
