@@ -260,15 +260,6 @@
     />
 
     <menuitem
-            id="menu_vendor_margin_thresholds"
-            name="Margin Thresholds"
-            parent="menu_vendor_configuration"
-            action="infinys_margin_validation.action_margin_threshold_config_vendor"
-            sequence="20"
-            groups="boq_management_v19.group_vendor"
-    />
-
-    <menuitem
             id="menu_supplier_purchase_root"
             name="Procurement"
             sequence="100"
@@ -377,15 +368,6 @@
             parent="menu_supplier_configuration"
             action="product.product_category_action_form"
             sequence="4"
-            groups="boq_management_v19.group_supplier"
-    />
-
-    <menuitem
-            id="menu_supplier_margin_thresholds"
-            name="Margin Thresholds"
-            parent="menu_supplier_configuration"
-            action="infinys_margin_validation.action_margin_threshold_config_supplier"
-            sequence="20"
             groups="boq_management_v19.group_supplier"
     />
 
