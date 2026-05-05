@@ -145,12 +145,13 @@ class BoqVendorRating(models.Model):
         return res
 
     def action_save_and_close(self):
-        """Save the rating and navigate to the vendor master form so the
-        rating list and avg_rating / rating_count always load fresh from DB,
-        regardless of whether the dialog was opened from the vendor master
-        or from a Purchase Order.
+        """Save the rating and close.
+
+        From the vendor master (show_rating_tab in context): navigate to the
+        partner form so the rating list and stats reload fresh from DB.
+        From a PO dialog: just close — user stays on the PO.
         """
-        if self.partner_id:
+        if self.env.context.get('show_rating_tab') and self.partner_id:
             return {
                 'type': 'ir.actions.act_window',
                 'res_model': 'res.partner',
