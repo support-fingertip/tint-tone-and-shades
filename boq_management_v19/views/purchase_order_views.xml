@@ -169,6 +169,7 @@
         <field name="res_model">res.partner</field>
         <field name="view_mode">list,form,kanban</field>
         <field name="domain">[('partner_type', '=', 'vendor')]</field>
+        <field name="context">{'default_partner_type': 'vendor'}</field>
     </record>
 
     <record id="action_supplier_contacts" model="ir.actions.act_window">
@@ -176,6 +177,7 @@
         <field name="res_model">res.partner</field>
         <field name="view_mode">list,form,kanban</field>
         <field name="domain">[('partner_type', '=', 'supplier')]</field>
+        <field name="context">{'default_partner_type': 'supplier'}</field>
     </record>
 
     <menuitem

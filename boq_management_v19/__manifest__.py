@@ -46,6 +46,7 @@
             'boq_management_v19/static/src/css/boq_dashboard.css',
             'boq_management_v19/static/src/js/boq_dashboard.js',
             'boq_management_v19/static/src/js/boq_form.js',
+            'boq_management_v19/static/src/js/numeric_input_filter.js',
             'boq_management_v19/static/src/xml/boq_dashboard.xml',
         ],
     },
