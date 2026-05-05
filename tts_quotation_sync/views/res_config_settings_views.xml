@@ -2,19 +2,17 @@
 <odoo>
 
     <!--
-        Standalone settings form for tts_quotation_sync.
-        js_class="base_settings" is required so Odoo uses the SettingsFormView
-        renderer, which calls get_values() on every page load and keeps the
-        Save / Discard buttons working correctly — without it fields go blank
-        on reload because the standard FormView does not call get_values().
+        Inherit the main Settings form so "Quotation Sync" appears in the
+        Settings sidebar alongside Sales, Purchase, Inventory, etc.
+        base_setup is declared in __manifest__.py depends to guarantee this
+        external ID is available when the module loads.
     -->
-    <record id="view_tts_config_settings_form" model="ir.ui.view">
-        <field name="name">tts.quotation.sync.config.form</field>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">tts.quotation.sync.config.settings</field>
         <field name="model">res.config.settings</field>
-        <field name="priority">100</field>
+        <field name="inherit_id" ref="base_setup.view_general_configuration"/>
         <field name="arch" type="xml">
-            <form string="Quotation Sync — Configuration"
-                  js_class="base_settings">
+            <xpath expr="//form" position="inside">
 
                 <app string="Quotation Sync" name="tts_quotation_sync">
 
@@ -40,10 +38,6 @@
                                  help="How often Odoo polls the API">
                             <field name="tts_sync_interval"/>
                         </setting>
-                        <setting string="Auto-create Sale Order"
-                                 help="Automatically create SO on success">
-                            <field name="tts_auto_create_so"/>
-                        </setting>
                         <setting string="Auto-create BOQ"
                                  help="Automatically create BOQ from the API data during each sync run">
                             <field name="tts_auto_create_boq"/>
@@ -53,7 +47,7 @@
                             <field name="tts_failure_notification_email"/>
                         </setting>
                         <setting string="Default Customer"
-                                 help="Customer placed on auto-created Sale Orders / BOQs">
+                                 help="Customer placed on auto-created BOQs">
                             <field name="tts_default_customer_id"/>
                         </setting>
                     </block>
@@ -75,18 +69,8 @@
 
                 </app>
 
-            </form>
+            </xpath>
         </field>
-    </record>
-
-    <!-- Action that opens this settings form -->
-    <record id="action_tts_config_settings" model="ir.actions.act_window">
-        <field name="name">Configuration</field>
-        <field name="res_model">res.config.settings</field>
-        <field name="view_mode">form</field>
-        <field name="view_id" ref="view_tts_config_settings_form"/>
-        <field name="target">current</field>
-        <field name="context">{'module': 'tts_quotation_sync'}</field>
     </record>
 
 </odoo>

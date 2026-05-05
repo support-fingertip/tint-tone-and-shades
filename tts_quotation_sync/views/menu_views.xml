@@ -33,13 +33,13 @@
         sequence="20"
     />
 
-    <!-- Configuration tab — opens the standard Odoo Settings page
-         where "Quotation Sync" appears in the left sidebar -->
+    <!-- Configuration tab — opens Odoo Settings with Quotation Sync
+         pre-selected in the left sidebar (same as Sales/Purchase do) -->
     <menuitem
         id="menu_tts_configuration"
         name="Configuration"
         parent="menu_tts_quotation_sync_root"
-        action="action_tts_config_settings"
+        action="base_setup.action_general_configuration"
         sequence="30"
     />
 
