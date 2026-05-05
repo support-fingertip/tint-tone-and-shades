@@ -121,7 +121,7 @@
                         class="oe_highlight"
                         groups="boq_management_v19.group_vendor"
                         invisible="
-                state not in ('sent')
+                state not in ('sent', 'submitted')
                 or not has_margin_below_threshold
                 or margin_approval_status in ('to_approve', 'approved')
             "
