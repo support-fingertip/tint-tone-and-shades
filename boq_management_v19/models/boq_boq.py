@@ -702,9 +702,12 @@ class BoqBoq(models.Model):
         Return an ORM domain fragment that filters boq_type.
         For 'vendor' we also include NULL rows so that BOQs created before
         the boq_type field existed (upgrade scenario) still appear.
+        For 'all' (Head of Supplier) we return no filter so both types appear.
         """
         if dashboard_type == 'vendor':
             return ['|', ('boq_type', '=', 'vendor'), ('boq_type', '=', False)]
+        elif dashboard_type == 'all':
+            return []
         return [('boq_type', '=', dashboard_type)]
 
     @api.model
@@ -824,15 +827,17 @@ class BoqBoq(models.Model):
         total_tax   = sum(boqs.mapped('total_tax'))
         grand_total = sum(boqs.mapped('grand_total'))
 
-        # RFQ metrics — union of BOQ-linked RFQs + partner_type-filtered direct POs
-        # so that stat cards match the tree view totals exactly.
-        all_rfq_ids = self._get_dashboard_rfq_ids(dashboard_type, company_ids, boqs.ids)
-        if all_rfq_ids:
-            rfqs = self.env['purchase.order'].browse(list(all_rfq_ids)).filtered(
-                lambda r: r.company_id.id in set(company_ids)
-            )
-        else:
-            rfqs = self.env['purchase.order']
+        # RFQ metrics — filter by partner_type only so the stat card count
+        # matches the list view exactly when the user clicks the RFQ card.
+        # Using the BOQ-union approach counted BOQ-linked RFQs whose partner
+        # had no partner_type set, causing the card to show more than the list.
+        rfq_domain = [('company_id', 'in', company_ids)]
+        if dashboard_type == 'vendor':
+            rfq_domain.append(('partner_id.partner_type', '=', 'vendor'))
+        elif dashboard_type == 'supplier':
+            rfq_domain.append(('partner_id.partner_type', '=', 'supplier'))
+        # For 'all' (Head of Supplier), no partner_type restriction
+        rfqs = self.env['purchase.order'].search(rfq_domain)
 
         rfq_total = 0.0
         rfq_tax   = 0.0

@@ -433,14 +433,14 @@ export class ProcurementManagerDashboard extends BoqManagerDashboardBase {
 }
 
 export class HeadSupplierDashboard extends BoqManagerDashboardBase {
-    static DASHBOARD_TYPE = "supplier";
+    static DASHBOARD_TYPE = "all";
     static template       = "boq_management_v19.HeadSupplierDashboard";
 
     get isHeadDashboard()   { return true; }
     get dashboardTitle()    { return "Head of Supplier Dashboard"; }
     get dashboardSubtitle() { return "Consolidated multi-company supplier & procurement view"; }
     get dashboardIcon()     { return "fa-globe"; }
-    get partnerLabel()      { return "Supplier"; }
+    get partnerLabel()      { return "Partner"; }
     get dashboardColor()    { return "text-success"; }
 
     get iconBoqs()             { return "fa-clipboard"; }
@@ -611,17 +611,50 @@ export class HeadSupplierDashboard extends BoqManagerDashboardBase {
         await this._loadAll();
     }
 
+    openAllBoqs() {
+        // Head sees all BOQs regardless of boq_type
+        this.actionSvc.doAction({
+            type:      "ir.actions.act_window",
+            name:      "Bills of Quantities",
+            res_model: "boq.boq",
+            views:     [[false, "list"], [false, "kanban"], [false, "form"]],
+            domain:    [],
+            target:    "current",
+        });
+    }
+
+    openRfqs() {
+        // Head sees all RFQs — no partner_type restriction
+        this.actionSvc.doAction({
+            type:      "ir.actions.act_window",
+            name:      "All RFQs",
+            res_model: "purchase.order",
+            views:     [[false, "list"], [false, "form"]],
+            domain:    [],
+            target:    "current",
+        });
+    }
+
+    openApprovalPos() {
+        // Head sees all POs awaiting approval — no partner_type restriction
+        this.actionSvc.doAction({
+            type:      "ir.actions.act_window",
+            name:      "POs Awaiting Approval",
+            res_model: "purchase.order",
+            views:     [[false, "list"], [false, "form"]],
+            domain:    [["state", "=", "to approve"]],
+            target:    "current",
+        });
+    }
+
     openCompanyRfqs(companyId, companyName) {
-        // Filter by company AND supplier partner_type to match dashboard numbers.
+        // Head sees all RFQs for the company — no partner_type restriction
         this.actionSvc.doAction({
             type:      "ir.actions.act_window",
             name:      `RFQs — ${companyName}`,
             res_model: "purchase.order",
             views:     [[false, "list"], [false, "form"]],
-            domain:    [
-                ["company_id", "=", companyId],
-                ["partner_id.partner_type", "=", "supplier"],
-            ],
+            domain:    [["company_id", "=", companyId]],
             target:    "current",
         });
     }
