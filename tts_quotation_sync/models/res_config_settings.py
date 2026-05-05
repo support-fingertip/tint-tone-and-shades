@@ -164,6 +164,26 @@ class ResConfigSettings(models.TransientModel):
         return self._notif('success', 'Sync Triggered',
                            'Sync completed. Check Sync Logs for details.')
 
+    # ── Navigate to Quotations list ───────────────────────────────────────
+    def action_view_quotations(self):
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Quotations',
+            'res_model': 'tts.quotation',
+            'view_mode': 'list,form',
+            'target': 'current',
+        }
+
+    # ── Navigate to Sync Logs list ────────────────────────────────────────
+    def action_view_sync_logs(self):
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Sync Logs',
+            'res_model': 'tts.sync.log',
+            'view_mode': 'list,form',
+            'target': 'current',
+        }
+
     @staticmethod
     def _notif(kind, title, message):
         return {
