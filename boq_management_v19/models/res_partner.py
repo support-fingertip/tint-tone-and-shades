@@ -77,12 +77,25 @@ class ResPartner(models.Model):
 
     @api.depends('rating_ids', 'rating_ids.rating_int')
     def _compute_avg_rating(self):
+        real_ids = [p.id for p in self if isinstance(p.id, int)]
+        data = {}
+        if real_ids:
+            self.env.cr.execute("""
+                SELECT partner_id,
+                       AVG(rating_int::numeric),
+                       COUNT(*)
+                  FROM boq_vendor_rating
+                 WHERE partner_id IN %s
+                   AND rating_int > 0
+                 GROUP BY partner_id
+            """, (tuple(real_ids),))
+            data = {row[0]: (float(row[1]), int(row[2]))
+                    for row in self.env.cr.fetchall()}
         for partner in self:
-            ratings = partner.rating_ids.mapped('rating_int')
-            valid = [r for r in ratings if r > 0]
-            if valid:
-                partner.avg_rating = sum(valid) / len(valid)
-                partner.rating_count = len(valid)
+            row = data.get(partner.id)
+            if row:
+                partner.avg_rating = row[0]
+                partner.rating_count = row[1]
             else:
                 partner.avg_rating = 0.0
                 partner.rating_count = 0
