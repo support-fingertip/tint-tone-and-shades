@@ -23,7 +23,6 @@
     'license': 'OPL-1',
     'depends': [
         'base',
-        'base_setup',
         'mail',
         'product',
         'sale',
