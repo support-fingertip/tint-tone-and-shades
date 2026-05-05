@@ -1,12 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!--
-        No top-level app menu / no web_icon — Quotation Sync is not a
-        separate home-screen app.  All configuration is accessed from
-        Settings → Quotation Sync (sidebar).  Quotations and Sync Logs
-        are reachable via the "View Quotations" / "View Sync Logs" action
-        buttons in that Settings section.
-    -->
-
 </odoo>

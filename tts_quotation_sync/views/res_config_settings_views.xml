@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!--
-        In this Odoo 19 build the base settings form lives in the 'base'
-        module, not 'base_setup'.  Confirmed from tk_purchase_advance_payment
-        which uses the same ref and installs successfully.
-    -->
     <record id="res_config_settings_view_form" model="ir.ui.view">
         <field name="name">tts.quotation.sync.config.settings</field>
         <field name="model">res.config.settings</field>

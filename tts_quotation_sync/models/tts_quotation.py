@@ -11,7 +11,7 @@ _logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 3
 
-# Maps TTS category_type → BOQ category code
+
 _TTS_TO_BOQ_CATEGORY = {
     'wood':    'finishing',
     'civil':   'civil',
@@ -26,7 +26,7 @@ class TtsQuotation(models.Model):
     _order = 'approved_at desc, id desc'
     _rec_name = 'name'
 
-    # ── Identity ───────────────────────────────────────────────────────────
+   
     name = fields.Char(
         string='Reference',
         compute='_compute_name',
@@ -69,7 +69,6 @@ class TtsQuotation(models.Model):
     )
     sync_message = fields.Text(string='Sync Message', readonly=True)
 
-    # ── Task 1: Full API response body capture ────────────────────────────
     api_response_body = fields.Text(
         string='API Response Body',
         readonly=True,
@@ -81,7 +80,6 @@ class TtsQuotation(models.Model):
         help='Full JSON response from the PUT /mark-reviewed API call',
     )
 
-    # ── Task 2: Error reason ──────────────────────────────────────────────
     error_reason = fields.Text(
         string='Error Reason',
         readonly=True,
@@ -89,7 +87,6 @@ class TtsQuotation(models.Model):
         help='Exact error captured when the last processing attempt failed',
     )
 
-    # ── Task 3: Retry counter ─────────────────────────────────────────────
     retry_count = fields.Integer(
         string='Retry Count',
         default=0,
@@ -97,7 +94,6 @@ class TtsQuotation(models.Model):
         help='Number of retry attempts made (0 = succeeded on first try; 3 = all retries exhausted)',
     )
 
-    # ── Relations ─────────────────────────────────────────────────────────
     line_ids = fields.One2many(
         'tts.quotation.line', 'tts_quotation_id', string='Line Items'
     )
@@ -150,7 +146,6 @@ class TtsQuotation(models.Model):
             'target': 'current',
         }
 
-    # ── Task 5: Create BOQ — shared logic (API sync + manual button) ──────
     def _create_boq_from_api(self, quotation):
         """
         Build a boq.boq record from a tts.quotation.
@@ -307,20 +302,8 @@ class TtsQuotation(models.Model):
             _logger.exception('tts_quotation_sync: fatal error during sync run')
             log.write({'state': 'error', 'error_message': str(exc)})
 
-    # ─────────────────────────────────────────────────────────────────────
-    # SINGLE-QUOTATION PROCESSOR  (Tasks 1 + 2 + 3 + 4)
-    # ─────────────────────────────────────────────────────────────────────
-
     def _process_single_quotation(self, config, log, q_data, qid):
-        """
-        Process one quotation with up to MAX_RETRIES attempts (Task 3).
 
-        Each attempt runs inside a savepoint so a mid-flight DB error does not
-        abort the outer transaction.  The Second API (mark-reviewed PUT) is only
-        called after the First API data has been fully processed and persisted
-        (Task 4 — sequential gate).  The full response body and any error reason
-        are stored on the record (Tasks 1 + 2).
-        """
         last_error = None
         raw_body = json.dumps(q_data, default=str)
 
@@ -346,7 +329,6 @@ class TtsQuotation(models.Model):
                         message=None,
                     )
 
-                    # Persist success + captured response bodies (Task 1)
                     quotation.write({
                         'is_reviewed': True,
                         'is_review_status': 'Success',
@@ -387,15 +369,13 @@ class TtsQuotation(models.Model):
                             })
                     except Exception:
                         pass
-                    continue  # → next attempt
+                    continue 
 
-        # ── All MAX_RETRIES attempts exhausted ────────────────────────────
         _logger.error(
             'tts_quotation_sync: all %d attempts failed for quotation %s: %s',
             MAX_RETRIES, qid, last_error,
         )
 
-        # Write final failure record in the healthy outer transaction (Task 2)
         failure_quotation = None
         try:
             existing = self.search([('external_id', '=', qid)], limit=1)
