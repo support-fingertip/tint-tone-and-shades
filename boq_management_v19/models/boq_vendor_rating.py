@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from markupsafe import Markup, escape
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 
@@ -143,14 +144,19 @@ class BoqVendorRating(models.Model):
             pass
         return res
 
+    def action_save_and_close(self):
+        """Save and close the dialog; returning act_window_close causes the
+        parent form to reload, which refreshes avg_rating / rating_count."""
+        return {'type': 'ir.actions.act_window_close'}
+
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
         for rec in records:
             rating_label = dict(rec._fields['rating'].selection).get(rec.rating, rec.rating)
-            body = _('<b>Vendor Rated: %s / 5</b>') % rating_label
+            body = Markup('<b>Vendor Rated: %s / 5</b>') % rating_label
             if rec.comments:
-                body += '<br/>%s' % rec.comments
+                body += Markup('<br/>') + escape(rec.comments)
             if rec.partner_id:
                 rec.partner_id.message_post(body=body, subtype_xmlid='mail.mt_note')
             if rec.purchase_order_id:
@@ -170,11 +176,11 @@ class BoqVendorRating(models.Model):
                 sel = dict(rec._fields['rating'].selection)
                 old_lbl = sel.get(b.get('rating'), b.get('rating') or '—')
                 new_lbl = sel.get(rec.rating, rec.rating or '—')
-                msgs.append(_('Rating updated: <b>%s → %s</b> / 5') % (old_lbl, new_lbl))
+                msgs.append(Markup('Rating updated: <b>%s → %s</b> / 5') % (old_lbl, new_lbl))
             if 'comments' in vals and b.get('comments') != rec.comments:
-                msgs.append(_('Comments updated: %s') % (rec.comments or _('(cleared)')))
+                msgs.append(Markup('Comments updated: %s') % escape(rec.comments or '(cleared)'))
             if msgs:
-                body = '<br/>'.join(msgs)
+                body = Markup('<br/>').join(msgs)
                 if rec.partner_id:
                     rec.partner_id.message_post(body=body, subtype_xmlid='mail.mt_note')
                 if rec.purchase_order_id:

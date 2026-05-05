@@ -124,6 +124,11 @@ class PurchaseOrderBoqExtend(models.Model):
         compute='_compute_vendor_rating_id',
         store=False,
     )
+    vendor_rating_int = fields.Integer(
+        string='Rating',
+        compute='_compute_vendor_rating_id',
+        store=False,
+    )
 
     @api.depends('state', 'picking_ids', 'picking_ids.state')
     def _compute_show_rate_vendor(self):
@@ -135,13 +140,14 @@ class PurchaseOrderBoqExtend(models.Model):
             )
             order.show_rate_vendor = is_purchase and pickings_done
 
-    @api.depends('partner_id')
+    @api.depends('partner_id', 'state')
     def _compute_vendor_rating_id(self):
         for order in self:
             rating = self.env['boq.vendor.rating'].search(
                 [('purchase_order_id', '=', order.id)], limit=1
             )
             order.vendor_rating_id = rating
+            order.vendor_rating_int = rating.rating_int if rating else 0
 
     def action_rate_vendor(self):
         """
