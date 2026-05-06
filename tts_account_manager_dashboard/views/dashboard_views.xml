@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- ───────────────────────────────────────────────────────────────
+             Client action — registers the OWL dashboard component
+        ─────────────────────────────────────────────────────────────────── -->
+        <record id="action_account_manager_dashboard" model="ir.actions.client">
+            <field name="name">Accounts Manager Dashboard</field>
+            <field name="tag">tts_account_manager_dashboard.Dashboard</field>
+            <field name="target">current</field>
+        </record>
+
+        <!-- ───────────────────────────────────────────────────────────────
+             Top-level app entry  (only shown to account.group_account_manager)
+             Associates see no menu at all — groups attribute enforces this.
+        ─────────────────────────────────────────────────────────────────── -->
+        <menuitem
+            id="menu_account_manager_dashboard_root"
+            name="Accounts Dashboard"
+            sequence="3"
+            groups="account.group_account_manager"
+        />
+
+        <menuitem
+            id="menu_account_manager_dashboard_home"
+            name="Dashboard"
+            parent="menu_account_manager_dashboard_root"
+            action="action_account_manager_dashboard"
+            sequence="10"
+            groups="account.group_account_manager"
+        />
+
+    </data>
+</odoo>
