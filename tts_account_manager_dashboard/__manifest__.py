@@ -24,6 +24,7 @@
     "license": "LGPL-3",
     "depends": ["base", "account", "web"],
     "data": [
+        "security/ir.model.access.csv",
         "views/dashboard_views.xml",
     ],
     "assets": {
@@ -33,6 +34,9 @@
             "tts_account_manager_dashboard/static/src/dashboard.js",
         ],
     },
+    "images": [
+        "static/description/icon.png",
+    ],
     "installable": True,
     "application": True,
     "auto_install": False,

@@ -1,93 +1,97 @@
 /** @odoo-module **/
 
-import { Component, useState, onMounted } from "@odoo/owl";
+import { Component, useState, onWillStart } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Root dashboard component — owns all state, fetches data once on mount
+// Root dashboard component
+// Data is fetched via orm.call() — the same pattern used by all other modules
+// in this project (see boq_management_v19 / boq_dashboard.js).
 // ─────────────────────────────────────────────────────────────────────────────
 export class AccountManagerDashboard extends Component {
     static template = "tts_account_manager_dashboard.Dashboard";
-    static props = {};
+    static props = {
+        action:            { type: Object,   optional: true },
+        actionId:          { optional: true },
+        updateActionState: { type: Function, optional: true },
+        className:         { type: String,   optional: true },
+        "*":               true,
+    };
 
     setup() {
-        this.rpc = useService("rpc");
+        this.orm           = useService("orm");
         this.actionService = useService("action");
+        this.notification  = useService("notification");
 
         this.state = useState({
             loading: true,
-            error: null,
-            revenue: [],
-            overheads: [],
-            officeExpenses: { categories: [], monthly: [] },
+            error:   null,
+            revenue:          [],
+            overheads:        [],
+            officeExpenses:   { categories: [], monthly: [] },
             pendingApprovals: { count: 0, items: [] },
-            vendorPayments: { count: 0, items: [] },
-            summary: {},
+            vendorPayments:   { count: 0, items: [] },
+            summary:          {},
         });
 
-        onMounted(async () => {
+        // onWillStart runs before first render — data is ready when the
+        // component mounts, avoiding a loading-flicker on fast connections.
+        onWillStart(async () => {
             await this._loadData();
         });
     }
 
+    // ── Data loading ─────────────────────────────────────────────────────────
     async _loadData() {
         this.state.loading = true;
-        this.state.error = null;
+        this.state.error   = null;
         try {
-            const data = await this.rpc("/tts/account/dashboard/data", {});
-            if (data.error) {
-                this.state.error = data.error;
-            } else {
-                this.state.revenue = data.revenue || [];
-                this.state.overheads = data.overheads || [];
-                this.state.officeExpenses = data.office_expenses || { categories: [], monthly: [] };
-                this.state.pendingApprovals = data.pending_approvals || { count: 0, items: [] };
-                this.state.vendorPayments = data.vendor_payments || { count: 0, items: [] };
-                this.state.summary = data.summary || {};
-            }
+            const data = await this.orm.call(
+                "tts.account.dashboard",
+                "get_dashboard_data",
+                [],
+                {},
+            );
+            this.state.revenue          = data.revenue          || [];
+            this.state.overheads        = data.overheads        || [];
+            this.state.officeExpenses   = data.office_expenses  || { categories: [], monthly: [] };
+            this.state.pendingApprovals = data.pending_approvals || { count: 0, items: [] };
+            this.state.vendorPayments   = data.vendor_payments   || { count: 0, items: [] };
+            this.state.summary          = data.summary           || {};
         } catch (e) {
-            this.state.error = "Failed to load dashboard data. Please refresh.";
+            this.state.error = e.message || "Failed to load dashboard data. Please refresh.";
         } finally {
             this.state.loading = false;
         }
     }
 
-    // ── Chart helpers ────────────────────────────────────────────────────────
-
+    // ── Chart helpers ─────────────────────────────────────────────────────────
     _maxOf(arr, key = "amount") {
         const vals = arr.map((d) => Math.abs(d[key] || 0));
         return Math.max(...vals, 1);
     }
 
     barHeightPct(amount, max) {
-        const h = (Math.abs(amount) / max) * 100;
-        return Math.max(h, 1).toFixed(1);
+        return Math.max((Math.abs(amount) / max) * 100, 1).toFixed(1);
     }
 
-    // ── Number formatting ────────────────────────────────────────────────────
-
+    // ── Number formatting ─────────────────────────────────────────────────────
     fmt(value, decimals = 0) {
         return new Intl.NumberFormat("en-US", {
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals,
         }).format(value || 0);
     }
-
-    fmtMoney(value) {
-        return this.fmt(value, 2);
-    }
-
+    fmtMoney(value) { return this.fmt(value, 2); }
     fmtK(value) {
-        if (Math.abs(value) >= 1_000_000)
-            return (value / 1_000_000).toFixed(1) + "M";
-        if (Math.abs(value) >= 1_000)
-            return (value / 1_000).toFixed(1) + "K";
-        return this.fmt(value, 0);
+        const v = value || 0;
+        if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
+        if (Math.abs(v) >= 1_000)     return (v / 1_000).toFixed(1) + "K";
+        return this.fmt(v, 0);
     }
 
-    // ── Navigation ───────────────────────────────────────────────────────────
-
+    // ── Navigation ────────────────────────────────────────────────────────────
     openRecord(model, id) {
         this.actionService.doAction({
             type: "ir.actions.act_window",
@@ -128,15 +132,15 @@ export class AccountManagerDashboard extends Component {
         await this._loadData();
     }
 
-    // ── Computed getters used by template ────────────────────────────────────
-
-    get maxRevenue() { return this._maxOf(this.state.revenue); }
-    get maxOverheads() { return this._maxOf(this.state.overheads); }
-    get maxOfficeMonthly() { return this._maxOf(this.state.officeExpenses.monthly || []); }
+    // ── Computed getters used by the template ─────────────────────────────────
+    get maxRevenue()      { return this._maxOf(this.state.revenue); }
+    get maxOverheads()    { return this._maxOf(this.state.overheads); }
+    get maxOfficeMonthly(){ return this._maxOf(this.state.officeExpenses.monthly || []); }
 
     get netProfitClass() {
-        const n = this.state.summary.net_profit || 0;
-        return n >= 0 ? "tts-kpi-positive" : "tts-kpi-negative";
+        return (this.state.summary.net_profit || 0) >= 0
+            ? "tts-kpi-positive"
+            : "tts-kpi-negative";
     }
 
     get overdueCount() {

@@ -20,6 +20,7 @@
             name="Accounts Dashboard"
             sequence="3"
             groups="account.group_account_manager"
+            web_icon="tts_account_manager_dashboard,static/description/icon.png"
         />
 
         <menuitem
