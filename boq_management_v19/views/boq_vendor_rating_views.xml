@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!--
-        NEW TASK 4 / BUG 3 — Vendor Rating views.
-        Form opens as popup from the 'Rate Vendor' button on purchase.order.
-        List view accessible from the Reporting menu.
-    -->
-
-    <!-- ── Form View (popup dialog) ────────────────────────────────────── -->
     <record id="view_boq_vendor_rating_form" model="ir.ui.view">
         <field name="name">boq.vendor.rating.form</field>
         <field name="model">boq.vendor.rating</field>
@@ -16,20 +9,21 @@
                 <sheet>
                     <div class="oe_title">
                         <h1>
-                            <field name="partner_id" readonly="1" options="{'no_open': True}"/>
+                            <field name="partner_id" readonly="1" force_save="1" options="{'no_open': True}"/>
                         </h1>
-                        <h2 class="text-muted">
-                            <field name="purchase_order_id" readonly="1" options="{'no_open': True}"/>
-                        </h2>
                     </div>
                     <group>
                         <group string="Rating">
                             <field name="rating" widget="radio"/>
                             <field name="date"/>
                         </group>
-                        <group string="Order Details">
-                            <field name="company_id" readonly="1"/>
-                            <field name="partner_type" readonly="1"/>
+                        <group string="Details">
+                            <field name="purchase_order_id"
+                                   domain="[('partner_id', '=', partner_id)]"
+                                   options="{'no_create': True}"
+                                   placeholder="Select linked PO (optional)"/>
+                            <field name="partner_type" readonly="1" invisible="not partner_type"/>
+                            <field name="company_id" readonly="1" invisible="not company_id"/>
                         </group>
                     </group>
                     <group string="Comments">
@@ -38,11 +32,15 @@
                                nolabel="1"/>
                     </group>
                 </sheet>
+                <footer>
+                    <button name="action_save_and_close" type="object"
+                            string="Save Rating" class="btn-primary"/>
+                    <button string="Discard" class="btn-secondary" special="cancel"/>
+                </footer>
             </form>
         </field>
     </record>
 
-    <!-- ── List View ────────────────────────────────────────────────────── -->
     <record id="view_boq_vendor_rating_list" model="ir.ui.view">
         <field name="name">boq.vendor.rating.list</field>
         <field name="model">boq.vendor.rating</field>
@@ -63,7 +61,6 @@
         </field>
     </record>
 
-    <!-- ── Window Action ────────────────────────────────────────────────── -->
     <record id="action_boq_vendor_rating" model="ir.actions.act_window">
         <field name="name">Vendor Ratings</field>
         <field name="res_model">boq.vendor.rating</field>

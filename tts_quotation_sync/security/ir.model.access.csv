@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tts_quotation_user,tts.quotation user,model_tts_quotation,base.group_user,1,1,1,1
+access_tts_quotation_line_user,tts.quotation.line user,model_tts_quotation_line,base.group_user,1,1,1,1
+access_tts_sync_log_user,tts.sync.log user,model_tts_sync_log,base.group_user,1,1,1,1
+access_tts_sync_log_line_user,tts.sync.log.line user,model_tts_sync_log_line,base.group_user,1,1,1,1

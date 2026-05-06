@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════
+         QUOTATION LIST VIEW
+    ══════════════════════════════════════════════ -->
+    <record id="view_tts_quotation_list" model="ir.ui.view">
+        <field name="name">tts.quotation.list</field>
+        <field name="model">tts.quotation</field>
+        <field name="arch" type="xml">
+            <list string="Quotations"
+                  decoration-success="sync_state == 'success'"
+                  decoration-danger="sync_state == 'failure'"
+                  decoration-muted="sync_state == 'pending'">
+                <field name="name"/>
+                <field name="external_id" string="Quotation ID"/>
+                <field name="status"/>
+                <field name="total_amount" widget="monetary" optional="show"/>
+                <field name="approved_at" optional="show"/>
+                <field name="sync_state" widget="badge"
+                       decoration-success="sync_state == 'success'"
+                       decoration-danger="sync_state == 'failure'"
+                       decoration-info="sync_state == 'pending'"/>
+                <field name="retry_count" string="Retries" optional="show"/>
+                <field name="is_review_status" optional="show"/>
+                <field name="error_reason" optional="show"/>
+                <field name="sale_order_id" optional="show"/>
+                <field name="boq_id" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════
+         QUOTATION FORM VIEW
+    ══════════════════════════════════════════════ -->
+    <record id="view_tts_quotation_form" model="ir.ui.view">
+        <field name="name">tts.quotation.form</field>
+        <field name="model">tts.quotation</field>
+        <field name="arch" type="xml">
+            <form string="TTS Quotation">
+                <header>
+                    <field name="sync_state" widget="statusbar"
+                           statusbar_visible="pending,success,failure"/>
+                </header>
+                <sheet>
+                    <!-- Smart Buttons -->
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_sale_order"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-shopping-cart"
+                                invisible="sale_order_count == 0">
+                            <field name="sale_order_count" widget="statinfo"
+                                   string="Sale Order"/>
+                        </button>
+                        <button name="action_create_boq"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-list-alt"
+                                invisible="boq_count != 0">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Create BOQ</span>
+                            </div>
+                        </button>
+                        <button name="action_create_boq"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-list-alt"
+                                invisible="boq_count == 0">
+                            <field name="boq_count" widget="statinfo" string="BOQ"/>
+                        </button>
+                    </div>
+
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+
+                    <!-- Header Info -->
+                    <group>
+                        <group string="API Details">
+                            <field name="external_id" string="Quotation ID" readonly="1"/>
+                            <field name="status" readonly="1"/>
+                            <field name="approved_at" readonly="1"/>
+                            <field name="total_amount" widget="monetary" readonly="1"/>
+                        </group>
+                        <group string="Sync Status">
+                            <field name="sync_state" readonly="1"
+                                   widget="badge"
+                                   decoration-success="sync_state == 'success'"
+                                   decoration-danger="sync_state == 'failure'"
+                                   decoration-info="sync_state == 'pending'"/>
+                            <field name="retry_count" readonly="1"/>
+                            <field name="is_review_status" readonly="1"/>
+                            <field name="is_reviewed" readonly="1"/>
+                            <field name="sale_order_id" readonly="1"/>
+                            <field name="boq_id" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <field name="client_notes" readonly="1" widget="text"
+                               placeholder="No client notes"/>
+                    </group>
+
+                    <group invisible="not error_reason" string="Failure Details">
+                        <field name="error_reason" readonly="1" widget="text"
+                               string="Error Reason"/>
+                    </group>
+
+                    <group invisible="not sync_message">
+                        <field name="sync_message" readonly="1" widget="text"
+                               string="Sync Error"/>
+                    </group>
+                    <group invisible="not is_review_message">
+                        <field name="is_review_message" readonly="1" widget="text"/>
+                    </group>
+
+                    <notebook>
+                        <page string="Line Items" name="lines">
+                            <field name="line_ids" readonly="1">
+                                <list>
+                                    <field name="sequence" optional="hide"/>
+                                    <field name="item_type" widget="badge"
+                                           decoration-info="item_type == 'header'"
+                                           decoration-muted="item_type == 'row'"/>
+                                    <field name="category_type" widget="badge"
+                                           decoration-success="category_type == 'wood'"
+                                           decoration-warning="category_type == 'civil'"
+                                           decoration-info="category_type == 'handles'"/>
+                                    <field name="title" optional="show"/>
+                                    <field name="line_description" string="Description"/>
+                                    <field name="product_code" optional="hide"/>
+                                    <field name="category" optional="hide"/>
+                                    <field name="subcategory" optional="hide"/>
+                                    <field name="brand" optional="hide"/>
+                                    <field name="height" optional="show" string="H(ft)"/>
+                                    <field name="width" optional="show" string="W(ft)"/>
+                                    <field name="sqft" optional="show" string="Sqft"/>
+                                    <field name="unit" optional="show"/>
+                                    <field name="price" optional="show" string="Rate"/>
+                                    <field name="qty" optional="show"/>
+                                    <field name="amount" optional="show"/>
+                                    <field name="discount" optional="show"/>
+                                    <field name="discount_type" optional="show"/>
+                                    <field name="final_amount" string="Final Amount"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="API Responses" name="api_responses">
+                            <group>
+                                <field name="api_response_body" readonly="1"
+                                       widget="text"
+                                       string="GET Response (Quotation Data)"
+                                       placeholder="Populated after first successful sync"/>
+                                <field name="mark_reviewed_response" readonly="1"
+                                       widget="text"
+                                       string="PUT Response (Mark-Reviewed)"
+                                       placeholder="Populated after successful mark-reviewed call"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════
+         QUOTATION SEARCH VIEW
+    ══════════════════════════════════════════════ -->
+    <record id="view_tts_quotation_search" model="ir.ui.view">
+        <field name="name">tts.quotation.search</field>
+        <field name="model">tts.quotation</field>
+        <field name="arch" type="xml">
+            <search string="Search Quotations">
+                <field name="name"/>
+                <field name="status"/>
+                <field name="error_reason"/>
+                <filter name="pending" string="Pending"
+                        domain="[('sync_state','=','pending')]"/>
+                <filter name="success" string="Success"
+                        domain="[('sync_state','=','success')]"/>
+                <filter name="failure" string="Failure"
+                        domain="[('sync_state','=','failure')]"/>
+                <separator/>
+                <filter name="has_retries" string="Has Retries"
+                        domain="[('retry_count','&gt;',0)]"/>
+                <filter name="with_so" string="Has Sale Order"
+                        domain="[('sale_order_id','!=',False)]"/>
+                <filter name="with_boq" string="Has BOQ"
+                        domain="[('boq_id','!=',False)]"/>
+                <separator/>
+                <filter name="group_sync_state" string="Group by Sync State"
+                        context="{'group_by': 'sync_state'}"/>
+                <filter name="group_status" string="Group by API Status"
+                        context="{'group_by': 'status'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════
+         ACTION
+    ══════════════════════════════════════════════ -->
+    <record id="action_tts_quotation" model="ir.actions.act_window">
+        <field name="name">Quotations</field>
+        <field name="res_model">tts.quotation</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_tts_quotation_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No quotations synced yet.
+            </p>
+            <p>
+                Configure the API connection and click <b>Sync Now</b>
+                or wait for the scheduled cron to run.
+            </p>
+        </field>
+    </record>
+
+</odoo>

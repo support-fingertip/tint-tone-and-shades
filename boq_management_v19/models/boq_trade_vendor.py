@@ -66,6 +66,7 @@ class BoqTradeVendor(models.Model):
         string='Lines',
         compute='_compute_line_count',
         store=False,
+<<<<<<< HEAD
     )
 
     # One vendor row + one supplier row allowed per trade per BOQ
@@ -74,6 +75,18 @@ class BoqTradeVendor(models.Model):
         'Each trade + type combination can only appear once per BOQ.',
     )
 
+=======
+    )
+
+    _sql_constraints = [
+        (
+            'unique_boq_category_type',
+            'unique(boq_id, category_id, partner_type)',
+            'Each trade + type combination can only appear once per BOQ.',
+        ),
+    ]
+
+>>>>>>> main
     @api.depends('boq_id.line_ids', 'category_id')
     def _compute_line_count(self):
         for rec in self:

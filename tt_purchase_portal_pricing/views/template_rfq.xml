@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<template id="portal_my_purchase_rfqs_inherit"
+          inherit_id="purchase.portal_my_purchase_rfqs">
+
+    <!-- Header -->
+    <xpath expr="//th[last()]" position="after">
+        <th style="width: 150px; text-align: center;">
+            Status
+        </th>
+    </xpath>
+
+    <!-- Row -->
+    <xpath expr="//td[last()]" position="after">
+        <td style="width: 150px; text-align: center;">
+            <span t-att-class="'badge ' + (
+                'bg-secondary' if rfq.state == 'draft' else
+                'bg-info' if rfq.state == 'submitted' else
+                'bg-warning' if rfq.state == 'to approve' else
+                'bg-danger' if rfq.state == 'cancel' else
+                'bg-success'
+            )">
+                <t t-esc="rfq.state"/>
+            </span>
+        </td>
+    </xpath>
+
+</template>
+
+</odoo>

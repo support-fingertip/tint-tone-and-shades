@@ -14,11 +14,12 @@
     "live_test_url": "https://odoo-ce.atisicloud.com/",
     "license": "LGPL-3",
     "category": "Purchases",
-    "version": "19.0.1.0.0",
-    "depends": ["base", "purchase", "mail"],
+    "version": "19.0.1.1.0",
+    "depends": ["base", "purchase", "mail",],
     # always loaded
     "data": [
         "security/ir.model.access.csv",
+        "security/ir_rule.xml",
         "views/purchase_approval_level_views.xml",
         "views/purchase_order_views.xml",
         "views/purchase_reporting_views.xml",

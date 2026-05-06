@@ -10,9 +10,51 @@ class PurchaseOrder(models.Model):
         string='Approval Lines', readonly=True,
     )
 
+    state = fields.Selection(
+        selection_add=[('to approve', 'To Approve')],
+        ondelete={'to approve': 'set default'},
+    )
+
     is_admin = fields.Boolean(
         string='Is Admin', compute='_compute_is_admin',
     )
+
+    # Stored computed fields to fix SQL-join ambiguity in dashboard domains.
+    # These always reflect the SINGLE 'current' approval line's data, so
+    # dashboard domains can use direct column lookups instead of chained joins.
+    current_approver_ids = fields.Many2many(
+        'res.users',
+        'purchase_order_current_approver_rel',
+        'order_id', 'user_id',
+        string='Current Approvers',
+        compute='_compute_current_approval_info',
+        store=True,
+    )
+    current_approval_type = fields.Selection(
+        [('vendor', 'Vendor'), ('supplier', 'Supplier')],
+        string='Current Approval Type',
+        compute='_compute_current_approval_info',
+        store=True,
+    )
+
+    @api.depends(
+        'approval_line_ids',
+        'approval_line_ids.status',
+        'approval_line_ids.user_ids',
+        'approval_line_ids.level_id',
+        'approval_line_ids.level_id.type',
+    )
+    def _compute_current_approval_info(self):
+        for order in self:
+            current_line = order.approval_line_ids.filtered(
+                lambda l: l.status == 'current'
+            )
+            if current_line:
+                order.current_approver_ids = current_line[0].user_ids
+                order.current_approval_type = current_line[0].level_id.type
+            else:
+                order.current_approver_ids = [(5, 0, 0)]
+                order.current_approval_type = False
 
     @api.depends_context('uid')
     def _compute_is_admin(self):
@@ -23,19 +65,15 @@ class PurchaseOrder(models.Model):
     def button_confirm(self):
         self.ensure_one()
 
-        # Admin users can always confirm directly
-        if self.env.user.has_group('base.group_system'):
-            return super(PurchaseOrder, self).button_confirm()
-
-        # If all approval lines are already approved, confirm directly
+        # If approval lines exist and all approved, final confirm
         if self.approval_line_ids and all(
-            line.status == 'approved' for line in self.approval_line_ids
+                line.status == 'approved' for line in self.approval_line_ids
         ):
             return super(PurchaseOrder, self).button_confirm()
 
         # If approval is already in progress, block
         if self.approval_line_ids and any(
-            line.status in ('pending', 'current') for line in self.approval_line_ids
+                line.status in ('pending', 'current') for line in self.approval_line_ids
         ):
             self.message_post(
                 body="This order is already waiting for approval. "
@@ -43,8 +81,16 @@ class PurchaseOrder(models.Model):
             )
             return self._get_refresh_action()
 
-        # Check if approval is required based on amount
+        # First, confirm the order to PO state (RFQ → Purchase Order)
+        res = super(PurchaseOrder, self).button_confirm()
+
+        # Get the approval type from partner
+        approval_type = self._get_approval_type()
+
+        # Now check if approval is required based on amount AND type
         required_levels = self.env['purchase.approval.level'].search([
+            ('company_id', '=', self.company_id.id),
+            ('type', '=', approval_type),  # Filter by vendor or supplier type
             ('minimum_amount', '<=', self.amount_total),
             '|',
             ('maximum_amount', '>=', self.amount_total),
@@ -52,19 +98,32 @@ class PurchaseOrder(models.Model):
         ], order='sequence asc')
 
         if required_levels:
+            # PO is created, now put it on hold for approval
             self.write({'state': 'to approve'})
             self._create_approval_lines(required_levels)
             self._check_approval_status()
             self.message_post(
-                body="This order requires approval. The approval process has been initiated."
+                body=f"Purchase Order created. This order requires {approval_type} approval before it can proceed."
             )
-        else:
-            self.message_post(
-                body="No approval required for this order. Order confirmed."
-            )
-            super(PurchaseOrder, self).button_confirm()
+            return self._get_refresh_action()
 
-        return self._get_refresh_action()
+        return res
+
+    def _get_approval_type(self):
+        """
+        Determine if this purchase order should use vendor or supplier approval levels.
+        Uses the partner_type field from the associated partner.
+        """
+        partner_type = self.partner_id.partner_type
+
+        # Map partner_type to approval level type
+        if partner_type == 'supplier':
+            return 'supplier'
+        elif partner_type == 'vendor':
+            return 'vendor'
+        else:
+            # Default to vendor for other types (employee, customer, etc.)
+            return 'vendor'
 
     def _create_approval_lines(self, levels):
         self.approval_line_ids.unlink()
@@ -103,6 +162,22 @@ class PurchaseOrder(models.Model):
         else:
             super(PurchaseOrder, self).button_confirm()
 
+    def _cleanup_approval_activities(self):
+        """Remove pending approval activities when order is confirmed/approved by admin."""
+        todo_type = self.env.ref('mail.mail_activity_data_todo')
+        activities = self.activity_ids.filtered(
+            lambda a: a.activity_type_id == todo_type
+            and 'Approval required for Purchase Order' in (a.summary or '')
+        )
+        if activities:
+            activities.action_feedback(feedback=f"Order confirmed by {self.env.user.name} (admin bypass)")
+        # Mark any pending/current approval lines as approved
+        for line in self.approval_line_ids.filtered(lambda l: l.status in ('pending', 'current')):
+            line.write({
+                'status': 'approved',
+                'approved_by_user_id': self.env.user.id,
+            })
+
     def _get_refresh_action(self):
         return {
             'type': 'ir.actions.client',
@@ -112,17 +187,6 @@ class PurchaseOrder(models.Model):
     def button_approve(self, force=False):
         self.ensure_one()
         if self.state == 'to approve' and self.approval_line_ids:
-            # Admin can bypass
-            if self.env.user.has_group('base.group_system'):
-                self.write({
-                    'state': 'purchase',
-                    'date_approve': fields.Datetime.now(),
-                })
-                self.filtered(
-                    lambda p: p.lock_confirmed_po == 'lock'
-                ).write({'locked': True})
-                return {}
-
             all_approved = all(
                 line.status == 'approved' for line in self.approval_line_ids
             )

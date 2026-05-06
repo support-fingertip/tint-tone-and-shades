@@ -62,6 +62,36 @@ class PurchaseOrderApprovalLine(models.Model):
         return self.order_id._get_refresh_action()
 
 
+    # def action_reject(self):
+    #     self.ensure_one()
+    #
+    #     if self.status != 'current':
+    #         raise exceptions.UserError("You can only reject the current approval level.")
+    #
+    #     if self.env.user not in self.user_ids:
+    #         raise exceptions.UserError(f"You are not in the list of authorized approvers for the level '{self.level_id.name}'.")
+    #
+    #     self.write({
+    #         'status': 'rejected',
+    #         'rejected_by_user_id': self.env.user.id,
+    #     })
+    #     self.order_id.write({
+    #         'state': 'cancel',
+    #     })
+    #     self.order_id.message_post(body=f"Approval Level '{self.level_id.name}' has been rejected by {self.env.user.name}.")
+    #
+    #     todo_type = self.env.ref('mail.mail_activity_data_todo')
+    #     activities = self.env['mail.activity'].search([
+    #         ('res_model', '=', 'purchase.order'),
+    #         ('res_id', '=', self.order_id.id),
+    #         ('activity_type_id', '=', todo_type.id),
+    #         ('user_id', 'in', self.user_ids.ids)
+    #     ])
+    #     if activities:
+    #         activities.action_feedback(feedback=f"Rejected by {self.env.user.name}")
+    #
+    #     return self.order_id._get_refresh_action()
+
     def action_reject(self):
         self.ensure_one()
 
@@ -69,25 +99,18 @@ class PurchaseOrderApprovalLine(models.Model):
             raise exceptions.UserError("You can only reject the current approval level.")
 
         if self.env.user not in self.user_ids:
-            raise exceptions.UserError(f"You are not in the list of authorized approvers for the level '{self.level_id.name}'.")
+            raise exceptions.UserError(
+                f"You are not in the list of authorized approvers for level '{self.level_id.name}'."
+            )
 
-        self.write({
-            'status': 'rejected',
-            'rejected_by_user_id': self.env.user.id,
-        })
-        self.order_id.write({
-            'state': 'cancel',
-        })
-        self.order_id.message_post(body=f"Approval Level '{self.level_id.name}' has been rejected by {self.env.user.name}.")
-        
-        todo_type = self.env.ref('mail.mail_activity_data_todo')
-        activities = self.env['mail.activity'].search([
-            ('res_model', '=', 'purchase.order'),
-            ('res_id', '=', self.order_id.id),
-            ('activity_type_id', '=', todo_type.id),
-            ('user_id', 'in', self.user_ids.ids)
-        ])
-        if activities:
-            activities.action_feedback(feedback=f"Rejected by {self.env.user.name}")
-
-        return self.order_id._get_refresh_action()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Rejection Remarks',
+            'res_model': 'margin.reject.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_purchase_id': self.order_id.id,
+                'default_approval_line_id': self.id,
+            },
+        }

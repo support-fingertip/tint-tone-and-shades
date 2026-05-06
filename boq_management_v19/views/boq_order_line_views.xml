@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- ═══════════════════════════════════════════════════════
-         ORDER LINE — Standalone List
-    ═══════════════════════════════════════════════════════ -->
     <record id="view_boq_order_line_list" model="ir.ui.view">
         <field name="name">boq.order.line.list</field>
         <field name="model">boq.order.line</field>
@@ -31,7 +28,7 @@
                 <field name="subtotal" sum="Subtotal"/>
                 <field name="tax_amount" string="Total Tax" readonly="1" optional="show" sum="Total Tax"/>
                 <field name="total_value" string="Total Value" readonly="1" optional="show" sum="Total (incl. Tax)"/>
-                <field name="margin_percent" optional="show"/>
+                <field name="margin_percent" column_invisible="True"/>
                 <field name="currency_id" column_invisible="True"/>
                 <field name="notes" optional="hide"/>
             </list>

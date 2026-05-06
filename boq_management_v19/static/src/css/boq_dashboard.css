@@ -1,21 +1,13 @@
-/* ============================================================
-   BOQ Dashboard Styles — Task 4 (Odoo 19)
-   ============================================================ */
 
-/* ── Root action wrapper ─────────────────────────────────────── */
-/* flex-column so the header is fixed-height and boq_dash_scroll */
-/* fills the remainder. No overflow here — scroll is in child.   */
+
 .o_action.boq_dashboard {
+    position: absolute !important;
+    inset: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    height: 100% !important;
-    position: relative !important;
     overflow: hidden !important;
 }
 
-/* ── Scrollable content body ─────────────────────────────────── */
-/* flex:1 + min-height:0 is the standard "scrollable flex child" */
-/* pattern. Works inside Odoo's flex action manager.             */
 .boq_dash_scroll {
     flex: 1 1 0 !important;
     min-height: 0 !important;
@@ -25,14 +17,16 @@
     position: relative;
 }
 
-/* ── Page wrapper — force light theme regardless of OS/Odoo dark mode ── */
+.o_action_manager {
+    position: relative;
+}
+
 .boq_dashboard {
     background: #f8f9fa !important;
     min-height: 100%;
     font-family: inherit;
     color-scheme: light !important;
     color: #212529 !important;
-    /* Reset Bootstrap 5 dark-mode CSS custom properties to light values */
     --bs-body-bg: #ffffff;
     --bs-body-color: #212529;
     --bs-body-color-rgb: 33, 37, 41;
@@ -54,7 +48,6 @@
     --bs-table-hover-bg: rgba(0, 0, 0, 0.075);
 }
 
-/* ── Header bar ─────────────────────────────────────────────── */
 .boq_dash_header {
     background: #fff !important;
     border-bottom: 1px solid #dee2e6 !important;
@@ -67,7 +60,6 @@
     color: inherit !important;
 }
 
-/* ── Stat Cards ─────────────────────────────────────────────── */
 .boq_stat_card {
     background: #fff !important;
     color: #212529 !important;
@@ -110,7 +102,222 @@
     margin-top: 4px;
 }
 
-/* ── Vendor Grid ─────────────────────────────────────────────── */
+.boq_hero {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 24px 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+.boq_hero::before,
+.boq_hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.12;
+    pointer-events: none;
+}
+.boq_hero::before {
+    width: 220px;
+    height: 220px;
+    background: #fff;
+    top: -60px;
+    right: 80px;
+}
+.boq_hero::after {
+    width: 140px;
+    height: 140px;
+    background: #fff;
+    bottom: -50px;
+    right: 30px;
+}
+
+.boq_hero_icons {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.boq_hero_icon_wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    backdrop-filter: blur(4px);
+}
+.boq_hero_ic1 { transform: scale(1.12); }
+.boq_hero_ic2 { opacity: 0.85; }
+.boq_hero_ic3 { opacity: 0.7; }
+
+.boq_hero_title {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin: 0 0 4px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.boq_hero_sub {
+    color: rgba(255,255,255,0.82);
+    font-size: 0.85rem;
+}
+
+.boq_hero_kpis {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    align-items: center;
+}
+.boq_hero_kpi {
+    text-align: center;
+    background: rgba(255,255,255,0.18);
+    border-radius: 10px;
+    padding: 8px 14px;
+    min-width: 70px;
+    backdrop-filter: blur(4px);
+}
+.boq_hero_kpi_val {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.1;
+}
+.boq_hero_kpi_val.small { font-size: 0.95rem; }
+.boq_hero_kpi_lbl {
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.78);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+.boq_hero_kpi_warn  { background: rgba(255, 193, 7,  0.35) !important; }
+.boq_hero_kpi_alert { background: rgba(255, 99,  71,  0.35) !important; }
+.boq_hero_kpi_new   { background: rgba(245, 158, 11, 0.35) !important; }
+
+.boq_hero_vendor {
+    background: linear-gradient(135deg, #1a56db 0%, #0e3fa0 60%, #083080 100%);
+    border-bottom: 3px solid rgba(255,255,255,0.12);
+}
+
+.boq_hero_procurement {
+    background: linear-gradient(135deg, #0ea271 0%, #0b7a56 60%, #065438 100%);
+    border-bottom: 3px solid rgba(255,255,255,0.12);
+}
+
+.boq_hero_head {
+    background: linear-gradient(135deg, #0d7377 0%, #095e62 40%, #143d40 100%);
+    border-bottom: 4px solid rgba(255,255,255,0.15);
+    padding: 30px 32px;  
+}
+.boq_hero_head .boq_hero_icon_wrap {
+    width: 60px;
+    height: 60px;
+    font-size: 1.2rem;
+}
+.boq_hero_head .boq_hero_title { font-size: 1.45rem; }
+
+.boq_vendor_cards_scroll {
+    overflow-x: auto;
+    padding-bottom: 8px;
+}
+
+.boq_vendor_cards_row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: nowrap;
+    min-width: max-content;
+}
+
+.boq_vendor_card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 14px;
+    padding: 18px 20px;
+    width: 240px;
+    flex-shrink: 0;
+    transition: box-shadow 0.18s, transform 0.18s;
+    cursor: pointer;
+}
+
+.boq_vendor_card:hover {
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.boq_vendor_avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.boq_vc_name {
+    font-size: 0.92rem;
+    max-width: 160px;
+}
+
+.boq_vc_metrics {
+    border-top: 1px solid #f0f2f5;
+    padding-top: 10px;
+}
+
+.boq_vc_metric {
+    text-align: center;
+    min-width: 60px;
+}
+
+.boq_vc_metric_value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.boq_vc_metric_label {
+    font-size: 0.72rem;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.boq_vc_footer {
+    border-top: 1px solid #f0f2f5;
+    padding-top: 10px;
+}
+
+.boq_vc_open {
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.boq_vc_open:hover {
+    background: #f0f2f5;
+}
+
+.boq_vc_projects {
+    font-size: 0.75rem;
+    border-top: 1px solid #f0f2f5;
+    padding-top: 6px;
+}
+
+.boq_section_title {
+    font-size: 1rem;
+    color: #212529;
+}
+
 .boq_vendor_grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -118,7 +325,6 @@
     margin-top: 16px;
 }
 
-/* ── Vendor Card ─────────────────────────────────────────────── */
 .boq_vendor_card {
     background: #fff !important;
     color: #212529 !important;
@@ -138,7 +344,6 @@
     border-color: #0d6efd;
 }
 
-/* ── Vendor card header ──────────────────────────────────────── */
 .boq_vendor_header {
     display: flex;
     align-items: center;
@@ -179,7 +384,6 @@
     text-overflow: ellipsis;
 }
 
-/* ── Vendor stats row ────────────────────────────────────────── */
 .boq_vendor_stats {
     display: flex;
     gap: 0;
@@ -213,9 +417,8 @@
     word-break: break-all;
 }
 
-/* ── Dark section labels ─────────────────────────────────────── */
 .boq_section_label {
-    color: #343a40 !important;   /* darker than text-muted (#6c757d) */
+    color: #343a40 !important;   
     font-size: 0.85rem;
 }
 
@@ -223,7 +426,6 @@
     color: #212529 !important;
 }
 
-/* ── View Details button inside card ─────────────────────────── */
 .boq_view_details_btn {
     font-size: 0.77rem;
     padding: 2px 10px;
@@ -235,14 +437,11 @@
     background: #0d6efd;
     color: #fff;
 }
-
-/* Margin color helpers */
 .boq_margin_high  { color: #198754; }
 .boq_margin_mid   { color: #0d6efd; }
 .boq_margin_low   { color: #fd7e14; }
 .boq_margin_neg   { color: #dc3545; }
 
-/* ── Vendor footer ───────────────────────────────────────────── */
 .boq_vendor_footer {
     padding-top: 6px;
     border-top: 1px solid #f0f0f0;
@@ -264,12 +463,10 @@
     opacity: 1;
 }
 
-/* ── Loading state ───────────────────────────────────────────── */
 .boq_dash_loading {
     color: #6c757d;
 }
 
-/* ── Selected vendor card ────────────────────────────────────── */
 .boq_vendor_card_active {
     border: 2px solid #0d6efd !important;
     box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.20), 0 8px 28px rgba(0, 0, 0, 0.12) !important;
@@ -278,7 +475,6 @@
     position: relative;
 }
 
-/* Accent stripe along the top of the selected card */
 .boq_vendor_card_active::before {
     content: '';
     position: absolute;
@@ -295,7 +491,6 @@
     color: #0d6efd;
 }
 
-/* Active avatar (shows checkmark) */
 .boq_vendor_avatar_active {
     background: linear-gradient(135deg, #0d6efd, #6610f2) !important;
     box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.3);
@@ -307,7 +502,6 @@
     to   { transform: scale(1); }
 }
 
-/* ── Vendor totals bar ───────────────────────────────────────── */
 .boq_vendor_totals_bar {
     border-top: 1px solid #e9ecef;
     border-bottom: 1px solid #e9ecef;
@@ -317,26 +511,6 @@
     margin-bottom: 4px;
 }
 
-.boq_totals_chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    background: #f0f2f5;
-    color: #495057;
-    font-size: 0.8rem;
-    border: 1px solid #e2e6ea;
-}
-
-.boq_totals_value {
-    background: #e8f0fe;
-    color: #0d6efd;
-    border-color: #c8d8fb;
-    font-weight: 500;
-}
-
-/* ── Vendor filter widget ────────────────────────────────────── */
 .boq_vendor_filter_wrap {
     position: relative;
     width: 260px;
@@ -390,12 +564,11 @@
     opacity: 1;
 }
 
-/* ── Vendor notebook panel ───────────────────────────────────── */
 .boq_vendor_notebook {
     border: 1px solid #dee2e6 !important;
     border-radius: 14px;
     overflow: hidden;
-    scroll-margin-top: 80px;   /* clear Odoo's sticky top bar */
+    scroll-margin-top: 80px;  
     background: #fff !important;
     color: #212529 !important;
     animation: boq_notebook_in 0.22s ease;
@@ -416,8 +589,6 @@
     background: #fff !important;
     color: #212529 !important;
 }
-
-/* Title bar inside notebook */
 .boq_vendor_notebook .bg-light {
     background: #f8f9fa !important;
     color: #212529 !important;
@@ -445,7 +616,6 @@
     color: #495057 !important;
 }
 
-/* Stat boxes inside notebook */
 .boq_vendor_notebook .border {
     background: #fff !important;
     color: #212529 !important;
@@ -460,7 +630,6 @@
     color: #212529 !important;
 }
 
-/* ── BOQ lines table in Summary tab ─────────────────────────── */
 .boq_lines_table_wrap {
     overflow-x: auto;
     border: 1px solid #dee2e6;
@@ -504,11 +673,10 @@
     background: #f8f9ff;
 }
 
-/* ── Notebook totals table (like Odoo purchase order footer) ─── */
 .boq_totals_table {
     width: 100%;
     max-width: 440px;
-    margin-left: auto;        /* right-align within card-body */
+    margin-left: auto;        
     border: 1px solid #dee2e6;
     border-radius: 8px;
     overflow: hidden;
@@ -540,7 +708,6 @@
     text-align: right;
 }
 
-/* Grand total row — mimics Odoo's "Total:" row */
 .boq_totals_grand {
     background: #f8f9fa !important;
     border-top: 2px solid #dee2e6 !important;
@@ -555,8 +722,6 @@
 .boq_totals_margin_row .boq_totals_label {
     color: #6c757d;
 }
-
-/* ── Summary tab metric tiles ────────────────────────────────── */
 .boq_summary_metrics {
     border-bottom: 1px solid #f0f2f5;
     padding-bottom: 16px;
@@ -604,7 +769,6 @@
     margin-top: 2px;
 }
 
-/* ── Summary section title ───────────────────────────────────── */
 .boq_summary_section_title {
     font-size: 0.82rem;
     font-weight: 600;
@@ -613,7 +777,6 @@
     letter-spacing: 0.04em;
 }
 
-/* ── Summary BOQ breakdown table ─────────────────────────────── */
 .boq_summary_table_wrap {
     border: 1px solid #dee2e6;
     border-radius: 8px;
@@ -655,16 +818,10 @@
     background: #f8f9ff;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   FORCE LIGHT THEME — comprehensive override of Odoo Enterprise
-   dark-mode for all Bootstrap utilities inside the dashboard.
-   ═══════════════════════════════════════════════════════════════ */
 
-/* Root token reset */
 .boq_dashboard {
     --bs-light: #f8f9fa;
     --bs-light-rgb: 248, 249, 250;
-    /* Bootstrap 5.3 table tokens */
     --bs-table-color: #212529;
     --bs-table-bg: #ffffff;
     --bs-table-border-color: #dee2e6;
@@ -677,11 +834,9 @@
     --bs-table-accent-bg: transparent;
 }
 
-/* bg-light / bg-white utilities */
 .boq_dashboard .bg-light  { background-color: #f8f9fa !important; color: #212529 !important; }
 .boq_dashboard .bg-white  { background-color: #ffffff !important; color: #212529 !important; }
 
-/* Bootstrap -subtle color utilities (very dark in enterprise dark mode) */
 .boq_dashboard .bg-primary-subtle   { background-color: #cfe2ff !important; }
 .boq_dashboard .bg-success-subtle   { background-color: #d1e7dd !important; }
 .boq_dashboard .bg-warning-subtle   { background-color: #fff3cd !important; }
@@ -689,7 +844,6 @@
 .boq_dashboard .bg-secondary-subtle { background-color: #e2e3e5 !important; }
 .boq_dashboard .bg-danger-subtle    { background-color: #f8d7da !important; }
 
-/* Text color utilities */
 .boq_dashboard .text-primary   { color: #0d6efd !important; }
 .boq_dashboard .text-success   { color: #198754 !important; }
 .boq_dashboard .text-warning   { color: #fd7e14 !important; }
@@ -699,32 +853,34 @@
 .boq_dashboard .text-muted     { color: #6c757d !important; }
 .boq_dashboard .text-dark      { color: #212529 !important; }
 
-/* Badge colors */
-.boq_dashboard .badge.bg-primary   { background-color: #0d6efd !important; color: #fff !important; }
-.boq_dashboard .badge.bg-secondary { background-color: #6c757d !important; color: #fff !important; }
-.boq_dashboard .badge.bg-success   { background-color: #198754 !important; color: #fff !important; }
-.boq_dashboard .badge.bg-warning   { background-color: #ffc107 !important; color: #212529 !important; }
-.boq_dashboard .badge.bg-info      { background-color: #0dcaf0 !important; color: #212529 !important; }
-.boq_dashboard .badge.bg-danger    { background-color: #dc3545 !important; color: #fff !important; }
-.boq_dashboard .text-dark.badge    { color: #212529 !important; }
+.boq_dashboard .badge.bg-primary,
+.boq_dashboard .badge.bg-secondary,
+.boq_dashboard .badge.bg-success,
+.boq_dashboard .badge.bg-warning,
+.boq_dashboard .badge.bg-info,
+.boq_dashboard .badge.bg-danger {
+    background-color: #f1f3f5 !important;
+    color: #495057 !important;
+    border: 1px solid #dee2e6 !important;
+}
+.boq_dashboard .text-dark.badge { color: #495057 !important; }
 
-/* ── TABLE — THE KEY FIX ─────────────────────────────────────────
-   Bootstrap 5 applies stripe/hover via box-shadow (not background-
-   color), so overriding background-color alone is insufficient.
-   We must clear box-shadow AND set background-color on every cell. */
+.boq_metric_neutral {
+    color: #495057 !important;
+    font-weight: 700;
+}
+
 .boq_dashboard table,
 .boq_dashboard .table { color: #212529 !important; background-color: #ffffff; }
 
-/* Every cell in every table section — clears the BS5 box-shadow trick */
 .boq_dashboard .table > :not(caption) > * > * {
     background-color: #ffffff !important;
     color: #212529 !important;
     border-color: #dee2e6 !important;
-    box-shadow: none !important;          /* ← clears hover/stripe accent */
+    box-shadow: none !important;          
     --bs-table-accent-bg: transparent;
 }
 
-/* thead — light grey */
 .boq_dashboard .table > thead > * > * {
     background-color: #f0f2f5 !important;
     color: #495057 !important;
@@ -732,14 +888,12 @@
     box-shadow: none !important;
 }
 
-/* tbody hover row — very subtle blue tint */
 .boq_dashboard .table > tbody > tr:hover > * {
     background-color: #f0f4ff !important;
     color: #212529 !important;
     box-shadow: none !important;
 }
 
-/* tfoot total row */
 .boq_dashboard .table > tfoot > * > * {
     background-color: #f8f9fa !important;
     color: #212529 !important;
@@ -748,16 +902,12 @@
     box-shadow: none !important;
 }
 
-/* table-responsive wrapper */
 .boq_dashboard .table-responsive {
     background: #ffffff !important;
     border-radius: 8px;
     border: 1px solid #dee2e6;
 }
 
-/* ── TOGGLE BUTTONS ──────────────────────────────────────────────
-   Active tab: filled primary blue.
-   Inactive tab: outlined primary (blue border + text, always visible). */
 .boq_dashboard .boq_toggle_btn.btn-primary {
     background-color: #0d6efd !important;
     border-color: #0d6efd !important;
@@ -774,7 +924,6 @@
     background-color: #e8f0fe !important;
 }
 
-/* ── Responsive tweaks ───────────────────────────────────────── */
 @media (max-width: 768px) {
     .boq_dash_stat_row {
         flex-direction: column !important;
@@ -788,4 +937,864 @@
     .boq_vendor_filter_wrap {
         width: 100%;
     }
+}
+
+.boq_tree_table {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.boq_tree_row {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    min-height: 46px;
+    border-bottom: 1px solid #f0f2f5;
+    transition: background 0.12s;
+    gap: 8px;
+    user-select: none;
+}
+.boq_tree_row:last-child {
+    border-bottom: none;
+}
+
+.boq_trade_row {
+    background: #f8f9fa;
+    cursor: pointer;
+    font-size: 0.92rem;
+    padding-left: 16px;
+}
+.boq_trade_row:hover {
+    background: #e8f0fe !important;
+}
+.boq_trade_row_open {
+    background: #e8f0fe !important;
+    border-left: 3px solid #0d6efd;
+}
+
+.boq_vendor_row {
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.88rem;
+    padding-left: 32px;
+    border-left: 3px solid transparent;
+}
+.boq_vendor_row:hover {
+    background: #f0f4ff !important;
+}
+.boq_vendor_row_open {
+    background: #f0f4ff !important;
+    border-left-color: #6ea8fe;
+}
+
+.boq_rfq_row {
+    background: #fff;
+    font-size: 0.84rem;
+    padding-left: 68px;
+    border-left: 3px solid transparent;
+    color: #495057;
+}
+.boq_rfq_row:hover {
+    background: #f8f9fa !important;
+}
+.boq_rfq_row_new {
+    background: #fffbeb !important;
+    border-left: 3px solid #f59e0b !important;
+    color: #212529;
+}
+.boq_rfq_row_new:hover {
+    background: #fef3c7 !important;
+    border-left-color: #d97706 !important;
+}
+
+.boq_empty_row {
+    cursor: default !important;
+    min-height: 36px;
+    background: #fafafa !important;
+}
+.boq_empty_row:hover {
+    background: #fafafa !important;
+}
+
+.boq_tree_expand_icon {
+    width: 18px;
+    flex-shrink: 0;
+    color: #6c757d;
+    font-size: 0.75rem;
+    transition: transform 0.15s;
+}
+
+.boq_tree_label {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.boq_tree_chips {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.boq_tree_value {
+    font-size: 0.875rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 110px;
+    text-align: right;
+}
+
+.boq_tree_action {
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+    cursor: pointer;
+}
+.boq_tree_row:hover .boq_tree_action {
+    opacity: 1;
+}
+.boq_tree_indent {
+    width: 20px;
+    flex-shrink: 0;
+    display: inline-block;
+}
+
+.boq_vendor_avatar_sm {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0d6efd, #6610f2);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+.boq_badge_neutral {
+    background: #f1f3f5 !important;
+    color: #495057 !important;
+    border: 1px solid #dee2e6 !important;
+    font-weight: 500;
+}
+
+@keyframes boq_pulse {
+    0%, 100% { box-shadow: 0 0 0 0   rgba(245, 158, 11, 0.55); }
+    50%       { box-shadow: 0 0 0 5px rgba(245, 158, 11, 0);    }
+}
+
+.boq_badge_submitted {
+    background: #fef3c7 !important;
+    color: #78350f !important;
+    border: 1px solid #f59e0b !important;
+    font-weight: 600;
+    animation: boq_pulse 2.2s ease-in-out infinite;
+}
+
+.boq_vendor_has_new {
+    border-left: 3px solid #fcd34d !important;
+    background: #fffef7 !important;
+}
+.boq_vendor_has_new:hover {
+    background: #fffbeb !important;
+    border-left-color: #f59e0b !important;
+}
+.boq_vendor_has_new.boq_vendor_row_open {
+    background: #fffbeb !important;
+    border-left-color: #f59e0b !important;
+}
+
+.boq_trade_has_new {
+    border-left: 3px solid #fde68a;
+}
+.boq_trade_has_new.boq_trade_row_open {
+    border-left-color: #f59e0b !important;
+}
+
+.boq_badge_margin {
+    background: #e8f5e9 !important;
+    color: #1b5e20 !important;
+    border: 1px solid #a5d6a7 !important;
+    font-weight: 600;
+}
+.boq_margin_good {
+    background: #d4edda !important;
+    color: #155724 !important;
+    border: 1px solid #c3e6cb !important;
+}
+.boq_margin_ok {
+    background: #fff3cd !important;
+    color: #856404 !important;
+    border: 1px solid #ffc107 !important;
+}
+.boq_margin_low {
+    background: #f8d7da !important;
+    color: #721c24 !important;
+    border: 1px solid #f5c6cb !important;
+}
+
+.boq_rfq_prices {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+.boq_rfq_price_item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+    min-width: 80px;
+}
+.boq_price_label {
+    color: #6c757d;
+    font-size: 0.68rem;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.boq_price_sep {
+    color: #dee2e6;
+    font-size: 1rem;
+}
+
+.boq_totals_margin {
+    background: #d4edda !important;
+    border: 1px solid #a5d6a7 !important;
+    color: #155724 !important;
+    font-weight: 600;
+}
+
+.boq_line_items_table {
+    background: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    border-top: 1px solid #e9ecef;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.80rem;
+    overflow-x: auto;
+}
+
+.boq_line_row {
+    display: grid;
+    grid-template-columns: 80px 1fr 80px 110px 110px 80px 110px 110px;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px 6px 96px; 
+    border-bottom: 1px solid #f0f2f5;
+    min-height: 36px;
+}
+.boq_line_row:last-child {
+    border-bottom: none;
+}
+
+.boq_line_header {
+    background: #e9f0ff;
+    font-weight: 600;
+    color: #344767;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.boq_line_row:not(.boq_line_header):hover {
+    background: #f0f4ff;
+}
+
+.boq_line_col_code    { color: #6c757d; }
+.boq_line_col_product { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.boq_line_col_qty,
+.boq_line_col_sell,
+.boq_line_col_cost,
+.boq_line_col_margin,
+.boq_line_col_total_sell,
+.boq_line_col_total_cost { text-align: right; }
+
+.boq_line_loading_row {
+    padding: 10px 16px 10px 96px;
+    color: #6c757d;
+    font-size: 0.82rem;
+}
+
+@media (max-width: 900px) {
+    .boq_line_row {
+        grid-template-columns: 60px 1fr 60px 90px 90px 70px;
+    }
+    .boq_line_col_total_sell,
+    .boq_line_col_total_cost {
+        display: none;
+    }
+}
+                         */
+.boq_avatar_new {
+    box-shadow: 0 0 0 2px #f59e0b, 0 0 0 4px rgba(245, 158, 11, 0.25);
+}
+
+.boq_chip_notification {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 20px;
+    padding: 4px 12px;
+    color: #78350f;
+    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+}
+
+.boq_company_card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 14px;
+    padding: 18px 20px;
+    min-width: 220px;
+    max-width: 280px;
+    flex: 1 1 220px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+    border-top: 3px solid #198754;   
+}
+.boq_company_card:hover {
+    box-shadow: 0 6px 20px rgba(25, 135, 84, 0.14);
+    border-color: #198754;
+    transform: translateY(-2px);
+}
+
+.boq_company_avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #198754, #0f5132);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.boq_cc_name {
+    font-size: 0.9rem;
+    color: #1a1a1a;
+    max-width: 160px;
+}
+
+.boq_chip_notif_btn {
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+.boq_chip_notif_btn:hover {
+    background: #fde68a !important;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4);
+}
+.boq_chip_notif_active {
+    background: #fde68a !important;
+    box-shadow: 0 0 0 2px #f59e0b !important;
+}
+
+
+.boq_recent_panel {
+    background: #fffbeb;
+    border: 1.5px solid #f59e0b;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.12);
+}
+
+.boq_recent_panel_header {
+    background: #fef3c7;
+    border-bottom: 1px solid #fde68a;
+    padding: 10px 16px;
+}
+
+/* Amber pulsing bell circle in panel header */
+.boq_notif_bell_circle {
+    width: 32px;
+    height: 32px;
+    background: #f59e0b;
+    color: #fff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    animation: boq_pulse 2.2s ease-in-out infinite;
+}
+
+.boq_recent_panel_title {
+    font-size: 0.92rem;
+    color: #78350f;
+}
+
+.boq_recent_panel_sub {
+    color: #92400e;
+    font-size: 0.78rem;
+}
+
+/* Close × button */
+.boq_recent_panel_close {
+    background: none;
+    border: none;
+    color: #92400e;
+    cursor: pointer;
+    font-size: 0.9rem;
+    opacity: 0.7;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.boq_recent_panel_close:hover { opacity: 1; background: #fde68a; }
+
+/* Column header row */
+.boq_recent_thead {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1.5fr 1fr 100px;
+    gap: 0 12px;
+    padding: 6px 16px;
+    background: #fef9ec;
+    border-bottom: 1px solid #fde68a;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #92400e;
+}
+
+/* Data rows */
+.boq_recent_row {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1.5fr 1fr 100px auto;
+    gap: 0 12px;
+    align-items: center;
+    padding: 9px 16px;
+    border-bottom: 1px solid #fef3c7;
+    transition: background 0.13s;
+}
+.boq_recent_row:last-child { border-bottom: none; }
+.boq_recent_row:hover { background: #fef3c7; }
+
+/* Grid column aliases */
+.boq_recent_col_vendor  { min-width: 0; overflow: hidden; }
+.boq_recent_col_ref     { font-size: 0.85rem; }
+.boq_recent_col_trade   { font-size: 0.82rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.boq_recent_col_amount  { font-size: 0.85rem; white-space: nowrap; color: #78350f; }
+.boq_recent_col_when    { font-size: 0.8rem; }
+.boq_recent_open        { font-size: 0.8rem; flex-shrink: 0; }
+
+/* ── Trade View Analysis section label ───────────────────────────
+   Header above the 3-level trade tree.                          */
+.boq_trade_view_header {
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 8px;
+}
+
+/* Legacy alias kept so existing .boq_badge_new references don't break */
+.boq_badge_new {
+    background: #f1f3f5 !important;
+    color: #495057 !important;
+    border: 1px solid #dee2e6 !important;
+    font-weight: 500;
+    animation: none !important;
+    box-shadow: none !important;
+}
+
+/* ── Tree summary bar ───────────────────────────────────────── */
+.boq_tree_summary_bar {
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    border-bottom: 1px solid #e9ecef;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-size: 0.85rem;
+}
+
+.boq_totals_chip {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    padding: 4px 12px;
+    color: #495057;
+    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+
+.boq_totals_value {
+    font-weight: 700;
+    color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+
+
+.boq_dash_header_icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+.boq_hdr_vendor   { background: rgba(13,110,253,.15); color: #0d6efd; }
+.boq_hdr_supplier { background: rgba(25,135,84,.15);  color: #198754; }
+
+.boq_header_search {
+    width: 220px;
+}
+.boq_header_search .form-control {
+    background: #fff;
+    color: #212529;
+    border-color: #ced4da;
+}
+
+
+/* ── Section header ─────────────────────────────────────────── */
+.boq_approval_section_header {
+    padding-top: 4px;
+}
+
+/* ── Approval table container ───────────────────────────────── */
+.boq_approval_table {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* ── Header row ─────────────────────────────────────────────── */
+.boq_approval_thead {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #6c757d;
+    gap: 12px;
+}
+
+/* ── Data row ───────────────────────────────────────────────── */
+.boq_approval_row {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 12px;
+    border-bottom: 1px solid #f0f2f5;
+    transition: background 0.12s;
+}
+.boq_approval_row:last-child { border-bottom: none; }
+.boq_approval_row:hover      { background: #f8f9fa; }
+
+/* Highlight rows where it's the current user's turn */
+.boq_approval_row_mine {
+    background: #fff8e1 !important;
+    border-left: 3px solid #ffc107;
+}
+.boq_approval_row_mine:hover { background: #fff3cd !important; }
+
+/* ── Column widths ──────────────────────────────────────────── */
+.boq_approval_col_ref      { flex: 0 0 180px; min-width: 0; }
+.boq_approval_col_partner  { flex: 0 0 150px; min-width: 0;
+                              white-space: nowrap; overflow: hidden;
+                              text-overflow: ellipsis; font-size: .87rem; }
+.boq_approval_col_amount   { flex: 0 0 130px; text-align: right;
+                              font-size: .87rem; }
+.boq_approval_col_progress { flex: 1; min-width: 0; }
+.boq_approval_col_action   { flex: 0 0 130px; text-align: right;
+                              display: flex; align-items: center;
+                              justify-content: flex-end; gap: 6px; }
+
+/* ── Approval level pill ────────────────────────────────────── */
+.boq_approval_pill {
+    font-size: 0.74rem;
+    padding: 3px 8px;
+}
+
+/* Pulse on pills that are the current user's turn — neutral outline */
+.boq_approval_pill_mine {
+    animation: boq_pulse 1.8s ease-in-out infinite;
+    outline: 2px solid #adb5bd;
+    outline-offset: 1px;
+}
+
+/* Approval stat card accent — neutral left border */
+.boq_stat_card_approval {
+    border-left: 3px solid #adb5bd !important;
+}
+
+.boq_rfq_state_summary_row {
+    background: #f8f9fa !important;
+    min-height: 36px !important;
+    border-left: 3px solid #dee2e6;
+    cursor: default !important;
+}
+.boq_rfq_state_summary_row:hover {
+    background: #f1f3f5 !important;
+}
+
+.boq_rfq_state_summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+}
+
+.boq_rfq_state_summary_label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.boq_state_count_badge {
+    font-size: 0.74rem;
+    padding: 3px 9px;
+}
+
+
+.boq_pending_table {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* ── Header row ─────────────────────────────────────────────── */
+.boq_pending_thead {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #6c757d;
+    gap: 10px;
+}
+
+/* ── Data row ───────────────────────────────────────────────── */
+.boq_pending_row {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    gap: 10px;
+    border-bottom: 1px solid #f0f2f5;
+    transition: background 0.12s;
+    font-size: 0.875rem;
+}
+.boq_pending_row:last-child { border-bottom: none; }
+.boq_pending_row:hover      { background: #fffde7; }
+
+/* Urgent row styling removed — all rows use uniform neutral style */
+
+/* ── Column widths ──────────────────────────────────────────── */
+.boq_pending_col_vendor {
+    flex: 0 0 180px;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+.boq_pending_col_rfq    { flex: 0 0 160px; min-width: 0;
+                           white-space: nowrap; overflow: hidden;
+                           text-overflow: ellipsis; }
+.boq_pending_col_trade  { flex: 1; min-width: 0;
+                           white-space: nowrap; overflow: hidden;
+                           text-overflow: ellipsis; }
+.boq_pending_col_date   { flex: 0 0 110px; min-width: 0; }
+.boq_pending_col_days   { flex: 0 0 100px; text-align: center; }
+.boq_pending_col_status { flex: 0 0 130px; }
+.boq_pending_col_value  { flex: 0 0 120px; text-align: right;
+                           display: flex; align-items: center;
+                           justify-content: flex-end; gap: 4px; }
+
+/* Show open icon on row hover */
+.boq_pending_open_icon { opacity: 0; transition: opacity 0.15s; }
+.boq_pending_row:hover .boq_pending_open_icon { opacity: 1; }
+
+
+.boq_cf_wrap {
+    
+}
+
+.boq_cf_row {
+    min-height: 40px;
+}
+
+/* "Companies" label */
+.boq_cf_label {
+    font-size: .82rem;
+    font-weight: 600;
+    color: #6c757d;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* The input box — looks like an Odoo many2many field */
+.boq_cf_input {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-height: 36px;
+    min-width: 260px;
+    max-width: 600px;
+    padding: 4px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+    position: relative;
+}
+.boq_cf_input:hover  { border-color: #198754; }
+.boq_cf_input:focus-within {
+    border-color: #198754;
+    box-shadow: 0 0 0 3px rgba(25,135,84,.12);
+}
+
+/* "All companies" placeholder text */
+.boq_cf_placeholder {
+    color: #6c757d;
+    font-size: .85rem;
+    flex: 1;
+}
+
+/* Selected company tag chip */
+.boq_cf_tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #e8f5ee;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: .8rem;
+    color: #198754;
+    font-weight: 500;
+    max-width: 180px;
+}
+
+.boq_cf_tag_avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #198754;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .65rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.boq_cf_tag_name {
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.boq_cf_tag_x {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: #198754;
+    opacity: .6;
+    cursor: pointer;
+    font-size: .7rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+}
+.boq_cf_tag_x:hover { opacity: 1; color: #dc3545; }
+
+.boq_cf_caret {
+    margin-left: auto;
+    color: #6c757d;
+    font-size: .8rem;
+    flex-shrink: 0;
+}
+
+.boq_cf_dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 260px;
+    max-width: 360px;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.12);
+    z-index: 1050;
+    overflow: hidden;
+}
+
+.boq_cf_dd_item {
+    display: flex;
+    align-items: center;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: .85rem;
+    color: #495057;
+    transition: background .1s;
+    gap: 0;
+}
+.boq_cf_dd_item:hover    { background: #f0faf5; color: #198754; }
+.boq_cf_dd_active        { background: #f0faf5; font-weight: 500; }
+
+.boq_cf_dd_all { border-bottom: 1px solid #f0f0f0; }
+
+.boq_cf_dd_avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #198754;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .68rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.boq_cf_dd_divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 0;
+}
+
+.boq_cf_clear { font-size: .8rem; flex-shrink: 0; }
+
+.boq_cf_badge {
+    font-size: .78rem;
+    color: #6c757d;
+    white-space: nowrap;
+    flex-shrink: 0;
 }

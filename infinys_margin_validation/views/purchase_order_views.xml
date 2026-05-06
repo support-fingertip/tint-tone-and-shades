@@ -6,9 +6,30 @@
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
 
+            <xpath expr="//notebook" position="inside">
+                <page string="Payment Invoice" name="remarks_tab">
+                    <field name="payment_invoice_ids" context="{'default_order_id': id}">
+                        <list editable="bottom">
+                            <field name="bill_id"/>
+                            <field name="payment_state"/>
+                            <field name="amount"/>
+                            <field name="comment"/>
+                            <field name="payment_type"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+             <!-- added here new state called Submitted-->
+            <xpath expr="//field[@name='state'][@widget='statusbar']" position="attributes">
+                <attribute name="statusbar_visible">
+                    draft,sent,submitted,purchase
+                </attribute>
+            </xpath>
+
             <!-- Margin (%) column on order lines -->
             <xpath expr="//field[@name='order_line']//list//field[@name='price_subtotal']" position="after">
-                <field name="margin_percentage" string="Margin (%)" widget="float" readonly="1"/>
+                <field name="margin_percentage" string="Margin (%)" widget="float" options="{'digits': [16, 2]}" readonly="1" groups="boq_management_v19.group_vendor"/>
                 <field name="is_margin_below_threshold" column_invisible="1"/>
             </xpath>
 
@@ -23,28 +44,91 @@
                     <field name="margin_warning_message" nolabel="1"/>
                     Approval required to confirm this order.
                 </div>
+               <!-- Success alert - shown when waiting for approval (to_approve state) -->
+                <div class="alert alert-info" role="alert"
+                     invisible="margin_approval_status != 'to_approve'">
+                    <strong>PO Approval: </strong> PO Pending for Approval.
+                </div>
+
+                <!-- Success alert - shown when approved -->
                 <div class="alert alert-success" role="alert"
                      invisible="margin_approval_status != 'approved'">
-                    <strong>Margin Approved. </strong> This order can now be confirmed.
+                    <strong>PO Approved: </strong> PO Approved Successfully.
                 </div>
                 <div class="alert alert-danger" role="alert"
                      invisible="margin_approval_status != 'rejected'">
-                    <strong>Margin Rejected. </strong> This order's margin was not approved.
+                    <strong>PO Approval: </strong> The PO has been rejected.
                 </div>
             </xpath>
 
-            <!-- Request for Approval button -->
+<!--            &lt;!&ndash; Request for Approval button &ndash;&gt;-->
+<!--            <xpath expr="//button[@name='button_confirm'][@id='draft_confirm']" position="before">-->
+<!--                <field name="margin_approval_status" invisible="1"/>-->
+<!--                <button name="action_request_margin_approval"-->
+<!--                        type="object"-->
+<!--                        string="Request Margin Approval"-->
+<!--                        class="oe_highlight"-->
+<!--                        invisible="not has_margin_below_threshold or margin_approval_status in ('to_approve', 'approved')"-->
+<!--                        data-hotkey="m"/>-->
+<!--            </xpath>-->
+
+<!--            &lt;!&ndash; Approve / Reject buttons for approver &ndash;&gt;-->
+<!--            <xpath expr="//button[@name='button_confirm'][@id='draft_confirm']" position="before">-->
+<!--                <button name="action_approve_margin"-->
+<!--                        type="object"-->
+<!--                        string="Approve Margin"-->
+<!--                        class="btn-success"-->
+<!--                        invisible="margin_approval_status != 'to_approve' or not is_margin_approver"-->
+<!--                        data-hotkey="y"/>-->
+<!--                <button name="action_reject_margin"-->
+<!--                        type="object"-->
+<!--                        string="Reject Margin"-->
+<!--                        class="btn-danger"-->
+<!--                        invisible="margin_approval_status != 'to_approve' or not is_margin_approver"-->
+<!--                        data-hotkey="n"/>-->
+<!--            </xpath>-->
+
+<!--            &lt;!&ndash; Hide Confirm Order button when margin needs approval &ndash;&gt;-->
+<!--            <xpath expr="//button[@name='button_confirm'][@id='draft_confirm']" position="attributes">-->
+<!--                <attribute name="invisible">state != 'draft' or (has_margin_below_threshold and margin_approval_status != 'approved')</attribute>-->
+<!--            </xpath>-->
+
+<!--            <xpath expr="//button[@name='button_confirm'][@id='bid_confirm']" position="attributes">-->
+<!--                <attribute name="invisible">state != 'sent' or (has_margin_below_threshold and margin_approval_status != 'approved')</attribute>-->
+<!--            </xpath>-->
+
+<!--            &lt;!&ndash; Margin Approval Status in the status bar area &ndash;&gt;-->
+<!--            <xpath expr="//field[@name='state'][@widget='statusbar']" position="before">-->
+<!--                <field name="margin_approval_status" widget="statusbar"-->
+<!--                       invisible="margin_approval_status == 'none' or state in ('purchase', 'done', 'cancel')"-->
+<!--                       statusbar_visible="to_approve,approved"/>-->
+<!--            </xpath>-->
+
+             <xpath expr="//field[@name='dest_address_id']" position="after">
+                <field name="margin_approval_status" readonly="1"/>
+            </xpath>
+            
+             <xpath expr="//field[@name='dest_address_id']" position="after">
+                <field name="margin_rejection_reason" readonly="1"/>
+            </xpath>
+
+              <!--  Request Margin Approval — visible in draft, sent AND submitted -->
             <xpath expr="//button[@name='button_confirm'][@id='draft_confirm']" position="before">
                 <field name="margin_approval_status" invisible="1"/>
                 <button name="action_request_margin_approval"
                         type="object"
                         string="Request Margin Approval"
                         class="oe_highlight"
-                        invisible="not has_margin_below_threshold or margin_approval_status in ('to_approve', 'approved')"
+                        groups="boq_management_v19.group_vendor"
+                        invisible="
+                state not in ('sent', 'submitted')
+                or not has_margin_below_threshold
+                or margin_approval_status in ('to_approve', 'approved')
+            "
                         data-hotkey="m"/>
             </xpath>
 
-            <!-- Approve / Reject buttons for approver -->
+            <!--  Approve / Reject — visible regardless of state, controlled only by margin status -->
             <xpath expr="//button[@name='button_confirm'][@id='draft_confirm']" position="before">
                 <button name="action_approve_margin"
                         type="object"
@@ -60,20 +144,32 @@
                         data-hotkey="n"/>
             </xpath>
 
-            <!-- Hide Confirm Order button when margin needs approval -->
+            <!-- Confirm Order for draft state -->
             <xpath expr="//button[@name='button_confirm'][@id='draft_confirm']" position="attributes">
-                <attribute name="invisible">state != 'draft' or (has_margin_below_threshold and margin_approval_status != 'approved')</attribute>
+                <attribute name="invisible">
+                    state != 'draft' or (has_margin_below_threshold and margin_approval_status != 'approved')
+                </attribute>
             </xpath>
 
+            <!--  Confirm Order for sent state -->
             <xpath expr="//button[@name='button_confirm'][@id='bid_confirm']" position="attributes">
-                <attribute name="invisible">state != 'sent' or (has_margin_below_threshold and margin_approval_status != 'approved')</attribute>
+                <attribute name="invisible">
+                    state != 'sent' or (has_margin_below_threshold and margin_approval_status != 'approved')
+                </attribute>
             </xpath>
 
-            <!-- Margin Approval Status in the status bar area -->
-            <xpath expr="//field[@name='state'][@widget='statusbar']" position="before">
-                <field name="margin_approval_status" widget="statusbar"
-                       invisible="margin_approval_status == 'none'"
-                       statusbar_visible="to_approve,approved"/>
+            <!--  NEW: Confirm Order for submitted state -->
+            <xpath expr="//button[@name='button_confirm'][@id='bid_confirm']" position="after">
+                <button name="button_confirm"
+                        id="submitted_confirm"
+                        type="object"
+                        string="Confirm Order"
+                        class="oe_highlight"
+                        invisible="
+                state != 'submitted'
+                or (has_margin_below_threshold and margin_approval_status != 'approved')
+            "
+                        data-hotkey="q"/>
             </xpath>
 
         </field>

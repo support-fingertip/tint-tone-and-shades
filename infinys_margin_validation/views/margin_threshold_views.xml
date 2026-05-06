@@ -29,6 +29,7 @@
                         <group>
                             <field name="approver_id"/>
                             <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="type" readonly="1"/>
                         </group>
                     </group>
                 </sheet>
@@ -43,11 +44,45 @@
         <field name="view_mode">list,form</field>
     </record>
 
+     <record id="action_margin_threshold_config_vendor" model="ir.actions.act_window">
+        <field name="name">Vendor Margin Thresholds</field>
+        <field name="res_model">margin.threshold.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'default_type': 'vendor'}</field>
+        <field name="domain">[('type', '=', 'vendor')]</field>
+    </record>
+
+    <record id="action_margin_threshold_config_supplier" model="ir.actions.act_window">
+        <field name="name">Supplier Margin Thresholds</field>
+        <field name="res_model">margin.threshold.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'default_type': 'supplier'}</field>
+        <field name="domain">[('type', '=', 'supplier')]</field>
+    </record>
+
     <!-- Menu under Purchase > Configuration -->
+<!--    <menuitem-->
+<!--        id="menu_margin_threshold_config"-->
+<!--        name="Margin Thresholds"-->
+<!--        parent="purchase.menu_purchase_config"-->
+<!--        action="action_margin_threshold_config"-->
+<!--        sequence="20"/>-->
+
+     <!-- Vendor Configuration Menu -->
     <menuitem
-        id="menu_margin_threshold_config"
-        name="Margin Thresholds"
-        parent="purchase.menu_purchase_config"
-        action="action_margin_threshold_config"
-        sequence="20"/>
+            id="menu_margin_threshold_config_vendor"
+            name="Margin Thresholds"
+            parent="boq_management_v19.menu_vendor_configuration"
+            action="action_margin_threshold_config_vendor"
+            sequence="20"/>
+
+    <!-- Supplier Configuration Menu -->
+    <menuitem
+            id="menu_margin_threshold_config_supplier"
+            name="Margin Thresholds"
+            parent="boq_management_v19.menu_supplier_configuration"
+            action="action_margin_threshold_config_supplier"
+            sequence="20"/>
+
+
 </odoo>

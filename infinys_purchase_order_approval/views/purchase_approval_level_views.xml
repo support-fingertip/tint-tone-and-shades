@@ -7,6 +7,7 @@
             <field name="arch" type="xml">
                 <list string="Purchase Approval Levels">
                     <field name="name"/>
+                    <field name="company_id"/>
                     <field name="user_ids" widget="many2many_tags"/>
                     <field name="minimum_amount"/>
                     <field name="maximum_amount"/>
@@ -30,6 +31,8 @@
                             <group>
                                 <field name="sequence"/>
                                 <field name="user_ids" widget="many2many_tags"/>
+                                <field name="company_id"/>
+                                <field name="type" readonly="id"/>
                             </group>
                         </group>
                     </sheet>
@@ -43,12 +46,28 @@
             <field name="view_mode">list,form</field>
         </record>
 
-        <menuitem 
-            id="menu_purchase_approval_level" 
-            name="Approval Levels" 
-            parent="purchase.menu_purchase_config" 
-            action="action_purchase_approval_level" 
+        <menuitem
+            id="menu_purchase_approval_level"
+            name="Approval Levels"
+            parent="purchase.menu_purchase_config"
+            action="action_purchase_approval_level"
             sequence="10"/>
+
+        <record id="action_vendor_approval_level" model="ir.actions.act_window">
+            <field name="name">Vendor Approval Levels</field>
+            <field name="res_model">purchase.approval.level</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[('type', '=', 'vendor')]</field>
+            <field name="context">{'default_type': 'vendor', 'search_default_type_vendor': 1}</field>
+        </record>
+
+        <record id="action_supplier_approval_level" model="ir.actions.act_window">
+            <field name="name">Supplier Approval Levels</field>
+            <field name="res_model">purchase.approval.level</field>
+            <field name="view_mode">list,form</field>
+             <field name="domain">[('type', '=', 'supplier')]</field>
+            <field name="context">{'default_type': 'supplier', 'search_default_type_supplier': 1}</field>
+        </record>
 
     </data>
 </odoo>

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
 
-
 class BoqOrderLine(models.Model):
     """
     Individual BOQ line item within a work category.
@@ -11,7 +10,6 @@ class BoqOrderLine(models.Model):
     _description = 'BOQ Order Line'
     _order = 'sequence asc, id asc'
 
-    # ── Relationships ────────────────────────────────────────────────────
     boq_id = fields.Many2one(
         comodel_name='boq.boq',
         string='BOQ',
@@ -32,10 +30,8 @@ class BoqOrderLine(models.Model):
         index=True,
     )
 
-    # ── Sequence / ordering ───────────────────────────────────────────────
     sequence = fields.Integer(string='#', default=10)
 
-    # ── Product ───────────────────────────────────────────────────────────
     product_id = fields.Many2one(
         comodel_name='product.product',
         string='Product / Material',
@@ -63,7 +59,6 @@ class BoqOrderLine(models.Model):
         default='material',
     )
 
-    # ── UoM ───────────────────────────────────────────────────────────────
     uom_id = fields.Many2one(
         comodel_name='uom.uom',
         string='Unit of Measure',
@@ -72,7 +67,6 @@ class BoqOrderLine(models.Model):
         readonly=False,
         precompute=True,
     )
-    # ── Quantity & Price ──────────────────────────────────────────────────
     qty = fields.Float(
         string='Quantity',
         required=True,
@@ -101,7 +95,6 @@ class BoqOrderLine(models.Model):
         store=True,
     )
 
-    # ── Preferred Vendors (Many2many → res.partner, filtered to vendors) ──
     vendor_ids = fields.Many2many(
         comodel_name='res.partner',
         relation='boq_order_line_vendor_rel',
@@ -113,10 +106,6 @@ class BoqOrderLine(models.Model):
              '"Create RFQ" will generate a purchase RFQ per vendor.',
     )
 
-    # ── Taxes ─────────────────────────────────────────────────────────────
-    # Relation table boq_order_line_tax_rel is pre-created by migration
-    # 19.0.1.0.2 (CREATE TABLE IF NOT EXISTS), so fresh installs and
-    # upgrades both work without UndefinedTable errors.
     tax_ids = fields.Many2many(
         comodel_name='account.tax',
         relation='boq_order_line_tax_rel',
@@ -127,7 +116,6 @@ class BoqOrderLine(models.Model):
         help='Taxes applied to this line. Affects Tax Amount and Total (incl. Tax).',
     )
 
-    # ── Tax / Total / Margin ──────────────────────────────────────────────
     tax_amount = fields.Float(
         string='Tax Amount',
         compute='_compute_total_value',
@@ -142,7 +130,6 @@ class BoqOrderLine(models.Model):
         help='Subtotal + computed taxes from tax_ids.',
     )
 
-    # ── Cost & Margin ──────────────────────────────────────────────────────
     cost_price = fields.Float(
         string='Cost Price',
         compute='_compute_cost_price',
@@ -159,10 +146,8 @@ class BoqOrderLine(models.Model):
         help='Gross margin percentage: ((Unit Price - Cost) / Unit Price) × 100.',
     )
 
-    # ── Notes ─────────────────────────────────────────────────────────────
     notes = fields.Char(string='Remarks')
 
-    # ── _auto_init: M2M table only (runs on install/upgrade) ─────────────
     def _auto_init(self):
         """
         Create boq_order_line_tax_rel if it does not exist.
@@ -181,49 +166,38 @@ class BoqOrderLine(models.Model):
         """)
         return res
 
-    # ── _register_hook: runs on EVERY server startup ───────────────────────
     def _register_hook(self):
-        """
-        Odoo calls _register_hook() for every model on every registry build
-        (i.e. every server start, with or without -u).  This is the correct
-        place to add DB columns that must exist before the first HTTP request
-        is served — unlike _auto_init() which only runs during install/upgrade.
-
-        All ALTER TABLE statements use ADD COLUMN IF NOT EXISTS so repeated
-        calls on restart are fully idempotent.
-        """
         res = super()._register_hook()
 
-        # ── boq_trade_vendor: add partner_type column + fix unique constraint ─
-        # partner_type column added in v2.1 — safe to add if already exists.
-        # Old unique constraint (boq_id, category_id) renamed to include partner_type.
-        self.env.cr.execute("""
-            ALTER TABLE boq_trade_vendor
-                ADD COLUMN IF NOT EXISTS partner_type VARCHAR DEFAULT 'vendor';
-            ALTER TABLE boq_trade_vendor
-                DROP CONSTRAINT IF EXISTS boq_trade_vendor_boq_id_category_id_key;
-        """)
+        try:
+            self.env.cr.execute("""
+                ALTER TABLE boq_trade_vendor
+                    ADD COLUMN IF NOT EXISTS partner_type VARCHAR DEFAULT 'vendor';
+                ALTER TABLE boq_trade_vendor
+                    DROP CONSTRAINT IF EXISTS boq_trade_vendor_boq_id_category_id_key;
+            """)
+        except Exception:
+            self.env.cr.rollback()
 
-        # ── res_partner columns (BOQ v2.0 — NEW TASK 1 + NEW TASK 4) ─────
-        # Cannot use res.partner._auto_init() because res.partner is owned
-        # by 'base' and Odoo won't call _auto_init() on it for our module.
-        self.env.cr.execute("""
-            ALTER TABLE res_partner
-                ADD COLUMN IF NOT EXISTS partner_type VARCHAR,
-                ADD COLUMN IF NOT EXISTS avg_rating   NUMERIC(6, 2) DEFAULT 0.0,
-                ADD COLUMN IF NOT EXISTS rating_count INTEGER       DEFAULT 0;
-        """)
+        try:
+            self.env.cr.execute("""
+                ALTER TABLE boq_boq
+                    ADD COLUMN IF NOT EXISTS boq_type VARCHAR DEFAULT 'vendor';
+                UPDATE boq_boq SET boq_type = 'vendor' WHERE boq_type IS NULL;
+            """)
+        except Exception:
+            self.env.cr.rollback()
 
-        # ── Clean up stale ir.rule for boq.vendor.rating ──────────────────
-        # A legacy ir.rule has domain_force [('res_model','=','res.partner')]
-        # which crashes every res.partner read because boq.vendor.rating has
-        # no `res_model` field.
-        #
-        # Raw SQL DELETE is used instead of ORM unlink because _register_hook
-        # runs during registry build before the ir.rule ORM cache is populated,
-        # making a direct DELETE safe and more reliable than ORM operations.
-        # The query is scoped to only the affected models to avoid removing
-        # unrelated security rules from other modules.
+        try:
+            self.env.cr.execute("""
+                ALTER TABLE res_partner
+                    ADD COLUMN IF NOT EXISTS partner_type VARCHAR,
+                    ADD COLUMN IF NOT EXISTS avg_rating   NUMERIC(6, 2) DEFAULT 0.0,
+                    ADD COLUMN IF NOT EXISTS rating_count INTEGER       DEFAULT 0;
+            """)
+        except Exception:
+            self.env.cr.rollback()
+
         try:
             self.env.cr.execute("""
                 DELETE FROM ir_rule
@@ -234,11 +208,10 @@ class BoqOrderLine(models.Model):
                    )
             """, ('%res_model%',))
         except Exception:
-            pass  # ir_rule table may not exist yet on very first install
+            self.env.cr.rollback()
 
         return res
 
-    # ── Computes ──────────────────────────────────────────────────────────
     @api.depends('product_id')
     def _compute_product_info(self):
         """Stored fields derived from product_id: product_name and uom_id."""
@@ -266,7 +239,6 @@ class BoqOrderLine(models.Model):
     def _compute_total_value(self):
         for line in self:
             if line.tax_ids:
-                # price_unit after discount — taxes compute per unit × qty
                 price_after_disc = line.unit_price * (1.0 - line.discount / 100.0)
                 taxes = line.tax_ids.compute_all(
                     price_after_disc,

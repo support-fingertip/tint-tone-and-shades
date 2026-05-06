@@ -1,28 +1,20 @@
 # -*- coding: utf-8 -*-
+from markupsafe import Markup, escape
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 
-
 class BoqVendorRating(models.Model):
-    """
-    NEW TASK 4 / BUG 3 — Vendor Rating after receipt.
-
-    A rating record is created after the PO is fully received (stock.picking
-    state = 'done') AND the invoice is fully paid.  The rating popup (form view)
-    is triggered by the 'Rate Vendor' button on purchase.order, which is only
-    visible when those conditions are met.
-    """
+    
     _name = 'boq.vendor.rating'
     _description = 'Vendor Rating'
     _inherit = ['mail.thread']
     _order = 'date desc, id desc'
     _rec_name = 'partner_id'
 
-    # ── Relations ────────────────────────────────────────────────────────
     purchase_order_id = fields.Many2one(
         comodel_name='purchase.order',
         string='Purchase Order',
-        required=True,
+        required=False,
         ondelete='cascade',
         index=True,
     )
@@ -33,7 +25,6 @@ class BoqVendorRating(models.Model):
         index=True,
     )
 
-    # ── Rating ───────────────────────────────────────────────────────────
     rating = fields.Selection(
         selection=[
             ('1', '1 — Poor'),
@@ -53,20 +44,9 @@ class BoqVendorRating(models.Model):
         store=True,
     )
 
-    # ── Details ──────────────────────────────────────────────────────────
     comments = fields.Text(string='Comments / Remarks')
     date = fields.Date(string='Rating Date', default=fields.Date.today)
 
-    # ── Compatibility shim for stale ir.rule ─────────────────────────────
-    # A legacy ir.rule on this model has domain_force [('res_model','=',
-    # 'res.partner')].  Without this field the ORM raises ValueError on every
-    # res.partner read that loads the rating_ids One2many.
-    #
-    # Adding res_model as a non-stored computed field makes the domain VALID:
-    #   • The field always returns 'res.partner' (all ratings belong to partners)
-    #   • _search_res_model maps ('res_model','=','res.partner') → [] (no filter)
-    #     so the stale rule silently becomes a no-op instead of crashing.
-    # No DB column is needed — this fix takes effect on a plain restart (no -u).
     res_model = fields.Char(
         string='Resource Model',
         compute='_compute_res_model',
@@ -86,10 +66,9 @@ class BoqVendorRating(models.Model):
         which in Odoo domain syntax is an empty list (no restriction).
         """
         if operator == '=' and value == 'res.partner':
-            return []          # no filter → all records visible
-        return [('id', '=', 0)]  # any other combination → no records
+            return []        
+        return [('id', '=', 0)] 
 
-    # ── Partner type (vendor or supplier) ────────────────────────────────
     partner_type = fields.Selection(
         related='partner_id.partner_type',
         string='Partner Type',
@@ -98,18 +77,19 @@ class BoqVendorRating(models.Model):
         help='Mirrors the rated partner\'s type (Vendor or Supplier).',
     )
 
-    # ── Context fields (read-only, from PO) ──────────────────────────────
     company_id = fields.Many2one(
         related='purchase_order_id.company_id',
         store=True,
         index=True,
     )
 
-    # ── Constraints ──────────────────────────────────────────────────────
-    _unique_po_rating = models.Constraint(
-        'unique(purchase_order_id)',
-        'A rating already exists for this Purchase Order. Edit the existing rating.',
-    )
+    _sql_constraints = [
+        (
+            'unique_po_rating',
+            'unique(purchase_order_id)',
+            'A rating already exists for this Purchase Order. Edit the existing rating.',
+        ),
+    ]
 
     @api.depends('rating')
     def _compute_rating_int(self):
@@ -164,14 +144,57 @@ class BoqVendorRating(models.Model):
             pass
         return res
 
+    def action_save_and_close(self):
+        """Save the rating and close.
+
+        From the vendor master (show_rating_tab in context): navigate to the
+        partner form so the rating list and stats reload fresh from DB.
+        From a PO dialog: just close — user stays on the PO.
+        """
+        if self.env.context.get('show_rating_tab') and self.partner_id:
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'res.partner',
+                'res_id': self.partner_id.id,
+                'view_mode': 'form',
+                'target': 'current',
+            }
+        return {'type': 'ir.actions.act_window_close'}
+
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
         for rec in records:
-            rec.purchase_order_id.message_post(
-                body=_('Vendor rated: %s/5 — %s') % (
-                    rec.rating, rec.comments or _('No comment.')
-                ),
-                subtype_xmlid='mail.mt_note',
-            )
+            rating_label = dict(rec._fields['rating'].selection).get(rec.rating, rec.rating)
+            body = Markup('<b>Vendor Rated: %s / 5</b>') % rating_label
+            if rec.comments:
+                body += Markup('<br/>') + escape(rec.comments)
+            if rec.partner_id:
+                rec.partner_id.message_post(body=body, subtype_xmlid='mail.mt_note')
+            if rec.purchase_order_id:
+                rec.purchase_order_id.message_post(body=body, subtype_xmlid='mail.mt_note')
         return records
+
+    def write(self, vals):
+        before = {
+            rec.id: {'rating': rec.rating, 'comments': rec.comments}
+            for rec in self
+        }
+        result = super().write(vals)
+        for rec in self:
+            b = before.get(rec.id, {})
+            msgs = []
+            if 'rating' in vals and b.get('rating') != rec.rating:
+                sel = dict(rec._fields['rating'].selection)
+                old_lbl = sel.get(b.get('rating'), b.get('rating') or '—')
+                new_lbl = sel.get(rec.rating, rec.rating or '—')
+                msgs.append(Markup('Rating updated: <b>%s → %s</b> / 5') % (old_lbl, new_lbl))
+            if 'comments' in vals and b.get('comments') != rec.comments:
+                msgs.append(Markup('Comments updated: %s') % escape(rec.comments or '(cleared)'))
+            if msgs:
+                body = Markup('<br/>').join(msgs)
+                if rec.partner_id:
+                    rec.partner_id.message_post(body=body, subtype_xmlid='mail.mt_note')
+                if rec.purchase_order_id:
+                    rec.purchase_order_id.message_post(body=body, subtype_xmlid='mail.mt_note')
+        return result
