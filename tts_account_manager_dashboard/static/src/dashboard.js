@@ -6,8 +6,11 @@ import { useService } from "@web/core/utils/hooks";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Root dashboard component
-// Data is fetched via orm.call() — the same pattern used by all other modules
-// in this project (see boq_management_v19 / boq_dashboard.js).
+//
+// Navigation methods are defined as arrow-function class fields so that `this`
+// is always the component instance, regardless of how OWL's template compiler
+// calls them (e.g. `() => openRecord(model, id)` in a t-on-click loses the
+// regular method's `this` in strict mode — arrow fields prevent that).
 // ─────────────────────────────────────────────────────────────────────────────
 export class AccountManagerDashboard extends Component {
     static template = "tts_account_manager_dashboard.Dashboard";
@@ -35,14 +38,12 @@ export class AccountManagerDashboard extends Component {
             summary:          {},
         });
 
-        // onWillStart runs before first render — data is ready when the
-        // component mounts, avoiding a loading-flicker on fast connections.
         onWillStart(async () => {
             await this._loadData();
         });
     }
 
-    // ── Data loading ─────────────────────────────────────────────────────────
+    // ── Data loading ──────────────────────────────────────────────────────────
     async _loadData() {
         this.state.loading = true;
         this.state.error   = null;
@@ -53,9 +54,9 @@ export class AccountManagerDashboard extends Component {
                 [],
                 {},
             );
-            this.state.revenue          = data.revenue          || [];
-            this.state.overheads        = data.overheads        || [];
-            this.state.officeExpenses   = data.office_expenses  || { categories: [], monthly: [] };
+            this.state.revenue          = data.revenue           || [];
+            this.state.overheads        = data.overheads         || [];
+            this.state.officeExpenses   = data.office_expenses   || { categories: [], monthly: [] };
             this.state.pendingApprovals = data.pending_approvals || { count: 0, items: [] };
             this.state.vendorPayments   = data.vendor_payments   || { count: 0, items: [] };
             this.state.summary          = data.summary           || {};
@@ -91,56 +92,73 @@ export class AccountManagerDashboard extends Component {
         return this.fmt(v, 0);
     }
 
-    // ── Navigation ────────────────────────────────────────────────────────────
-    openRecord(model, id) {
+    // ── Navigation — arrow function class fields (this always bound) ──────────
+
+    // Open a specific record in form view.
+    // Odoo 19 doAction requires `views` array; `view_mode` alone is not enough.
+    openRecord = (model, id) => {
         this.actionService.doAction({
-            type: "ir.actions.act_window",
+            type:      "ir.actions.act_window",
             res_model: model,
-            res_id: id,
-            views: [[false, "form"]],
-            target: "current",
+            res_id:    id,
+            view_mode: "form",
+            views:     [[false, "form"]],
+            target:    "current",
         });
-    }
+    };
 
-    openPendingApprovalsList() {
+    openPendingApprovalsList = () => {
         this.actionService.doAction({
-            type: "ir.actions.act_window",
-            name: "Pending Approvals",
+            type:      "ir.actions.act_window",
+            name:      "Pending Approvals",
             res_model: "account.move",
             view_mode: "list,form",
-            domain: [["approval_state", "=", "pending"]],
-            target: "current",
+            views:     [[false, "list"], [false, "form"]],
+            domain:    [["approval_state", "=", "pending"]],
+            target:    "current",
         });
-    }
+    };
 
-    openVendorBillsList() {
+    openVendorBillsList = () => {
         this.actionService.doAction({
-            type: "ir.actions.act_window",
-            name: "Vendor Payment Requests",
+            type:      "ir.actions.act_window",
+            name:      "Vendor Payment Requests",
             res_model: "account.move",
             view_mode: "list,form",
-            domain: [
-                ["move_type", "=", "in_invoice"],
-                ["state", "=", "posted"],
+            views:     [[false, "list"], [false, "form"]],
+            domain:    [
+                ["move_type",     "=",  "in_invoice"],
+                ["state",         "=",  "posted"],
                 ["payment_state", "in", ["not_paid", "partial"]],
             ],
             target: "current",
         });
-    }
+    };
 
-    async refresh() {
+    refresh = async () => {
         await this._loadData();
-    }
+    };
 
     // ── Computed getters used by the template ─────────────────────────────────
-    get maxRevenue()      { return this._maxOf(this.state.revenue); }
-    get maxOverheads()    { return this._maxOf(this.state.overheads); }
-    get maxOfficeMonthly(){ return this._maxOf(this.state.officeExpenses.monthly || []); }
+    get maxRevenue()       { return this._maxOf(this.state.revenue); }
+    get maxOverheads()     { return this._maxOf(this.state.overheads); }
+    get maxOfficeMonthly() { return this._maxOf(this.state.officeExpenses.monthly || []); }
 
     get netProfitClass() {
         return (this.state.summary.net_profit || 0) >= 0
             ? "tts-kpi-positive"
             : "tts-kpi-negative";
+    }
+
+    // Dynamic label: "Net Profit" when ≥ 0, "Net Loss" when < 0
+    get netProfitLabel() {
+        return (this.state.summary.net_profit || 0) >= 0 ? "Net Profit" : "Net Loss";
+    }
+
+    get netProfitIcon() {
+        return (this.state.summary.net_profit || 0) >= 0
+            ? "fa-trending-up fa-thumbs-up"
+            : "fa-exclamation-triangle";
     }
 
     get overdueCount() {
