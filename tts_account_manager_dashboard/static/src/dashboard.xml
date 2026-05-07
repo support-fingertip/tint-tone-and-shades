@@ -80,9 +80,11 @@
                     </div>
 
                     <div t-attf-class="tts-kpi-card #{netProfitClass}">
-                        <div class="tts-kpi-icon"><i class="fa fa-balance-scale"/></div>
+                        <div class="tts-kpi-icon">
+                            <i t-attf-class="fa #{netProfitIcon}"/>
+                        </div>
                         <div class="tts-kpi-body">
-                            <div class="tts-kpi-label">Net Profit / Loss</div>
+                            <div class="tts-kpi-label" t-esc="netProfitLabel"/>
                             <div class="tts-kpi-value">
                                 <t t-esc="state.summary.currency_symbol"/>
                                 <t t-esc="fmtK(state.summary.net_profit)"/>
