@@ -32,5 +32,45 @@
             groups="account.group_account_manager"
         />
 
+        <!-- ───────────────────────────────────────────────────────────────
+             Compatibility patch: remove is_exact_move_duplicate field refs
+             from the standard account.move views.
+
+             Some Odoo 19 builds ship view XML that references this field
+             before the Python model defines it. Removing the node from the
+             assembled view XML (server-side) means the client-side view
+             compiler never encounters the missing field.
+
+             Two separate inherit records cover both the list view and the
+             form view.  Each xpath uses position="replace" with no content
+             — this silently deletes the matched element.
+
+             These overrides are no-ops once the core account module adds
+             is_exact_move_duplicate to the model natively; the field will
+             simply disappear from the view but nothing will break.
+        ─────────────────────────────────────────────────────────────────── -->
+
+        <!-- List view (account.view_move_tree) -->
+        <record id="view_move_tree_rm_exact_duplicate" model="ir.ui.view">
+            <field name="name">account.move.tree.rm.exact.duplicate.tts</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='is_exact_move_duplicate']"
+                       position="replace"/>
+            </field>
+        </record>
+
+        <!-- Form view (account.view_move_form) -->
+        <record id="view_move_form_rm_exact_duplicate" model="ir.ui.view">
+            <field name="name">account.move.form.rm.exact.duplicate.tts</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='is_exact_move_duplicate']"
+                       position="replace"/>
+            </field>
+        </record>
+
     </data>
 </odoo>
