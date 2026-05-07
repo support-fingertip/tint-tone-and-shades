@@ -93,46 +93,68 @@ export class AccountManagerDashboard extends Component {
     }
 
     // ── Navigation — arrow function class fields (this always bound) ──────────
+    // All doAction calls are wrapped in try/catch so a view-loading issue
+    // (e.g. a missing field in account.move views) shows a clear notification
+    // instead of an unhandled promise rejection.
 
-    // Open a specific record in form view.
-    // Odoo 19 doAction requires `views` array; `view_mode` alone is not enough.
-    openRecord = (model, id) => {
-        this.actionService.doAction({
-            type:      "ir.actions.act_window",
-            res_model: model,
-            res_id:    id,
-            view_mode: "form",
-            views:     [[false, "form"]],
-            target:    "current",
-        });
+    openRecord = async (model, id) => {
+        try {
+            await this.actionService.doAction({
+                type:      "ir.actions.act_window",
+                res_model: model,
+                res_id:    id,
+                view_mode: "form",
+                views:     [[false, "form"]],
+                target:    "current",
+            });
+        } catch (e) {
+            this.notification.add(
+                "Could not open record — " + (e.message || "view loading error"),
+                { type: "danger", sticky: false },
+            );
+        }
     };
 
-    openPendingApprovalsList = () => {
-        this.actionService.doAction({
-            type:      "ir.actions.act_window",
-            name:      "Pending Approvals",
-            res_model: "account.move",
-            view_mode: "list,form",
-            views:     [[false, "list"], [false, "form"]],
-            domain:    [["approval_state", "=", "pending"]],
-            target:    "current",
-        });
+    openPendingApprovalsList = async () => {
+        try {
+            await this.actionService.doAction({
+                type:      "ir.actions.act_window",
+                name:      "Pending Approvals",
+                res_model: "account.move",
+                view_mode: "list,form",
+                views:     [[false, "list"], [false, "form"]],
+                domain:    [["approval_state", "=", "pending"]],
+                target:    "current",
+            });
+        } catch (e) {
+            this.notification.add(
+                "Could not open Pending Approvals — " + (e.message || "view loading error"),
+                { type: "danger", sticky: false },
+            );
+        }
     };
 
-    openVendorBillsList = () => {
-        this.actionService.doAction({
-            type:      "ir.actions.act_window",
-            name:      "Vendor Payment Requests",
-            res_model: "account.move",
-            view_mode: "list,form",
-            views:     [[false, "list"], [false, "form"]],
-            domain:    [
-                ["move_type",     "=",  "in_invoice"],
-                ["state",         "=",  "posted"],
-                ["payment_state", "in", ["not_paid", "partial"]],
-            ],
-            target: "current",
-        });
+    openVendorBillsList = async () => {
+        try {
+            await this.actionService.doAction({
+                type:      "ir.actions.act_window",
+                name:      "Vendor Payment Requests",
+                res_model: "account.move",
+                view_mode: "list,form",
+                views:     [[false, "list"], [false, "form"]],
+                domain:    [
+                    ["move_type",     "=",  "in_invoice"],
+                    ["state",         "=",  "posted"],
+                    ["payment_state", "in", ["not_paid", "partial"]],
+                ],
+                target: "current",
+            });
+        } catch (e) {
+            this.notification.add(
+                "Could not open Vendor Payments — " + (e.message || "view loading error"),
+                { type: "danger", sticky: false },
+            );
+        }
     };
 
     refresh = async () => {
