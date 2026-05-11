@@ -345,7 +345,6 @@ class TtsAccountDashboard(models.AbstractModel):
         return {
             "ytd_revenue": round(ytd_revenue, 2),
             "ytd_expenses": round(ytd_expenses, 2),
-            "net_profit": round(ytd_revenue - ytd_expenses, 2),
             "outstanding_payables": round(payables, 2),
             "outstanding_receivables": round(receivables, 2),
             "currency_symbol": currency.symbol or "",
