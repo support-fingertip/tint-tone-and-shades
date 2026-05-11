@@ -166,23 +166,6 @@ export class AccountManagerDashboard extends Component {
     get maxOverheads()     { return this._maxOf(this.state.overheads); }
     get maxOfficeMonthly() { return this._maxOf(this.state.officeExpenses.monthly || []); }
 
-    get netProfitClass() {
-        return (this.state.summary.net_profit || 0) >= 0
-            ? "tts-kpi-positive"
-            : "tts-kpi-negative";
-    }
-
-    // Dynamic label: "Net Profit" when ≥ 0, "Net Loss" when < 0
-    get netProfitLabel() {
-        return (this.state.summary.net_profit || 0) >= 0 ? "Net Profit" : "Net Loss";
-    }
-
-    get netProfitIcon() {
-        return (this.state.summary.net_profit || 0) >= 0
-            ? "fa-trending-up fa-thumbs-up"
-            : "fa-exclamation-triangle";
-    }
-
     get overdueCount() {
         return (this.state.vendorPayments.items || []).filter((i) => i.overdue).length;
     }
