@@ -22,9 +22,8 @@ class BiStockInventoryReport(models.Model):
     location_id = fields.Many2one('stock.location', string='Location', readonly=True)
     warehouse_id = fields.Many2one('stock.warehouse', string='Warehouse', readonly=True)
 
-    # ── Lot / Package / Owner ────────────────────────────────────────────────
+    # ── Lot / Owner ──────────────────────────────────────────────────────────
     lot_id = fields.Many2one('stock.lot', string='Lot / Serial No.', readonly=True)
-    package_id = fields.Many2one('stock.quant.package', string='Package', readonly=True)
     owner_id = fields.Many2one('res.partner', string='Owner', readonly=True)
 
     # ── Company / Currency ───────────────────────────────────────────────────
@@ -62,7 +61,6 @@ class BiStockInventoryReport(models.Model):
                     sq.location_id,
                     wh_lkp.warehouse_id,
                     sq.lot_id,
-                    sq.package_id,
                     sq.owner_id,
                     sq.company_id,
                     rc.currency_id,

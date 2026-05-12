@@ -24,7 +24,6 @@
                 <field name="currency_id" column_invisible="1"/>
                 <field name="total_value" optional="show" sum="Total Value" widget="monetary"/>
                 <field name="owner_id" optional="hide"/>
-                <field name="package_id" optional="hide"/>
                 <field name="last_update" optional="show"/>
                 <field name="company_id" optional="hide"/>
             </list>
