@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Top-level menu inside Inventory app -->
+    <menuitem
+        id="menu_tts_inventory_reports_root"
+        name="Advanced Reports"
+        parent="stock.menu_stock_reports"
+        sequence="90"
+        groups="stock.group_stock_manager,stock.group_stock_user"
+    />
+
+    <menuitem
+        id="menu_tts_inventory_reports_wizard"
+        name="Inventory Analytics"
+        parent="menu_tts_inventory_reports_root"
+        action="action_inventory_report_wizard"
+        sequence="10"
+        groups="stock.group_stock_manager,stock.group_stock_user"
+    />
+
+</odoo>
