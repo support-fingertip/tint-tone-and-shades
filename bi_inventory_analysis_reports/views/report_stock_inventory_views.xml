@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════
+         CURRENT STOCK INVENTORY ANALYSIS
+    ═══════════════════════════════════════════════════ -->
+
+    <!-- List View -->
+    <record id="view_bi_stock_inventory_list" model="ir.ui.view">
+        <field name="name">bi.stock.inventory.report.list</field>
+        <field name="model">bi.stock.inventory.report</field>
+        <field name="arch" type="xml">
+            <list string="Current Stock Analysis" create="0" edit="0" delete="0" export_xlsx="1">
+                <field name="product_id" optional="show"/>
+                <field name="categ_id" optional="show"/>
+                <field name="location_id" optional="show"/>
+                <field name="warehouse_id" optional="show"/>
+                <field name="lot_id" optional="show"/>
+                <field name="uom_id" optional="hide" string="UoM"/>
+                <field name="qty_on_hand" optional="show" sum="Total On Hand"/>
+                <field name="qty_reserved" optional="show" sum="Total Reserved"/>
+                <field name="qty_available" optional="show" sum="Total Available"/>
+                <field name="cost_price" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="total_value" optional="show" sum="Total Value" widget="monetary"/>
+                <field name="owner_id" optional="hide"/>
+                <field name="package_id" optional="hide"/>
+                <field name="last_update" optional="show"/>
+                <field name="company_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Pivot View -->
+    <record id="view_bi_stock_inventory_pivot" model="ir.ui.view">
+        <field name="name">bi.stock.inventory.report.pivot</field>
+        <field name="model">bi.stock.inventory.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Current Stock Analysis" disable_linking="True">
+                <field name="categ_id" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="warehouse_id" type="col"/>
+                <field name="qty_on_hand" type="measure"/>
+                <field name="qty_reserved" type="measure"/>
+                <field name="qty_available" type="measure"/>
+                <field name="total_value" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Graph View -->
+    <record id="view_bi_stock_inventory_graph" model="ir.ui.view">
+        <field name="name">bi.stock.inventory.report.graph</field>
+        <field name="model">bi.stock.inventory.report</field>
+        <field name="arch" type="xml">
+            <graph string="Current Stock Analysis" type="bar">
+                <field name="categ_id" type="row"/>
+                <field name="qty_on_hand" type="measure"/>
+                <field name="total_value" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_bi_stock_inventory_search" model="ir.ui.view">
+        <field name="name">bi.stock.inventory.report.search</field>
+        <field name="model">bi.stock.inventory.report</field>
+        <field name="arch" type="xml">
+            <search string="Current Stock Analysis">
+                <field name="product_id" filter_domain="[('product_id','ilike',self)]"/>
+                <field name="product_tmpl_id"/>
+                <field name="categ_id"/>
+                <field name="location_id"/>
+                <field name="warehouse_id"/>
+                <field name="lot_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+
+                <filter string="Available Stock" name="filter_available"
+                    domain="[('qty_available','&gt;',0)]"/>
+                <filter string="Has Reserved Qty" name="filter_reserved"
+                    domain="[('qty_reserved','&gt;',0)]"/>
+                <separator/>
+                <filter string="Updated This Month" name="filter_this_month"
+                    domain="[('last_update','&gt;=', (context_today() + relativedelta(day=1)).strftime('%Y-%m-%d'))]"/>
+                <filter string="Updated This Week" name="filter_this_week"
+                    domain="[('last_update','&gt;=', (context_today() + relativedelta(weeks=-1, weekday=0)).strftime('%Y-%m-%d'))]"/>
+
+                <group expand="0" string="Group By">
+                    <filter string="Product" name="group_product"
+                        context="{'group_by': 'product_id'}"/>
+                    <filter string="Product Category" name="group_categ"
+                        context="{'group_by': 'categ_id'}"/>
+                    <filter string="Location" name="group_location"
+                        context="{'group_by': 'location_id'}"/>
+                    <filter string="Warehouse" name="group_warehouse"
+                        context="{'group_by': 'warehouse_id'}"/>
+                    <filter string="Lot / Serial" name="group_lot"
+                        context="{'group_by': 'lot_id'}"/>
+                    <filter string="Owner" name="group_owner"
+                        context="{'group_by': 'owner_id'}"/>
+                    <filter string="Company" name="group_company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Window Action -->
+    <record id="action_bi_stock_inventory_report" model="ir.actions.act_window">
+        <field name="name">Current Stock Analysis</field>
+        <field name="res_model">bi.stock.inventory.report</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="view_bi_stock_inventory_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No stock data found
+            </p>
+            <p>This report shows current on-hand inventory quantities and stock values for all internal locations.</p>
+        </field>
+    </record>
+
+</odoo>
