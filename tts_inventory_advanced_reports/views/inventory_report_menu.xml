@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Top-level menu inside Inventory app -->
+    <!-- Standalone top-level menu — avoids dependency on stock.menu_stock_reports
+         which is absent in some Odoo 19 installations. -->
     <menuitem
         id="menu_tts_inventory_reports_root"
-        name="Advanced Reports"
-        parent="stock.menu_stock_reports"
-        sequence="90"
+        name="Inventory Reports"
+        sequence="105"
         groups="stock.group_stock_manager,stock.group_stock_user"
+        web_icon="tts_inventory_advanced_reports,static/description/icon.png"
     />
 
     <menuitem
         id="menu_tts_inventory_reports_wizard"
-        name="Inventory Analytics"
+        name="Advanced Analytics"
         parent="menu_tts_inventory_reports_root"
         action="action_inventory_report_wizard"
         sequence="10"

@@ -32,7 +32,7 @@
 
                     <!-- Aging / Breakdown options -->
                     <group string="Aging Thresholds"
-                           attrs="{'invisible': [('report_type','not in',['aging','age_breakdown'])]}">
+                           invisible="report_type not in ['aging','age_breakdown']">
                         <group>
                             <field name="aging_threshold_1"/>
                             <field name="aging_threshold_2"/>
@@ -42,7 +42,7 @@
 
                     <!-- FSN options -->
                     <group string="FSN Parameters"
-                           attrs="{'invisible': [('report_type','not in',['fsn','fsn_xyz'])]}">
+                           invisible="report_type not in ['fsn','fsn_xyz']">
                         <group>
                             <field name="fsn_fast_pct"
                                    help="Daily rate as % of max rate; at or above this = Fast"/>
@@ -51,7 +51,7 @@
 
                     <!-- XYZ options -->
                     <group string="XYZ Thresholds"
-                           attrs="{'invisible': [('report_type','not in',['xyz','fsn_xyz'])]}">
+                           invisible="report_type not in ['xyz','fsn_xyz']">
                         <group>
                             <field name="xyz_x_pct"/>
                             <field name="xyz_y_pct"/>
@@ -60,7 +60,7 @@
 
                     <!-- Coverage options -->
                     <group string="Coverage Parameters"
-                           attrs="{'invisible': [('report_type','not in',['overstock','out_of_stock'])]}">
+                           invisible="report_type not in ['overstock','out_of_stock']">
                         <group>
                             <field name="coverage_days"/>
                         </group>
@@ -84,7 +84,7 @@
         </field>
     </record>
 
-    <!-- ── Client action to open the wizard ─────────────────────────────── -->
+    <!-- ── Action to open the wizard ─────────────────────────────────────── -->
     <record id="action_inventory_report_wizard" model="ir.actions.act_window">
         <field name="name">Inventory Advanced Reports</field>
         <field name="res_model">inventory.report.wizard</field>
