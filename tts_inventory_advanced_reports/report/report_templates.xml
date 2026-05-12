@@ -13,7 +13,6 @@
         <field name="report_file">tts_inventory_advanced_reports.report_aging</field>
         <field name="print_report_name">'Inventory_Aging_Report'</field>
         <field name="binding_model_id" ref="model_inventory_report_wizard"/>
-        <field name="paperformat_id" ref="base.paperformat_a4"/>
     </record>
 
     <record id="action_report_age_breakdown" model="ir.actions.report">
@@ -24,7 +23,6 @@
         <field name="report_file">tts_inventory_advanced_reports.report_age_breakdown</field>
         <field name="print_report_name">'Age_Breakdown_Report'</field>
         <field name="binding_model_id" ref="model_inventory_report_wizard"/>
-        <field name="paperformat_id" ref="base.paperformat_a4"/>
     </record>
 
     <record id="action_report_fsn" model="ir.actions.report">
@@ -35,7 +33,6 @@
         <field name="report_file">tts_inventory_advanced_reports.report_fsn</field>
         <field name="print_report_name">'FSN_Analysis_Report'</field>
         <field name="binding_model_id" ref="model_inventory_report_wizard"/>
-        <field name="paperformat_id" ref="base.paperformat_a4"/>
     </record>
 
     <record id="action_report_xyz" model="ir.actions.report">
@@ -46,7 +43,6 @@
         <field name="report_file">tts_inventory_advanced_reports.report_xyz</field>
         <field name="print_report_name">'XYZ_Analysis_Report'</field>
         <field name="binding_model_id" ref="model_inventory_report_wizard"/>
-        <field name="paperformat_id" ref="base.paperformat_a4"/>
     </record>
 
     <record id="action_report_fsn_xyz" model="ir.actions.report">
@@ -57,7 +53,6 @@
         <field name="report_file">tts_inventory_advanced_reports.report_fsn_xyz</field>
         <field name="print_report_name">'FSN_XYZ_Combined_Report'</field>
         <field name="binding_model_id" ref="model_inventory_report_wizard"/>
-        <field name="paperformat_id" ref="base.paperformat_a4"/>
     </record>
 
     <record id="action_report_overstock" model="ir.actions.report">
@@ -68,7 +63,6 @@
         <field name="report_file">tts_inventory_advanced_reports.report_overstock</field>
         <field name="print_report_name">'Overstock_Analysis_Report'</field>
         <field name="binding_model_id" ref="model_inventory_report_wizard"/>
-        <field name="paperformat_id" ref="base.paperformat_a4"/>
     </record>
 
     <record id="action_report_out_of_stock" model="ir.actions.report">
@@ -79,7 +73,6 @@
         <field name="report_file">tts_inventory_advanced_reports.report_out_of_stock</field>
         <field name="print_report_name">'Out_of_Stock_Analysis_Report'</field>
         <field name="binding_model_id" ref="model_inventory_report_wizard"/>
-        <field name="paperformat_id" ref="base.paperformat_a4"/>
     </record>
 
     <record id="action_report_movement" model="ir.actions.report">
@@ -90,7 +83,6 @@
         <field name="report_file">tts_inventory_advanced_reports.report_movement</field>
         <field name="print_report_name">'Stock_Movement_Report'</field>
         <field name="binding_model_id" ref="model_inventory_report_wizard"/>
-        <field name="paperformat_id" ref="base.paperformat_a4"/>
     </record>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
