@@ -73,7 +73,6 @@
         <field name="arch" type="xml">
             <search string="Stock Valuation Report">
                 <field name="product_id"/>
-                <field name="product_tmpl_id"/>
                 <field name="categ_id"/>
                 <field name="partner_id"/>
                 <field name="picking_type_id" string="Operation Type"/>

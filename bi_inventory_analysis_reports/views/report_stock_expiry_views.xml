@@ -96,9 +96,6 @@
                     domain="[('expiry_status','in',['expired','near_expiry'])]"/>
                 <filter string="Expiring within 90 Days" name="filter_expiring_90"
                     domain="[('expiry_status','in',['expired','near_expiry','expiring_soon'])]"/>
-                <separator/>
-                <filter string="Expiration Date" name="filter_expiration_date" date="expiration_date"/>
-
                 <group expand="0" string="Group By">
                     <filter string="Expiry Status" name="group_status"
                         context="{'group_by': 'expiry_status'}"/>
