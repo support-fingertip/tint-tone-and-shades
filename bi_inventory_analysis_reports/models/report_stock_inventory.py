@@ -38,6 +38,12 @@ class BiStockInventoryReport(models.Model):
     qty_available = fields.Float(
         string='Available Qty', readonly=True, digits='Product Unit of Measure')
 
+    # ── Lot flag ─────────────────────────────────────────────────────────────
+    has_lot = fields.Selection([
+        ('yes', 'Has Lot / Serial'),
+        ('no', 'No Lot / Serial'),
+    ], string='Has Lot/Serial', readonly=True)
+
     # ── Dates ────────────────────────────────────────────────────────────────
     last_update = fields.Datetime(string='Last Updated', readonly=True)
 
@@ -87,6 +93,7 @@ class BiStockInventoryReport(models.Model):
                 sq.quantity                                     AS qty_on_hand,
                 sq.reserved_quantity                            AS qty_reserved,
                 (sq.quantity - sq.reserved_quantity)            AS qty_available,
+                CASE WHEN sq.lot_id IS NOT NULL THEN 'yes' ELSE 'no' END AS has_lot,
                 sq.in_date                                      AS last_update,
                 {cost_expr}                                     AS cost_price,
                 sq.quantity * {cost_expr}                       AS total_value
