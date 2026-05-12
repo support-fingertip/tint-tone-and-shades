@@ -72,11 +72,6 @@
                 <field name="warehouse_id"/>
                 <field name="lot_id"/>
 
-                <filter string="Available Stock" name="filter_available"
-                    domain="[('qty_available','&gt;',0)]"/>
-                <filter string="Has Reserved Qty" name="filter_reserved"
-                    domain="[('qty_reserved','&gt;',0)]"/>
-
                 <group expand="0" string="Group By">
                     <filter string="Product" name="group_product"
                         context="{'group_by': 'product_id'}"/>
