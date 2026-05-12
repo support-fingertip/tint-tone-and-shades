@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════
+         STOCK MOVEMENT ANALYSIS
+    ═══════════════════════════════════════════════════ -->
+
+    <!-- List View -->
+    <record id="view_bi_stock_move_list" model="ir.ui.view">
+        <field name="name">bi.stock.move.report.list</field>
+        <field name="model">bi.stock.move.report</field>
+        <field name="arch" type="xml">
+            <list string="Stock Movement Analysis" create="0" edit="0" delete="0" export_xlsx="1">
+                <field name="date" optional="show"/>
+                <field name="product_id" optional="show"/>
+                <field name="categ_id" optional="show"/>
+                <field name="move_type" optional="show" decoration-success="move_type=='in'" decoration-danger="move_type=='out'" decoration-info="move_type=='internal'"/>
+                <field name="picking_type_id" optional="show"/>
+                <field name="picking_id" optional="show"/>
+                <field name="location_id" optional="show"/>
+                <field name="location_dest_id" optional="show"/>
+                <field name="warehouse_id" optional="show"/>
+                <field name="partner_id" optional="show"/>
+                <field name="product_qty" optional="show" sum="Total Demand"/>
+                <field name="qty_done" optional="show" sum="Total Done"/>
+                <field name="uom_id" optional="hide" string="UoM"/>
+                <field name="price_unit" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="total_value" optional="show" sum="Total Value" widget="monetary"/>
+                <field name="origin" optional="hide"/>
+                <field name="name" optional="hide"/>
+                <field name="date_month" optional="hide"/>
+                <field name="company_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Pivot View -->
+    <record id="view_bi_stock_move_pivot" model="ir.ui.view">
+        <field name="name">bi.stock.move.report.pivot</field>
+        <field name="model">bi.stock.move.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Stock Movement Analysis" disable_linking="True">
+                <field name="date_month" type="col"/>
+                <field name="categ_id" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="qty_done" type="measure"/>
+                <field name="total_value" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Graph View -->
+    <record id="view_bi_stock_move_graph" model="ir.ui.view">
+        <field name="name">bi.stock.move.report.graph</field>
+        <field name="model">bi.stock.move.report</field>
+        <field name="arch" type="xml">
+            <graph string="Stock Movement Analysis" type="bar">
+                <field name="date_month" type="row"/>
+                <field name="move_type" type="col"/>
+                <field name="qty_done" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_bi_stock_move_search" model="ir.ui.view">
+        <field name="name">bi.stock.move.report.search</field>
+        <field name="model">bi.stock.move.report</field>
+        <field name="arch" type="xml">
+            <search string="Stock Movement Analysis">
+                <field name="product_id"/>
+                <field name="product_tmpl_id"/>
+                <field name="categ_id"/>
+                <field name="picking_id" string="Transfer"/>
+                <field name="picking_type_id" string="Operation Type"/>
+                <field name="partner_id"/>
+                <field name="location_id" string="From Location"/>
+                <field name="location_dest_id" string="To Location"/>
+                <field name="warehouse_id"/>
+                <field name="origin" string="Source Document"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+
+                <filter string="Incoming" name="filter_incoming"
+                    domain="[('move_type','=','in')]"/>
+                <filter string="Outgoing" name="filter_outgoing"
+                    domain="[('move_type','=','out')]"/>
+                <filter string="Internal" name="filter_internal"
+                    domain="[('move_type','=','internal')]"/>
+                <separator/>
+                <filter string="Today" name="filter_today"
+                    domain="[('date','&gt;=',context_today().strftime('%Y-%m-%d')),
+                              ('date','&lt;', (context_today()+relativedelta(days=1)).strftime('%Y-%m-%d'))]"/>
+                <filter string="This Week" name="filter_week"
+                    domain="[('date','&gt;=',(context_today()+relativedelta(weeks=-1,weekday=0)).strftime('%Y-%m-%d'))]"/>
+                <filter string="This Month" name="filter_month"
+                    domain="[('date','&gt;=',(context_today()+relativedelta(day=1)).strftime('%Y-%m-%d'))]"/>
+                <filter string="This Quarter" name="filter_quarter"
+                    domain="[('date','&gt;=',(context_today()+relativedelta(months=-3,day=1)).strftime('%Y-%m-%d'))]"/>
+                <filter string="This Year" name="filter_year"
+                    domain="[('date','&gt;=',(context_today()+relativedelta(month=1,day=1)).strftime('%Y-%m-%d'))]"/>
+                <separator/>
+                <filter string="Date" name="filter_date" date="date"/>
+
+                <group expand="0" string="Group By">
+                    <filter string="Product" name="group_product"
+                        context="{'group_by': 'product_id'}"/>
+                    <filter string="Product Category" name="group_categ"
+                        context="{'group_by': 'categ_id'}"/>
+                    <filter string="Move Type" name="group_move_type"
+                        context="{'group_by': 'move_type'}"/>
+                    <filter string="Operation Type" name="group_picking_type"
+                        context="{'group_by': 'picking_type_id'}"/>
+                    <filter string="From Location" name="group_location"
+                        context="{'group_by': 'location_id'}"/>
+                    <filter string="To Location" name="group_location_dest"
+                        context="{'group_by': 'location_dest_id'}"/>
+                    <filter string="Warehouse" name="group_warehouse"
+                        context="{'group_by': 'warehouse_id'}"/>
+                    <filter string="Partner" name="group_partner"
+                        context="{'group_by': 'partner_id'}"/>
+                    <filter string="Month" name="group_month"
+                        context="{'group_by': 'date_month'}"/>
+                    <filter string="Company" name="group_company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Window Action -->
+    <record id="action_bi_stock_move_report" model="ir.actions.act_window">
+        <field name="name">Stock Movement Analysis</field>
+        <field name="res_model">bi.stock.move.report</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="view_bi_stock_move_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No movement data found
+            </p>
+            <p>This report shows all completed stock movements — incoming, outgoing, and internal transfers.</p>
+        </field>
+    </record>
+
+</odoo>

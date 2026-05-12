@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════
+         DEAD / SLOW-MOVING STOCK REPORT
+    ═══════════════════════════════════════════════════ -->
+
+    <!-- List View -->
+    <record id="view_bi_stock_dead_list" model="ir.ui.view">
+        <field name="name">bi.stock.dead.report.list</field>
+        <field name="model">bi.stock.dead.report</field>
+        <field name="arch" type="xml">
+            <list string="Dead / Slow-Moving Stock" create="0" edit="0" delete="0" export_xlsx="1"
+                  default_order="days_no_movement desc">
+                <field name="product_id" optional="show"/>
+                <field name="categ_id" optional="show"/>
+                <field name="location_id" optional="show"/>
+                <field name="warehouse_id" optional="show"/>
+                <field name="lot_id" optional="show"/>
+                <field name="uom_id" optional="hide" string="UoM"/>
+                <field name="qty_on_hand" optional="show" sum="Total Qty"/>
+                <field name="last_move_date" optional="show"/>
+                <field name="days_no_movement" optional="show"
+                       decoration-success="stock_status=='active'"
+                       decoration-warning="stock_status=='slow_moving'"
+                       decoration-danger="stock_status in ('dead','no_movement')"/>
+                <field name="stock_status" optional="show"
+                       decoration-success="stock_status=='active'"
+                       decoration-warning="stock_status=='slow_moving'"
+                       decoration-danger="stock_status in ('dead','no_movement')"/>
+                <field name="cost_price" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="total_value" optional="show" sum="Total Value" widget="monetary"/>
+                <field name="company_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Pivot View -->
+    <record id="view_bi_stock_dead_pivot" model="ir.ui.view">
+        <field name="name">bi.stock.dead.report.pivot</field>
+        <field name="model">bi.stock.dead.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Dead / Slow-Moving Stock" disable_linking="True">
+                <field name="stock_status" type="col"/>
+                <field name="categ_id" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="qty_on_hand" type="measure"/>
+                <field name="total_value" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Graph View -->
+    <record id="view_bi_stock_dead_graph" model="ir.ui.view">
+        <field name="name">bi.stock.dead.report.graph</field>
+        <field name="model">bi.stock.dead.report</field>
+        <field name="arch" type="xml">
+            <graph string="Dead / Slow-Moving Stock" type="bar">
+                <field name="stock_status" type="row"/>
+                <field name="qty_on_hand" type="measure"/>
+                <field name="total_value" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_bi_stock_dead_search" model="ir.ui.view">
+        <field name="name">bi.stock.dead.report.search</field>
+        <field name="model">bi.stock.dead.report</field>
+        <field name="arch" type="xml">
+            <search string="Dead / Slow-Moving Stock">
+                <field name="product_id"/>
+                <field name="categ_id"/>
+                <field name="location_id"/>
+                <field name="warehouse_id"/>
+                <field name="lot_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+
+                <!-- Status Filters -->
+                <filter string="Dead Stock (&gt;180 days)" name="filter_dead"
+                    domain="[('stock_status','=','dead')]"/>
+                <filter string="Slow Moving (90–180 days)" name="filter_slow"
+                    domain="[('stock_status','=','slow_moving')]"/>
+                <filter string="No Movement Ever" name="filter_no_movement"
+                    domain="[('stock_status','=','no_movement')]"/>
+                <filter string="Active" name="filter_active"
+                    domain="[('stock_status','=','active')]"/>
+                <separator/>
+                <filter string="Not Moving (90+ days)" name="filter_stale"
+                    domain="[('stock_status','in',['dead','slow_moving','no_movement'])]"/>
+                <filter string="No Movement in 30 Days" name="filter_30"
+                    domain="[('days_no_movement','&gt;',30)]"/>
+                <filter string="No Movement in 60 Days" name="filter_60"
+                    domain="[('days_no_movement','&gt;',60)]"/>
+
+                <group expand="0" string="Group By">
+                    <filter string="Stock Status" name="group_status"
+                        context="{'group_by': 'stock_status'}"/>
+                    <filter string="Product" name="group_product"
+                        context="{'group_by': 'product_id'}"/>
+                    <filter string="Product Category" name="group_categ"
+                        context="{'group_by': 'categ_id'}"/>
+                    <filter string="Location" name="group_location"
+                        context="{'group_by': 'location_id'}"/>
+                    <filter string="Warehouse" name="group_warehouse"
+                        context="{'group_by': 'warehouse_id'}"/>
+                    <filter string="Company" name="group_company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Window Action -->
+    <record id="action_bi_stock_dead_report" model="ir.actions.act_window">
+        <field name="name">Dead / Slow-Moving Stock</field>
+        <field name="res_model">bi.stock.dead.report</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="view_bi_stock_dead_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No dead stock found — great job!
+            </p>
+            <p>This report identifies products with no recent movement activity. Dead stock (&gt;180 days) and slow-moving stock (90–180 days) are highlighted.</p>
+        </field>
+    </record>
+
+</odoo>
