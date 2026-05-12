@@ -55,10 +55,33 @@ class BiStockExpiryReport(models.Model):
 
     # ─────────────────────────────────────────────────────────────────────────
 
+    @staticmethod
+    def _svl_exists(cr):
+        cr.execute(
+            "SELECT EXISTS (SELECT FROM information_schema.tables "
+            "WHERE table_schema = 'public' AND table_name = 'stock_valuation_layer')"
+        )
+        return cr.fetchone()[0]
+
     def init(self):
         tools.drop_view_if_exists(self.env.cr, self._table)
-        self.env.cr.execute("""
-            CREATE OR REPLACE VIEW %s AS (
+        if self._svl_exists(self.env.cr):
+            cost_join = """
+                LEFT JOIN LATERAL (
+                    SELECT svl.unit_cost
+                    FROM stock_valuation_layer svl
+                    WHERE svl.product_id = sq.product_id
+                      AND svl.company_id = sq.company_id
+                    ORDER BY svl.id DESC
+                    LIMIT 1
+                ) last_cost ON TRUE"""
+            cost_expr = "COALESCE(last_cost.unit_cost, 0.0)"
+        else:
+            cost_join = ""
+            cost_expr = "0.0"
+
+        self.env.cr.execute(f"""
+            CREATE OR REPLACE VIEW {self._table} AS (
                 SELECT
                     sq.id,
                     sq.product_id,
@@ -93,8 +116,8 @@ class BiStockExpiryReport(models.Model):
                             THEN 'expiring_soon'
                         ELSE 'ok'
                     END                                                   AS expiry_status,
-                    COALESCE(last_cost.unit_cost, 0.0)                    AS cost_price,
-                    sq.quantity * COALESCE(last_cost.unit_cost, 0.0)      AS total_value
+                    {cost_expr}                                           AS cost_price,
+                    sq.quantity * {cost_expr}                             AS total_value
                 FROM stock_quant sq
                 JOIN product_product  pp   ON pp.id = sq.product_id
                 JOIN product_template pt   ON pt.id = pp.product_tmpl_id
@@ -105,21 +128,14 @@ class BiStockExpiryReport(models.Model):
                     SELECT sw.id AS warehouse_id
                     FROM stock_warehouse  sw
                     JOIN stock_location   wv ON wv.id = sw.view_location_id
-                    WHERE sl.complete_name LIKE wv.complete_name || '/%%'
+                    WHERE sl.complete_name LIKE wv.complete_name || '/%'
                        OR sl.id = wv.id
                     ORDER BY LENGTH(wv.complete_name) DESC
                     LIMIT 1
                 ) wh_lkp ON TRUE
-                LEFT JOIN LATERAL (
-                    SELECT svl.unit_cost
-                    FROM stock_valuation_layer svl
-                    WHERE svl.product_id = sq.product_id
-                      AND svl.company_id = sq.company_id
-                    ORDER BY svl.id DESC
-                    LIMIT 1
-                ) last_cost ON TRUE
+                {cost_join}
                 WHERE sl.usage = 'internal'
                   AND sq.quantity > 0
                   AND sq.lot_id IS NOT NULL
             )
-        """ % self._table)
+        """)

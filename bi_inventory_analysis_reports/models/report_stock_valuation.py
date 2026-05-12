@@ -55,10 +55,49 @@ class BiStockValuationReport(models.Model):
 
     # ─────────────────────────────────────────────────────────────────────────
 
+    @staticmethod
+    def _svl_exists(cr):
+        cr.execute(
+            "SELECT EXISTS (SELECT FROM information_schema.tables "
+            "WHERE table_schema = 'public' AND table_name = 'stock_valuation_layer')"
+        )
+        return cr.fetchone()[0]
+
     def init(self):
         tools.drop_view_if_exists(self.env.cr, self._table)
-        self.env.cr.execute("""
-            CREATE OR REPLACE VIEW %s AS (
+        if not self._svl_exists(self.env.cr):
+            # stock_account not installed — create an empty view with correct column types
+            self.env.cr.execute(f"""
+                CREATE OR REPLACE VIEW {self._table} AS (
+                    SELECT
+                        NULL::integer           AS id,
+                        NULL::integer           AS product_id,
+                        NULL::integer           AS product_tmpl_id,
+                        NULL::integer           AS categ_id,
+                        NULL::integer           AS uom_id,
+                        NULL::integer           AS stock_move_id,
+                        NULL::integer           AS picking_type_id,
+                        NULL::integer           AS location_id,
+                        NULL::integer           AS location_dest_id,
+                        NULL::integer           AS partner_id,
+                        NULL::integer           AS company_id,
+                        NULL::integer           AS currency_id,
+                        NULL::double precision  AS quantity,
+                        NULL::double precision  AS unit_cost,
+                        NULL::double precision  AS total_value,
+                        NULL::double precision  AS remaining_qty,
+                        NULL::double precision  AS remaining_value,
+                        NULL::varchar           AS description,
+                        NULL::varchar           AS movement_type,
+                        NULL::timestamp         AS date,
+                        NULL::date              AS date_month
+                    WHERE FALSE
+                )
+            """)
+            return
+
+        self.env.cr.execute(f"""
+            CREATE OR REPLACE VIEW {self._table} AS (
                 SELECT
                     svl.id,
                     svl.product_id,
@@ -90,4 +129,4 @@ class BiStockValuationReport(models.Model):
                 JOIN res_company      rc ON rc.id = svl.company_id
                 LEFT JOIN stock_move  sm ON sm.id = svl.stock_move_id
             )
-        """ % self._table)
+        """)
