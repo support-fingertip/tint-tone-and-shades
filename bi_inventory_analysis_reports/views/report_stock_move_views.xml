@@ -14,7 +14,7 @@
                 <field name="date" optional="show"/>
                 <field name="product_id" optional="show"/>
                 <field name="categ_id" optional="show"/>
-                <field name="move_type" optional="show" decoration-success="move_type=='in'" decoration-danger="move_type=='out'" decoration-info="move_type=='internal'"/>
+                <field name="move_type" optional="show" decoration-success="move_type=='incoming'" decoration-danger="move_type=='outgoing'" decoration-info="move_type=='internal'"/>
                 <field name="picking_type_id" optional="show"/>
                 <field name="picking_id" optional="show"/>
                 <field name="location_id" optional="show"/>
@@ -80,13 +80,13 @@
                 <field name="company_id" groups="base.group_multi_company"/>
 
                 <filter string="Incoming" name="filter_incoming"
-                    domain="[('move_type','=','in')]"/>
+                    domain="[('move_type','=','incoming')]"/>
                 <filter string="Outgoing" name="filter_outgoing"
-                    domain="[('move_type','=','out')]"/>
+                    domain="[('move_type','=','outgoing')]"/>
                 <filter string="Internal" name="filter_internal"
                     domain="[('move_type','=','internal')]"/>
                 <separator/>
-                <filter string="Date" name="filter_date" date="date"/>
+                <filter string="Month" name="filter_date" date="date_month"/>
 
                 <group expand="0" string="Group By">
                     <filter string="Product" name="group_product"

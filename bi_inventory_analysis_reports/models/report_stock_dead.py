@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models
+from odoo import fields, models, tools
 
 
 class BiStockDeadReport(models.Model):
@@ -54,13 +54,14 @@ class BiStockDeadReport(models.Model):
     # ─────────────────────────────────────────────────────────────────────────
 
     def _auto_init(self):
-        self.env.cr.execute(
-            "CREATE OR REPLACE VIEW %s AS (%s)" % (self._table, self._table_query)
-        )
+        self.init()
         return super()._auto_init()
 
-    @property
-    def _table_query(self):
+    def init(self):
+        tools.drop_view_if_exists(self.env.cr, self._table)
+        self.env.cr.execute("""CREATE VIEW %s AS (%s)""" % (self._table, self._get_query()))
+
+    def _get_query(self):
         self.env.cr.execute(
             "SELECT EXISTS (SELECT FROM information_schema.tables "
             "WHERE table_schema = 'public' AND table_name = 'stock_valuation_layer')"

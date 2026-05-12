@@ -16,8 +16,8 @@
                 <field name="product_id" optional="show"/>
                 <field name="categ_id" optional="show"/>
                 <field name="movement_type" optional="show"
-                       decoration-success="movement_type=='in'"
-                       decoration-danger="movement_type=='out'"/>
+                       decoration-success="movement_type=='stock_in'"
+                       decoration-danger="movement_type=='stock_out'"/>
                 <field name="description" optional="show"/>
                 <field name="picking_type_id" optional="show"/>
                 <field name="location_id" optional="hide"/>
@@ -79,11 +79,11 @@
                 <field name="company_id" groups="base.group_multi_company"/>
 
                 <filter string="Stock In" name="filter_in"
-                    domain="[('movement_type','=','in')]"/>
+                    domain="[('movement_type','=','stock_in')]"/>
                 <filter string="Stock Out" name="filter_out"
-                    domain="[('movement_type','=','out')]"/>
+                    domain="[('movement_type','=','stock_out')]"/>
                 <separator/>
-                <filter string="Date" name="filter_date" date="date"/>
+                <filter string="Month" name="filter_date" date="date_month"/>
 
                 <group expand="0" string="Group By">
                     <filter string="Product" name="group_product"
