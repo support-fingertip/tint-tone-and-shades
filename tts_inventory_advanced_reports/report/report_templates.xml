@@ -1,0 +1,681 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         ir.actions.report — one per report type
+    ═══════════════════════════════════════════════════════════════════════════ -->
+
+    <record id="action_report_inventory_aging" model="ir.actions.report">
+        <field name="name">Inventory Aging Report</field>
+        <field name="model">inventory.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tts_inventory_advanced_reports.report_aging</field>
+        <field name="report_file">tts_inventory_advanced_reports.report_aging</field>
+        <field name="print_report_name">'Inventory_Aging_Report'</field>
+        <field name="binding_model_id" ref="model_inventory_report_wizard"/>
+    </record>
+
+    <record id="action_report_age_breakdown" model="ir.actions.report">
+        <field name="name">Age Breakdown Report</field>
+        <field name="model">inventory.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tts_inventory_advanced_reports.report_age_breakdown</field>
+        <field name="report_file">tts_inventory_advanced_reports.report_age_breakdown</field>
+        <field name="print_report_name">'Age_Breakdown_Report'</field>
+        <field name="binding_model_id" ref="model_inventory_report_wizard"/>
+    </record>
+
+    <record id="action_report_fsn" model="ir.actions.report">
+        <field name="name">FSN Analysis Report</field>
+        <field name="model">inventory.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tts_inventory_advanced_reports.report_fsn</field>
+        <field name="report_file">tts_inventory_advanced_reports.report_fsn</field>
+        <field name="print_report_name">'FSN_Analysis_Report'</field>
+        <field name="binding_model_id" ref="model_inventory_report_wizard"/>
+    </record>
+
+    <record id="action_report_xyz" model="ir.actions.report">
+        <field name="name">XYZ Analysis Report</field>
+        <field name="model">inventory.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tts_inventory_advanced_reports.report_xyz</field>
+        <field name="report_file">tts_inventory_advanced_reports.report_xyz</field>
+        <field name="print_report_name">'XYZ_Analysis_Report'</field>
+        <field name="binding_model_id" ref="model_inventory_report_wizard"/>
+    </record>
+
+    <record id="action_report_fsn_xyz" model="ir.actions.report">
+        <field name="name">FSN &amp; XYZ Combined Report</field>
+        <field name="model">inventory.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tts_inventory_advanced_reports.report_fsn_xyz</field>
+        <field name="report_file">tts_inventory_advanced_reports.report_fsn_xyz</field>
+        <field name="print_report_name">'FSN_XYZ_Combined_Report'</field>
+        <field name="binding_model_id" ref="model_inventory_report_wizard"/>
+    </record>
+
+    <record id="action_report_overstock" model="ir.actions.report">
+        <field name="name">Overstock Analysis Report</field>
+        <field name="model">inventory.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tts_inventory_advanced_reports.report_overstock</field>
+        <field name="report_file">tts_inventory_advanced_reports.report_overstock</field>
+        <field name="print_report_name">'Overstock_Analysis_Report'</field>
+        <field name="binding_model_id" ref="model_inventory_report_wizard"/>
+    </record>
+
+    <record id="action_report_out_of_stock" model="ir.actions.report">
+        <field name="name">Out of Stock Analysis Report</field>
+        <field name="model">inventory.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tts_inventory_advanced_reports.report_out_of_stock</field>
+        <field name="report_file">tts_inventory_advanced_reports.report_out_of_stock</field>
+        <field name="print_report_name">'Out_of_Stock_Analysis_Report'</field>
+        <field name="binding_model_id" ref="model_inventory_report_wizard"/>
+    </record>
+
+    <record id="action_report_movement" model="ir.actions.report">
+        <field name="name">Stock Movement Report</field>
+        <field name="model">inventory.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tts_inventory_advanced_reports.report_movement</field>
+        <field name="report_file">tts_inventory_advanced_reports.report_movement</field>
+        <field name="print_report_name">'Stock_Movement_Report'</field>
+        <field name="binding_model_id" ref="model_inventory_report_wizard"/>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Shared layout template
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <template id="report_layout_tts">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page tts-inv-report">
+                    <style>
+                        .tts-inv-report { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #1a1a1a; }
+                        .tts-report-header { background: #1e3a8a; color: white; padding: 10px 14px; border-radius: 4px; margin-bottom: 12px; }
+                        .tts-report-header h2 { margin: 0; font-size: 14pt; }
+                        .tts-report-meta { font-size: 8pt; opacity: 0.85; margin-top: 4px; }
+                        table.tts-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+                        table.tts-table thead tr th { background: #1e3a8a; color: white; padding: 5px 6px; text-align: left; font-size: 8pt; border: 1px solid #1e3a8a; }
+                        table.tts-table tbody tr td { padding: 4px 6px; border: 1px solid #d1d5db; vertical-align: top; }
+                        table.tts-table tbody tr:nth-child(even) td { background: #f0f4ff; }
+                        .badge-f  { background:#dcfce7; color:#166534; padding:2px 6px; border-radius:3px; font-weight:bold; }
+                        .badge-s  { background:#fef9c3; color:#854d0e; padding:2px 6px; border-radius:3px; font-weight:bold; }
+                        .badge-n  { background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:3px; font-weight:bold; }
+                        .badge-x  { background:#dcfce7; color:#166534; padding:2px 6px; border-radius:3px; font-weight:bold; }
+                        .badge-y  { background:#fef9c3; color:#854d0e; padding:2px 6px; border-radius:3px; font-weight:bold; }
+                        .badge-z  { background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:3px; font-weight:bold; }
+                        .badge-out  { background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:3px; font-weight:bold; }
+                        .badge-low  { background:#fef9c3; color:#854d0e; padding:2px 6px; border-radius:3px; font-weight:bold; }
+                        .badge-reo  { background:#fff7ed; color:#c2410c; padding:2px 6px; border-radius:3px; font-weight:bold; }
+                        .summary-box { display:inline-block; border:1px solid #d1d5db; border-radius:4px; padding:6px 12px; margin:4px; background:#f9fafb; }
+                        .summary-box .val { font-size:14pt; font-weight:bold; color:#1e3a8a; }
+                        .summary-box .lbl { font-size:7.5pt; color:#555; }
+                        .tts-footer { margin-top:12px; border-top:1px solid #e5e7eb; padding-top:4px; font-size:7.5pt; color:#888; }
+                        .text-right { text-align: right; }
+                        .text-center { text-align: center; }
+                    </style>
+                    <t t-out="0"/>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Report 1 — Inventory Aging
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <template id="report_aging">
+        <t t-call="tts_inventory_advanced_reports.report_layout_tts">
+            <t t-foreach="docs" t-as="wizard">
+                <div class="tts-report-header">
+                    <h2>Inventory Aging Report</h2>
+                    <div class="tts-report-meta">
+                        <span t-esc="wizard.company_id.name"/> ·
+                        <t t-if="wizard.date_from">From <span t-esc="wizard.date_from"/> </t>
+                        <t t-if="wizard.date_to">To <span t-esc="wizard.date_to"/></t>
+                        <t t-if="wizard.warehouse_id"> · Warehouse: <span t-esc="wizard.warehouse_id.name"/></t>
+                    </div>
+                </div>
+
+                <t t-set="rows" t-value="wizard._compute_aging_data()"/>
+
+                <t t-if="not rows">
+                    <p>No aged inventory found for the selected filters.</p>
+                </t>
+                <t t-else="">
+                    <table class="tts-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Location</th>
+                                <th>Lot/Serial</th>
+                                <th class="text-right">Qty</th>
+                                <th>UoM</th>
+                                <th class="text-right">Unit Cost</th>
+                                <th class="text-right">Stock Value</th>
+                                <th class="text-center">Date In</th>
+                                <th class="text-right">Days</th>
+                                <th>Aging Band</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="rows" t-as="r">
+                                <tr>
+                                    <td><t t-esc="r['product']"/></td>
+                                    <td><t t-esc="r['category']"/></td>
+                                    <td><t t-esc="r['location']"/></td>
+                                    <td><t t-esc="r['lot']"/></td>
+                                    <td class="text-right"><t t-esc="r['quantity']"/></td>
+                                    <td><t t-esc="r['uom']"/></td>
+                                    <td class="text-right"><t t-esc="'{:,.2f}'.format(r['unit_cost'])"/></td>
+                                    <td class="text-right"><t t-esc="'{:,.2f}'.format(r['stock_value'])"/></td>
+                                    <td class="text-center"><t t-esc="r['in_date']"/></td>
+                                    <td class="text-right"><t t-esc="r['days']"/></td>
+                                    <td><t t-esc="r['aging_band']"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                    <div class="tts-footer">
+                        Total records: <t t-esc="len(rows)"/> ·
+                        Total value: <t t-esc="'{:,.2f}'.format(sum(r['stock_value'] for r in rows))"/>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Report 2 — Age Breakdown
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <template id="report_age_breakdown">
+        <t t-call="tts_inventory_advanced_reports.report_layout_tts">
+            <t t-foreach="docs" t-as="wizard">
+                <div class="tts-report-header">
+                    <h2>Age Breakdown Report</h2>
+                    <div class="tts-report-meta">
+                        <span t-esc="wizard.company_id.name"/> ·
+                        <t t-if="wizard.date_from">From <span t-esc="wizard.date_from"/> </t>
+                        <t t-if="wizard.date_to">To <span t-esc="wizard.date_to"/></t>
+                    </div>
+                </div>
+
+                <t t-set="data" t-value="wizard._compute_age_breakdown_data()"/>
+
+                <!-- Summary boxes -->
+                <div style="margin-bottom:12px;">
+                    <t t-foreach="data['summary']" t-as="s">
+                        <div class="summary-box">
+                            <div class="val"><t t-esc="s['count']"/></div>
+                            <div class="lbl"><t t-esc="s['band']"/></div>
+                            <div style="font-size:8pt;">
+                                Qty: <t t-esc="'{:,.2f}'.format(s['total_qty'])"/> ·
+                                Value: <t t-esc="'{:,.2f}'.format(s['total_value'])"/>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+
+                <!-- Summary table -->
+                <table class="tts-table" style="margin-bottom:16px;">
+                    <thead>
+                        <tr>
+                            <th>Aging Band</th>
+                            <th class="text-right">Product Count</th>
+                            <th class="text-right">Total Qty</th>
+                            <th class="text-right">Total Stock Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="data['summary']" t-as="s">
+                            <tr>
+                                <td><t t-esc="s['band']"/></td>
+                                <td class="text-right"><t t-esc="s['count']"/></td>
+                                <td class="text-right"><t t-esc="'{:,.2f}'.format(s['total_qty'])"/></td>
+                                <td class="text-right"><t t-esc="'{:,.2f}'.format(s['total_value'])"/></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+
+                <h4 style="margin:8px 0 4px;">Detail</h4>
+                <table class="tts-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th class="text-right">Qty</th>
+                            <th class="text-right">Stock Value</th>
+                            <th class="text-right">Days in Stock</th>
+                            <th>Aging Band</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="data['rows']" t-as="r">
+                            <tr>
+                                <td><t t-esc="r['product']"/></td>
+                                <td><t t-esc="r['category']"/></td>
+                                <td class="text-right"><t t-esc="r['quantity']"/></td>
+                                <td class="text-right"><t t-esc="'{:,.2f}'.format(r['stock_value'])"/></td>
+                                <td class="text-right"><t t-esc="r['days']"/></td>
+                                <td><t t-esc="r['aging_band']"/></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </t>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Report 3 — FSN Analysis
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <template id="report_fsn">
+        <t t-call="tts_inventory_advanced_reports.report_layout_tts">
+            <t t-foreach="docs" t-as="wizard">
+                <div class="tts-report-header">
+                    <h2>FSN Analysis — Fast / Slow / Non-Moving</h2>
+                    <div class="tts-report-meta">
+                        <span t-esc="wizard.company_id.name"/> ·
+                        <t t-if="wizard.date_from">From <span t-esc="wizard.date_from"/> </t>
+                        <t t-if="wizard.date_to">To <span t-esc="wizard.date_to"/></t>
+                        · Fast threshold: <span t-esc="wizard.fsn_fast_pct"/>%
+                    </div>
+                </div>
+
+                <t t-set="rows" t-value="wizard._compute_fsn_data()"/>
+                <t t-set="fast_count" t-value="sum(1 for r in rows if r['classification']=='F')"/>
+                <t t-set="slow_count" t-value="sum(1 for r in rows if r['classification']=='S')"/>
+                <t t-set="non_count"  t-value="sum(1 for r in rows if r['classification']=='N')"/>
+
+                <div style="margin-bottom:12px;">
+                    <div class="summary-box">
+                        <div class="val" style="color:#166534;"><t t-esc="fast_count"/></div>
+                        <div class="lbl">Fast Moving</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="val" style="color:#92400e;"><t t-esc="slow_count"/></div>
+                        <div class="lbl">Slow Moving</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="val" style="color:#991b1b;"><t t-esc="non_count"/></div>
+                        <div class="lbl">Non-Moving</div>
+                    </div>
+                </div>
+
+                <table class="tts-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>UoM</th>
+                            <th class="text-right">Stock Qty</th>
+                            <th class="text-right">Qty Out</th>
+                            <th class="text-right">Moves</th>
+                            <th class="text-right">Daily Rate</th>
+                            <th class="text-center">Classification</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="rows" t-as="r">
+                            <tr>
+                                <td><t t-esc="r['product']"/></td>
+                                <td><t t-esc="r['category']"/></td>
+                                <td><t t-esc="r['uom']"/></td>
+                                <td class="text-right"><t t-esc="r['stock_qty']"/></td>
+                                <td class="text-right"><t t-esc="r['qty_out']"/></td>
+                                <td class="text-right"><t t-esc="r['move_count']"/></td>
+                                <td class="text-right"><t t-esc="r['daily_rate']"/></td>
+                                <td class="text-center">
+                                    <span t-attf-class="badge-{{r['classification'].lower()}}">
+                                        <t t-esc="r['classification_label']"/>
+                                    </span>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </t>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Report 4 — XYZ Analysis
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <template id="report_xyz">
+        <t t-call="tts_inventory_advanced_reports.report_layout_tts">
+            <t t-foreach="docs" t-as="wizard">
+                <div class="tts-report-header">
+                    <h2>XYZ Analysis — Value Classification</h2>
+                    <div class="tts-report-meta">
+                        <span t-esc="wizard.company_id.name"/> ·
+                        <t t-if="wizard.date_from">From <span t-esc="wizard.date_from"/> </t>
+                        <t t-if="wizard.date_to">To <span t-esc="wizard.date_to"/></t>
+                        · X ≤ <span t-esc="wizard.xyz_x_pct"/>% · Y ≤ <span t-esc="wizard.xyz_y_pct"/>%
+                    </div>
+                </div>
+
+                <t t-set="rows" t-value="wizard._compute_xyz_data()"/>
+
+                <t t-if="not rows">
+                    <p>No consumption data found for the selected period.</p>
+                </t>
+                <t t-else="">
+                    <table class="tts-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>UoM</th>
+                                <th class="text-right">Qty Consumed</th>
+                                <th class="text-right">Consumption Value</th>
+                                <th class="text-right">Value %</th>
+                                <th class="text-right">Cumulative %</th>
+                                <th class="text-center">Class</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="rows" t-as="r">
+                                <tr>
+                                    <td><t t-esc="r['product']"/></td>
+                                    <td><t t-esc="r['category']"/></td>
+                                    <td><t t-esc="r['uom']"/></td>
+                                    <td class="text-right"><t t-esc="r['qty_consumed']"/></td>
+                                    <td class="text-right"><t t-esc="'{:,.2f}'.format(r['consumption_value'])"/></td>
+                                    <td class="text-right"><t t-esc="r['value_pct']"/>%</td>
+                                    <td class="text-right"><t t-esc="r['cumulative_pct']"/>%</td>
+                                    <td class="text-center">
+                                        <span t-attf-class="badge-{{r['classification'].lower()}}">
+                                            <t t-esc="r['classification']"/>
+                                        </span>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                    <div class="tts-footer">
+                        Total consumption value: <t t-esc="'{:,.2f}'.format(sum(r['consumption_value'] for r in rows))"/>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Report 5 — FSN & XYZ Combined
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <template id="report_fsn_xyz">
+        <t t-call="tts_inventory_advanced_reports.report_layout_tts">
+            <t t-foreach="docs" t-as="wizard">
+                <div class="tts-report-header">
+                    <h2>FSN &amp; XYZ Combined Analysis</h2>
+                    <div class="tts-report-meta">
+                        <span t-esc="wizard.company_id.name"/> ·
+                        <t t-if="wizard.date_from">From <span t-esc="wizard.date_from"/> </t>
+                        <t t-if="wizard.date_to">To <span t-esc="wizard.date_to"/></t>
+                    </div>
+                </div>
+
+                <t t-set="rows" t-value="wizard._compute_fsn_xyz_data()"/>
+
+                <table class="tts-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>UoM</th>
+                            <th class="text-right">Stock Qty</th>
+                            <th class="text-right">Qty Out</th>
+                            <th class="text-center">FSN</th>
+                            <th class="text-center">XYZ</th>
+                            <th class="text-center">Combined</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="rows" t-as="r">
+                            <tr>
+                                <td><t t-esc="r['product']"/></td>
+                                <td><t t-esc="r['category']"/></td>
+                                <td><t t-esc="r['uom']"/></td>
+                                <td class="text-right"><t t-esc="r['stock_qty']"/></td>
+                                <td class="text-right"><t t-esc="r['qty_out']"/></td>
+                                <td class="text-center">
+                                    <span t-attf-class="badge-{{r['classification'].lower()}}">
+                                        <t t-esc="r['classification']"/>
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span t-attf-class="badge-{{r['xyz_classification'].lower()}}">
+                                        <t t-esc="r['xyz_classification']"/>
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <strong><t t-esc="r['combined']"/></strong>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </t>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Report 6 — Overstock Analysis
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <template id="report_overstock">
+        <t t-call="tts_inventory_advanced_reports.report_layout_tts">
+            <t t-foreach="docs" t-as="wizard">
+                <div class="tts-report-header">
+                    <h2>Overstock Analysis Report</h2>
+                    <div class="tts-report-meta">
+                        <span t-esc="wizard.company_id.name"/> ·
+                        <t t-if="wizard.date_from">From <span t-esc="wizard.date_from"/> </t>
+                        <t t-if="wizard.date_to">To <span t-esc="wizard.date_to"/></t>
+                        · Target Coverage: <span t-esc="wizard.coverage_days"/> days
+                    </div>
+                </div>
+
+                <t t-set="rows" t-value="wizard._compute_overstock_data()"/>
+
+                <t t-if="not rows">
+                    <p>No overstock items found for the selected filters.</p>
+                </t>
+                <t t-else="">
+                    <div style="margin-bottom:10px;">
+                        <div class="summary-box">
+                            <div class="val"><t t-esc="len(rows)"/></div>
+                            <div class="lbl">Overstock Items</div>
+                        </div>
+                        <div class="summary-box">
+                            <div class="val" style="color:#991b1b;">
+                                <t t-esc="'{:,.2f}'.format(sum(r['excess_value'] for r in rows))"/>
+                            </div>
+                            <div class="lbl">Total Excess Value</div>
+                        </div>
+                    </div>
+
+                    <table class="tts-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>UoM</th>
+                                <th class="text-right">Stock Qty</th>
+                                <th class="text-right">Stock Value</th>
+                                <th class="text-right">Daily Use</th>
+                                <th class="text-right">Target Qty</th>
+                                <th class="text-right">Excess Qty</th>
+                                <th class="text-right">Excess Value</th>
+                                <th class="text-right">Coverage (d)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="rows" t-as="r">
+                                <tr>
+                                    <td><t t-esc="r['product']"/></td>
+                                    <td><t t-esc="r['category']"/></td>
+                                    <td><t t-esc="r['uom']"/></td>
+                                    <td class="text-right"><t t-esc="r['stock_qty']"/></td>
+                                    <td class="text-right"><t t-esc="'{:,.2f}'.format(r['stock_value'])"/></td>
+                                    <td class="text-right"><t t-esc="r['daily_consumption']"/></td>
+                                    <td class="text-right"><t t-esc="r['target_qty']"/></td>
+                                    <td class="text-right"><t t-esc="r['excess_qty']"/></td>
+                                    <td class="text-right" style="color:#991b1b;font-weight:bold;">
+                                        <t t-esc="'{:,.2f}'.format(r['excess_value'])"/>
+                                    </td>
+                                    <td class="text-right"><t t-esc="r['coverage_days']"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Report 7 — Out of Stock Analysis
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <template id="report_out_of_stock">
+        <t t-call="tts_inventory_advanced_reports.report_layout_tts">
+            <t t-foreach="docs" t-as="wizard">
+                <div class="tts-report-header">
+                    <h2>Out of Stock Analysis Report</h2>
+                    <div class="tts-report-meta">
+                        <span t-esc="wizard.company_id.name"/> ·
+                        <t t-if="wizard.date_from">From <span t-esc="wizard.date_from"/> </t>
+                        <t t-if="wizard.date_to">To <span t-esc="wizard.date_to"/></t>
+                        · Coverage target: <span t-esc="wizard.coverage_days"/> days
+                    </div>
+                </div>
+
+                <t t-set="rows" t-value="wizard._compute_out_of_stock_data()"/>
+                <t t-set="out_count" t-value="sum(1 for r in rows if r['status']=='out_of_stock')"/>
+                <t t-set="reo_count" t-value="sum(1 for r in rows if r['status']=='below_reorder')"/>
+                <t t-set="low_count" t-value="sum(1 for r in rows if r['status']=='low_stock')"/>
+
+                <div style="margin-bottom:10px;">
+                    <div class="summary-box">
+                        <div class="val" style="color:#991b1b;"><t t-esc="out_count"/></div>
+                        <div class="lbl">Out of Stock</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="val" style="color:#c2410c;"><t t-esc="reo_count"/></div>
+                        <div class="lbl">Below Reorder Point</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="val" style="color:#92400e;"><t t-esc="low_count"/></div>
+                        <div class="lbl">Low Stock</div>
+                    </div>
+                </div>
+
+                <t t-if="not rows">
+                    <p>All products are adequately stocked.</p>
+                </t>
+                <t t-else="">
+                    <table class="tts-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>UoM</th>
+                                <th class="text-right">Stock Qty</th>
+                                <th class="text-right">Reorder Point</th>
+                                <th class="text-right">Daily Use</th>
+                                <th class="text-right">Days Remaining</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="rows" t-as="r">
+                                <tr>
+                                    <td><t t-esc="r['product']"/></td>
+                                    <td><t t-esc="r['category']"/></td>
+                                    <td><t t-esc="r['uom']"/></td>
+                                    <td class="text-right"><t t-esc="r['stock_qty']"/></td>
+                                    <td class="text-right"><t t-esc="r['reorder_point']"/></td>
+                                    <td class="text-right"><t t-esc="r['daily_consumption']"/></td>
+                                    <td class="text-right"><t t-esc="r['days_remaining']"/></td>
+                                    <td class="text-center">
+                                        <span t-att-class="'badge-out' if r['status']=='out_of_stock' else ('badge-reo' if r['status']=='below_reorder' else 'badge-low')">
+                                            <t t-esc="r['status_label']"/>
+                                        </span>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Report 8 — Stock Movement
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <template id="report_movement">
+        <t t-call="tts_inventory_advanced_reports.report_layout_tts">
+            <t t-foreach="docs" t-as="wizard">
+                <div class="tts-report-header">
+                    <h2>Stock Movement Report</h2>
+                    <div class="tts-report-meta">
+                        <span t-esc="wizard.company_id.name"/> ·
+                        <t t-if="wizard.date_from">From <span t-esc="wizard.date_from"/> </t>
+                        <t t-if="wizard.date_to">To <span t-esc="wizard.date_to"/></t>
+                        <t t-if="wizard.warehouse_id"> · Warehouse: <span t-esc="wizard.warehouse_id.name"/></t>
+                    </div>
+                </div>
+
+                <t t-set="rows" t-value="wizard._compute_movement_data()"/>
+
+                <t t-if="not rows">
+                    <p>No stock movements found for the selected period.</p>
+                </t>
+                <t t-else="">
+                    <div style="margin-bottom:8px; font-size:8.5pt;">
+                        Total movements: <strong><t t-esc="len(rows)"/></strong>
+                        <t t-if="len(rows) >= 2000"> (limited to 2 000 records — narrow the date range for a complete view)</t>
+                    </div>
+
+                    <table class="tts-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Lot/Serial</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Type</th>
+                                <th class="text-right">Qty Done</th>
+                                <th>UoM</th>
+                                <th>Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="rows" t-as="r">
+                                <tr>
+                                    <td><t t-esc="r['date']"/></td>
+                                    <td><t t-esc="r['product']"/></td>
+                                    <td><t t-esc="r['category']"/></td>
+                                    <td><t t-esc="r['lot']"/></td>
+                                    <td><t t-esc="r['from_location']"/></td>
+                                    <td><t t-esc="r['to_location']"/></td>
+                                    <td><t t-esc="r['move_type']"/></td>
+                                    <td class="text-right"><t t-esc="r['qty_done']"/></td>
+                                    <td><t t-esc="r['uom']"/></td>
+                                    <td><t t-esc="r['reference']"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

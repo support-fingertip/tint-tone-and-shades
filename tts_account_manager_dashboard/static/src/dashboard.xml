@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+
+<t t-name="tts_account_manager_dashboard.Dashboard">
+    <!--
+        Root fills the Odoo action viewport (position:absolute inset:0).
+        overflow:hidden here prevents double scroll bars.
+        The .tts-dash-scroll child carries overflow-y:auto — this is the
+        only scrolling element, same pattern as boq_management_v19.
+    -->
+    <div class="tts-am-dashboard o_action">
+
+        <!-- ══════════════════════════════════════════════════════════════
+             LOADING STATE
+        ══════════════════════════════════════════════════════════════ -->
+        <t t-if="state.loading">
+            <div class="tts-loading-overlay">
+                <div class="tts-spinner">
+                    <span class="fa fa-circle-o-notch fa-spin fa-3x text-primary"/>
+                </div>
+                <p class="mt-3 text-muted fw-semibold">Loading dashboard…</p>
+            </div>
+        </t>
+
+        <!-- ══════════════════════════════════════════════════════════════
+             ERROR STATE
+        ══════════════════════════════════════════════════════════════ -->
+        <t t-elif="state.error">
+            <div class="tts-error-banner alert alert-danger m-4">
+                <i class="fa fa-exclamation-triangle me-2"/>
+                <t t-esc="state.error"/>
+                <button class="btn btn-sm btn-outline-danger ms-3" t-on-click="refresh">
+                    <i class="fa fa-refresh me-1"/>Retry
+                </button>
+            </div>
+        </t>
+
+        <!-- ══════════════════════════════════════════════════════════════
+             DASHBOARD CONTENT — wrapped in the single scroll container
+        ══════════════════════════════════════════════════════════════ -->
+        <t t-else="">
+
+            <!-- Fixed header — does NOT scroll -->
+            <div class="tts-page-header">
+                <div class="tts-page-title">
+                    <i class="fa fa-tachometer me-2 text-primary"/>
+                    <h1>Accounts Manager Dashboard</h1>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary tts-refresh-btn" t-on-click="refresh">
+                    <i class="fa fa-refresh me-1"/>Refresh
+                </button>
+            </div>
+
+            <!-- ─── SCROLLABLE BODY ────────────────────────────────── -->
+            <div class="tts-dash-scroll">
+
+                <!-- ─── Row 0 : Summary KPI Strip ─────────────────── -->
+                <div class="tts-kpi-strip">
+
+                    <div class="tts-kpi-card tts-kpi-green">
+                        <div class="tts-kpi-icon"><i class="fa fa-arrow-up"/></div>
+                        <div class="tts-kpi-body">
+                            <div class="tts-kpi-label">YTD Revenue</div>
+                            <div class="tts-kpi-value">
+                                <t t-esc="state.summary.currency_symbol"/>
+                                <t t-esc="fmtK(state.summary.ytd_revenue)"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tts-kpi-card tts-kpi-orange">
+                        <div class="tts-kpi-icon"><i class="fa fa-arrow-down"/></div>
+                        <div class="tts-kpi-body">
+                            <div class="tts-kpi-label">YTD Expenses</div>
+                            <div class="tts-kpi-value">
+                                <t t-esc="state.summary.currency_symbol"/>
+                                <t t-esc="fmtK(state.summary.ytd_expenses)"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tts-kpi-card tts-kpi-red">
+                        <div class="tts-kpi-icon"><i class="fa fa-credit-card"/></div>
+                        <div class="tts-kpi-body">
+                            <div class="tts-kpi-label">Outstanding Payables</div>
+                            <div class="tts-kpi-value">
+                                <t t-esc="state.summary.currency_symbol"/>
+                                <t t-esc="fmtK(state.summary.outstanding_payables)"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tts-kpi-card tts-kpi-blue">
+                        <div class="tts-kpi-icon"><i class="fa fa-money"/></div>
+                        <div class="tts-kpi-body">
+                            <div class="tts-kpi-label">Outstanding Receivables</div>
+                            <div class="tts-kpi-value">
+                                <t t-esc="state.summary.currency_symbol"/>
+                                <t t-esc="fmtK(state.summary.outstanding_receivables)"/>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /tts-kpi-strip -->
+
+                <!-- ─── Row 1 : Revenue + Overheads ───────────────── -->
+                <div class="tts-widget-row">
+
+                    <!-- ══ Widget 1 — Monthly Revenue Collection ══ -->
+                    <div class="tts-widget tts-widget-half">
+                        <div class="tts-widget-head">
+                            <span class="tts-wh-icon tts-icon-green"><i class="fa fa-line-chart"/></span>
+                            <div class="tts-wh-text">
+                                <h2>Monthly Revenue Collection</h2>
+                                <p>Total revenue received per month · last 12 months</p>
+                            </div>
+                        </div>
+                        <div class="tts-bar-chart">
+                            <t t-if="!state.revenue.length">
+                                <div class="tts-no-data">No revenue data</div>
+                            </t>
+                            <t t-foreach="state.revenue" t-as="item" t-key="item.month">
+                                <div class="tts-bar-col">
+                                    <div class="tts-bar-tip">
+                                        <t t-esc="state.summary.currency_symbol"/><t t-esc="fmtK(item.amount)"/>
+                                    </div>
+                                    <div class="tts-bar-track">
+                                        <div
+                                            class="tts-bar tts-bar-green"
+                                            t-attf-style="height:#{barHeightPct(item.amount, maxRevenue)}%"
+                                            t-attf-title="#{item.month}: #{state.summary.currency_symbol}#{fmtMoney(item.amount)}"
+                                        />
+                                    </div>
+                                    <div class="tts-bar-lbl" t-esc="item.month_short"/>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+
+                    <!-- ══ Widget 2 — Monthly Overheads ══ -->
+                    <div class="tts-widget tts-widget-half">
+                        <div class="tts-widget-head">
+                            <span class="tts-wh-icon tts-icon-orange"><i class="fa fa-bar-chart"/></span>
+                            <div class="tts-wh-text">
+                                <h2>Monthly Overheads</h2>
+                                <p>Total company overhead and expenses per month · last 12 months</p>
+                            </div>
+                        </div>
+                        <div class="tts-bar-chart">
+                            <t t-if="!state.overheads.length">
+                                <div class="tts-no-data">No overhead data</div>
+                            </t>
+                            <t t-foreach="state.overheads" t-as="item" t-key="item.month">
+                                <div class="tts-bar-col">
+                                    <div class="tts-bar-tip">
+                                        <t t-esc="state.summary.currency_symbol"/><t t-esc="fmtK(item.amount)"/>
+                                    </div>
+                                    <div class="tts-bar-track">
+                                        <div
+                                            class="tts-bar tts-bar-orange"
+                                            t-attf-style="height:#{barHeightPct(item.amount, maxOverheads)}%"
+                                            t-attf-title="#{item.month}: #{state.summary.currency_symbol}#{fmtMoney(item.amount)}"
+                                        />
+                                    </div>
+                                    <div class="tts-bar-lbl" t-esc="item.month_short"/>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+
+                </div><!-- /row 1 -->
+
+                <!-- ─── Row 2 : Office Expenses ────────────────────── -->
+                <div class="tts-widget-row">
+                    <div class="tts-widget tts-widget-full">
+                        <div class="tts-widget-head">
+                            <span class="tts-wh-icon tts-icon-teal"><i class="fa fa-building"/></span>
+                            <div class="tts-wh-text">
+                                <h2>Monthly Office Expenses &amp; Maintenance</h2>
+                                <p>Categorised office and maintenance spend · year to date</p>
+                            </div>
+                        </div>
+
+                        <div class="tts-office-inner">
+
+                            <!-- Left: monthly trend -->
+                            <div class="tts-office-trend">
+                                <div class="tts-section-label">Monthly Trend</div>
+                                <div class="tts-bar-chart tts-bar-chart-sm">
+                                    <t t-if="!state.officeExpenses.monthly.length">
+                                        <div class="tts-no-data">No data</div>
+                                    </t>
+                                    <t t-foreach="state.officeExpenses.monthly" t-as="item" t-key="item.month">
+                                        <div class="tts-bar-col">
+                                            <div class="tts-bar-tip">
+                                                <t t-esc="state.summary.currency_symbol"/><t t-esc="fmtK(item.amount)"/>
+                                            </div>
+                                            <div class="tts-bar-track">
+                                                <div
+                                                    class="tts-bar tts-bar-teal"
+                                                    t-attf-style="height:#{barHeightPct(item.amount, maxOfficeMonthly)}%"
+                                                    t-attf-title="#{item.month}: #{state.summary.currency_symbol}#{fmtMoney(item.amount)}"
+                                                />
+                                            </div>
+                                            <div class="tts-bar-lbl" t-esc="item.month_short"/>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+
+                            <!-- Right: category breakdown -->
+                            <div class="tts-office-cats">
+                                <div class="tts-section-label">Breakdown by Account</div>
+                                <t t-if="!state.officeExpenses.categories.length">
+                                    <p class="tts-no-data">No expense categories found</p>
+                                </t>
+                                <t t-foreach="state.officeExpenses.categories" t-as="cat" t-key="cat.category">
+                                    <div class="tts-cat-row">
+                                        <div class="tts-cat-name" t-esc="cat.category"/>
+                                        <div class="tts-cat-bar-wrap">
+                                            <div class="tts-cat-bar" t-attf-style="width:#{cat.percentage}%"/>
+                                        </div>
+                                        <div class="tts-cat-right">
+                                            <span class="tts-cat-amt">
+                                                <t t-esc="state.summary.currency_symbol"/>
+                                                <t t-esc="fmtMoney(cat.amount)"/>
+                                            </span>
+                                            <span class="tts-cat-pct" t-esc="cat.percentage + '%'"/>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+
+                        </div><!-- /tts-office-inner -->
+                    </div>
+                </div><!-- /row 2 -->
+
+                <!-- ─── Row 3 : Pending Approvals + Vendor Payments ── -->
+                <div class="tts-widget-row">
+
+                    <!-- ══ Widget 4 — Pending Approvals ══ -->
+                    <div class="tts-widget tts-widget-half">
+                        <div class="tts-widget-head">
+                            <span class="tts-wh-icon tts-icon-red"><i class="fa fa-clock-o"/></span>
+                            <div class="tts-wh-text">
+                                <h2>Pending Approvals</h2>
+                                <p>Invoices, bills and purchase orders awaiting approval</p>
+                            </div>
+                            <div class="tts-count-badge tts-badge-red" t-esc="state.pendingApprovals.count"/>
+                        </div>
+
+                        <t t-if="state.pendingApprovals.count">
+                            <div class="tts-list-header">
+                                <span>Type</span><span>Reference</span><span>Partner</span><span class="text-end">Amount</span>
+                            </div>
+                        </t>
+
+                        <div class="tts-scrollable-list">
+                            <t t-if="!state.pendingApprovals.items.length">
+                                <div class="tts-empty-state">
+                                    <i class="fa fa-check-circle-o fa-2x text-success"/>
+                                    <p>No pending approvals</p>
+                                </div>
+                            </t>
+                            <t t-foreach="state.pendingApprovals.items" t-as="item" t-key="item.model + '-' + item.id">
+                                <div
+                                    class="tts-list-row tts-clickable"
+                                    t-on-click="() => openRecord(item.model, item.id)"
+                                >
+                                    <span t-attf-class="tts-type-pill tts-pill-#{item.source === 'Purchase' ? 'purple' : 'amber'}">
+                                        <t t-esc="item.type"/>
+                                    </span>
+                                    <span class="tts-ref fw-semibold" t-esc="item.name"/>
+                                    <span class="tts-partner text-muted" t-esc="item.partner"/>
+                                    <span class="tts-amount text-end fw-semibold">
+                                        <t t-esc="item.currency_symbol"/>
+                                        <t t-esc="fmtMoney(item.amount)"/>
+                                    </span>
+                                </div>
+                            </t>
+                        </div>
+
+                        <t t-if="state.pendingApprovals.count > 0">
+                            <div class="tts-widget-footer">
+                                <button class="btn btn-sm btn-outline-danger" t-on-click="openPendingApprovalsList">
+                                    View all <t t-esc="state.pendingApprovals.count"/> pending approvals
+                                    <i class="fa fa-arrow-right ms-1"/>
+                                </button>
+                            </div>
+                        </t>
+                    </div>
+
+                    <!-- ══ Widget 5 — Vendor Payment Requests ══ -->
+                    <div class="tts-widget tts-widget-half">
+                        <div class="tts-widget-head">
+                            <span class="tts-wh-icon tts-icon-blue"><i class="fa fa-money"/></span>
+                            <div class="tts-wh-text">
+                                <h2>Vendor Payment Requests</h2>
+                                <p>Pending payments from Procurement and Vendor module</p>
+                            </div>
+                            <div class="tts-count-badge tts-badge-blue" t-esc="state.vendorPayments.count"/>
+                        </div>
+
+                        <t t-if="overdueCount > 0">
+                            <div class="alert alert-warning tts-overdue-alert py-1 px-3 mb-2">
+                                <i class="fa fa-exclamation-triangle me-1"/>
+                                <strong><t t-esc="overdueCount"/></strong> overdue payment(s) need immediate attention
+                            </div>
+                        </t>
+
+                        <t t-if="state.vendorPayments.count">
+                            <div class="tts-list-header">
+                                <span>Type</span><span>Reference</span><span>Vendor</span><span class="text-end">Outstanding</span>
+                            </div>
+                        </t>
+
+                        <div class="tts-scrollable-list">
+                            <t t-if="!state.vendorPayments.items.length">
+                                <div class="tts-empty-state">
+                                    <i class="fa fa-check-circle-o fa-2x text-success"/>
+                                    <p>No pending payments</p>
+                                </div>
+                            </t>
+                            <t t-foreach="state.vendorPayments.items" t-as="item" t-key="item.model + '-' + item.id">
+                                <div
+                                    t-attf-class="tts-list-row tts-clickable #{item.overdue ? 'tts-row-overdue' : ''}"
+                                    t-on-click="() => openRecord(item.model, item.id)"
+                                >
+                                    <span t-attf-class="tts-type-pill #{item.overdue ? 'tts-pill-red' : 'tts-pill-blue'}">
+                                        <t t-esc="item.type"/>
+                                        <t t-if="item.overdue"> ⚠</t>
+                                    </span>
+                                    <span class="tts-ref fw-semibold" t-esc="item.name"/>
+                                    <span class="tts-partner text-muted">
+                                        <t t-esc="item.vendor"/>
+                                        <t t-if="item.due_date">
+                                            <br/>
+                                            <small t-attf-class="#{item.overdue ? 'text-danger' : 'text-muted'}">
+                                                Due: <t t-esc="item.due_date"/>
+                                            </small>
+                                        </t>
+                                    </span>
+                                    <span class="tts-amount text-end fw-semibold">
+                                        <t t-esc="item.currency_symbol"/>
+                                        <t t-esc="fmtMoney(item.amount_residual)"/>
+                                        <t t-if="item.payment_state === 'partial'">
+                                            <br/><small class="text-warning">Partial</small>
+                                        </t>
+                                    </span>
+                                </div>
+                            </t>
+                        </div>
+
+                        <t t-if="state.vendorPayments.count > 0">
+                            <div class="tts-widget-footer">
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="openVendorBillsList">
+                                    View all <t t-esc="state.vendorPayments.count"/> payment requests
+                                    <i class="fa fa-arrow-right ms-1"/>
+                                </button>
+                            </div>
+                        </t>
+                    </div>
+
+                </div><!-- /row 3 -->
+
+            </div><!-- /tts-dash-scroll -->
+        </t><!-- /else dashboard content -->
+    </div><!-- /tts-am-dashboard -->
+</t>
+
+</templates>

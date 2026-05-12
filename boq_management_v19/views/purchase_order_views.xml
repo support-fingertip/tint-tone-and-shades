@@ -28,6 +28,16 @@
                     <field name="boq_id" widget="statinfo" string="BOQ"/>
                 </button>
 
+<<<<<<< HEAD
+                <!-- Rate Vendor: visible once PO is confirmed and receipt is done -->
+                <button name="action_rate_vendor" type="object"
+                        class="oe_stat_button" icon="fa-star"
+                        invisible="not show_rate_vendor"
+                        string="Rate Vendor"/>
+
+                <!-- Load computed field used above in invisible expression -->
+                <field name="show_rate_vendor" invisible="1"/>
+=======
                 <button name="action_rate_vendor" type="object"
                         class="oe_stat_button" icon="fa-star"
                         invisible="not show_rate_vendor">
@@ -41,6 +51,7 @@
 
                 <field name="show_rate_vendor" invisible="1"/>
                 <field name="vendor_rating_int" invisible="1"/>
+>>>>>>> main
 
             </xpath>
 
