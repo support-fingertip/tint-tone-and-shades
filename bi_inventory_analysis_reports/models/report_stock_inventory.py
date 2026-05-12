@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models, tools
+from odoo import fields, models
 
 
 class BiStockInventoryReport(models.Model):
@@ -48,17 +48,15 @@ class BiStockInventoryReport(models.Model):
 
     # ─────────────────────────────────────────────────────────────────────────
 
-    @staticmethod
-    def _svl_exists(cr):
-        cr.execute(
+    @property
+    def _table_query(self):
+        self.env.cr.execute(
             "SELECT EXISTS (SELECT FROM information_schema.tables "
             "WHERE table_schema = 'public' AND table_name = 'stock_valuation_layer')"
         )
-        return cr.fetchone()[0]
+        svl_exists = self.env.cr.fetchone()[0]
 
-    def init(self):
-        tools.drop_view_if_exists(self.env.cr, self._table)
-        if self._svl_exists(self.env.cr):
+        if svl_exists:
             cost_join = """
                 LEFT JOIN LATERAL (
                     SELECT svl.unit_cost
@@ -73,42 +71,40 @@ class BiStockInventoryReport(models.Model):
             cost_join = ""
             cost_expr = "0.0"
 
-        self.env.cr.execute(f"""
-            CREATE OR REPLACE VIEW {self._table} AS (
-                SELECT
-                    sq.id,
-                    sq.product_id,
-                    pp.product_tmpl_id,
-                    pt.categ_id,
-                    pt.uom_id,
-                    sq.location_id,
-                    wh_lkp.warehouse_id,
-                    sq.lot_id,
-                    sq.owner_id,
-                    sq.company_id,
-                    rc.currency_id,
-                    sq.quantity                                     AS qty_on_hand,
-                    sq.reserved_quantity                            AS qty_reserved,
-                    (sq.quantity - sq.reserved_quantity)            AS qty_available,
-                    sq.in_date                                      AS last_update,
-                    {cost_expr}                                     AS cost_price,
-                    sq.quantity * {cost_expr}                       AS total_value
-                FROM stock_quant sq
-                JOIN product_product  pp  ON pp.id  = sq.product_id
-                JOIN product_template pt  ON pt.id  = pp.product_tmpl_id
-                JOIN stock_location   sl  ON sl.id  = sq.location_id
-                JOIN res_company      rc  ON rc.id  = sq.company_id
-                LEFT JOIN LATERAL (
-                    SELECT sw.id AS warehouse_id
-                    FROM stock_warehouse  sw
-                    JOIN stock_location   wv ON wv.id = sw.view_location_id
-                    WHERE sl.complete_name LIKE wv.complete_name || '/%'
-                       OR sl.id = wv.id
-                    ORDER BY LENGTH(wv.complete_name) DESC
-                    LIMIT 1
-                ) wh_lkp ON TRUE
-                {cost_join}
-                WHERE sl.usage = 'internal'
-                  AND sq.quantity > 0
-            )
-        """)
+        return f"""
+            SELECT
+                sq.id,
+                sq.product_id,
+                pp.product_tmpl_id,
+                pt.categ_id,
+                pt.uom_id,
+                sq.location_id,
+                wh_lkp.warehouse_id,
+                sq.lot_id,
+                sq.owner_id,
+                sq.company_id,
+                rc.currency_id,
+                sq.quantity                                     AS qty_on_hand,
+                sq.reserved_quantity                            AS qty_reserved,
+                (sq.quantity - sq.reserved_quantity)            AS qty_available,
+                sq.in_date                                      AS last_update,
+                {cost_expr}                                     AS cost_price,
+                sq.quantity * {cost_expr}                       AS total_value
+            FROM stock_quant sq
+            JOIN product_product  pp  ON pp.id  = sq.product_id
+            JOIN product_template pt  ON pt.id  = pp.product_tmpl_id
+            JOIN stock_location   sl  ON sl.id  = sq.location_id
+            JOIN res_company      rc  ON rc.id  = sq.company_id
+            LEFT JOIN LATERAL (
+                SELECT sw.id AS warehouse_id
+                FROM stock_warehouse  sw
+                JOIN stock_location   wv ON wv.id = sw.view_location_id
+                WHERE sl.complete_name LIKE wv.complete_name || '/%'
+                   OR sl.id = wv.id
+                ORDER BY LENGTH(wv.complete_name) DESC
+                LIMIT 1
+            ) wh_lkp ON TRUE
+            {cost_join}
+            WHERE sl.usage = 'internal'
+              AND sq.quantity > 0
+        """
