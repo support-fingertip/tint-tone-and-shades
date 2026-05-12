@@ -31,6 +31,7 @@ All Reports Include
     'license': 'OPL-1',
     'depends': [
         'stock',
+        'stock_account',
         'product',
         'uom',
         'product_expiry',
