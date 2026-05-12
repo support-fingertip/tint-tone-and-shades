@@ -56,6 +56,12 @@ class BiStockMoveReport(models.Model):
 
     # ─────────────────────────────────────────────────────────────────────────
 
+    def _auto_init(self):
+        self.env.cr.execute(
+            "CREATE OR REPLACE VIEW %s AS (%s)" % (self._table, self._table_query)
+        )
+        return super()._auto_init()
+
     @property
     def _table_query(self):
         return """
