@@ -13,7 +13,6 @@ class BiStockMoveReport(models.Model):
     _log_access = False
 
     # ── Move reference ───────────────────────────────────────────────────────
-    name = fields.Char(string='Reference', readonly=True)
     origin = fields.Char(string='Source Document', readonly=True)
     picking_id = fields.Many2one('stock.picking', string='Transfer', readonly=True)
     picking_type_id = fields.Many2one('stock.picking.type', string='Operation Type', readonly=True)
@@ -59,11 +58,10 @@ class BiStockMoveReport(models.Model):
 
     def init(self):
         tools.drop_view_if_exists(self.env.cr, self._table)
-        self.env.cr.execute("""
-            CREATE OR REPLACE VIEW %s AS (
+        self.env.cr.execute(f"""
+            CREATE OR REPLACE VIEW {self._table} AS (
                 SELECT
                     sm.id,
-                    sm.name,
                     sm.origin,
                     sm.picking_id,
                     sm.picking_type_id,
@@ -79,7 +77,6 @@ class BiStockMoveReport(models.Model):
                     sm.product_uom                                      AS uom_id,
                     sm.location_id,
                     sm.location_dest_id,
-                    -- Warehouse: resolve from destination for incoming, source for outgoing
                     wh_lkp.warehouse_id,
                     sm.partner_id,
                     sm.company_id,
@@ -103,21 +100,20 @@ class BiStockMoveReport(models.Model):
                     sm.date,
                     DATE_TRUNC('month', sm.date)::date                  AS date_month
                 FROM stock_move sm
-                JOIN product_product  pp   ON pp.id  = sm.product_id
-                JOIN product_template pt   ON pt.id  = pp.product_tmpl_id
-                JOIN res_company      rc   ON rc.id  = sm.company_id
+                JOIN product_product    pp  ON pp.id  = sm.product_id
+                JOIN product_template   pt  ON pt.id  = pp.product_tmpl_id
+                JOIN res_company        rc  ON rc.id  = sm.company_id
                 LEFT JOIN stock_picking_type spt ON spt.id = sm.picking_type_id
-                LEFT JOIN stock_location    sl  ON sl.id  = sm.location_dest_id
-                -- Warehouse from destination location
+                LEFT JOIN stock_location     sl  ON sl.id  = sm.location_dest_id
                 LEFT JOIN LATERAL (
                     SELECT sw.id AS warehouse_id
                     FROM stock_warehouse  sw
                     JOIN stock_location   wv ON wv.id = sw.view_location_id
-                    WHERE sl.complete_name LIKE wv.complete_name || '/%%'
+                    WHERE sl.complete_name LIKE wv.complete_name || '/%'
                        OR sl.id = wv.id
                     ORDER BY LENGTH(wv.complete_name) DESC
                     LIMIT 1
                 ) wh_lkp ON TRUE
                 WHERE sm.state = 'done'
             )
-        """ % self._table)
+        """)

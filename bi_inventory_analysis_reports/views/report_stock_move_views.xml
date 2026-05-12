@@ -28,7 +28,6 @@
                 <field name="currency_id" column_invisible="1"/>
                 <field name="total_value" optional="show" sum="Total Value" widget="monetary"/>
                 <field name="origin" optional="hide"/>
-                <field name="name" optional="hide"/>
                 <field name="date_month" optional="hide"/>
                 <field name="company_id" optional="hide"/>
             </list>
