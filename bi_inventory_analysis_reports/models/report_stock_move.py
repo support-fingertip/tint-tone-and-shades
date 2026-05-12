@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models, tools
+from odoo import fields, models
 
 
 class BiStockMoveReport(models.Model):
@@ -56,64 +56,62 @@ class BiStockMoveReport(models.Model):
 
     # ─────────────────────────────────────────────────────────────────────────
 
-    def init(self):
-        tools.drop_view_if_exists(self.env.cr, self._table)
-        self.env.cr.execute(f"""
-            CREATE OR REPLACE VIEW {self._table} AS (
-                SELECT
-                    sm.id,
-                    sm.origin,
-                    sm.picking_id,
-                    sm.picking_type_id,
-                    CASE
-                        WHEN spt.code = 'incoming' THEN 'in'
-                        WHEN spt.code = 'outgoing' THEN 'out'
-                        WHEN spt.code = 'internal' THEN 'internal'
-                        ELSE 'other'
-                    END                                                 AS move_type,
-                    sm.product_id,
-                    pp.product_tmpl_id,
-                    pt.categ_id,
-                    sm.product_uom                                      AS uom_id,
-                    sm.location_id,
-                    sm.location_dest_id,
-                    wh_lkp.warehouse_id,
-                    sm.partner_id,
-                    sm.company_id,
-                    rc.currency_id,
-                    sm.product_uom_qty                                  AS product_qty,
-                    COALESCE(
-                        (SELECT SUM(sml.quantity)
-                         FROM stock_move_line sml
-                         WHERE sml.move_id = sm.id
-                           AND sml.state = 'done'),
-                        0.0
-                    )                                                   AS qty_done,
-                    sm.price_unit,
-                    COALESCE(
-                        (SELECT SUM(sml.quantity)
-                         FROM stock_move_line sml
-                         WHERE sml.move_id = sm.id
-                           AND sml.state = 'done'),
-                        0.0
-                    ) * sm.price_unit                                   AS total_value,
-                    sm.date,
-                    DATE_TRUNC('month', sm.date)::date                  AS date_month
-                FROM stock_move sm
-                JOIN product_product    pp  ON pp.id  = sm.product_id
-                JOIN product_template   pt  ON pt.id  = pp.product_tmpl_id
-                JOIN res_company        rc  ON rc.id  = sm.company_id
-                LEFT JOIN stock_picking_type spt ON spt.id = sm.picking_type_id
-                LEFT JOIN stock_location     sl  ON sl.id  = sm.location_dest_id
-                LEFT JOIN LATERAL (
-                    SELECT sw.id AS warehouse_id
-                    FROM stock_warehouse  sw
-                    JOIN stock_location   wv ON wv.id = sw.view_location_id
-                    WHERE sl.complete_name LIKE wv.complete_name || '/%'
-                       OR sl.id = wv.id
-                    ORDER BY LENGTH(wv.complete_name) DESC
-                    LIMIT 1
-                ) wh_lkp ON TRUE
-                WHERE sm.state = 'done'
-            )
-        """)
+    @property
+    def _table_query(self):
+        return """
+            SELECT
+                sm.id,
+                sm.origin,
+                sm.picking_id,
+                sm.picking_type_id,
+                CASE
+                    WHEN spt.code = 'incoming' THEN 'in'
+                    WHEN spt.code = 'outgoing' THEN 'out'
+                    WHEN spt.code = 'internal' THEN 'internal'
+                    ELSE 'other'
+                END                                                 AS move_type,
+                sm.product_id,
+                pp.product_tmpl_id,
+                pt.categ_id,
+                sm.product_uom                                      AS uom_id,
+                sm.location_id,
+                sm.location_dest_id,
+                wh_lkp.warehouse_id,
+                sm.partner_id,
+                sm.company_id,
+                rc.currency_id,
+                sm.product_uom_qty                                  AS product_qty,
+                COALESCE(
+                    (SELECT SUM(sml.quantity)
+                     FROM stock_move_line sml
+                     WHERE sml.move_id = sm.id
+                       AND sml.state = 'done'),
+                    0.0
+                )                                                   AS qty_done,
+                sm.price_unit,
+                COALESCE(
+                    (SELECT SUM(sml.quantity)
+                     FROM stock_move_line sml
+                     WHERE sml.move_id = sm.id
+                       AND sml.state = 'done'),
+                    0.0
+                ) * sm.price_unit                                   AS total_value,
+                sm.date,
+                DATE_TRUNC('month', sm.date)::date                  AS date_month
+            FROM stock_move sm
+            JOIN product_product    pp  ON pp.id  = sm.product_id
+            JOIN product_template   pt  ON pt.id  = pp.product_tmpl_id
+            JOIN res_company        rc  ON rc.id  = sm.company_id
+            LEFT JOIN stock_picking_type spt ON spt.id = sm.picking_type_id
+            LEFT JOIN stock_location     sl  ON sl.id  = sm.location_dest_id
+            LEFT JOIN LATERAL (
+                SELECT sw.id AS warehouse_id
+                FROM stock_warehouse  sw
+                JOIN stock_location   wv ON wv.id = sw.view_location_id
+                WHERE sl.complete_name LIKE wv.complete_name || '/%'
+                   OR sl.id = wv.id
+                ORDER BY LENGTH(wv.complete_name) DESC
+                LIMIT 1
+            ) wh_lkp ON TRUE
+            WHERE sm.state = 'done'
+        """

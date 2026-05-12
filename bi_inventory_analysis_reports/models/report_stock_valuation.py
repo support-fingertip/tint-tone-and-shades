@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models, tools
+from odoo import fields, models
 
 
 class BiStockValuationReport(models.Model):
@@ -55,78 +55,70 @@ class BiStockValuationReport(models.Model):
 
     # ─────────────────────────────────────────────────────────────────────────
 
-    @staticmethod
-    def _svl_exists(cr):
-        cr.execute(
+    @property
+    def _table_query(self):
+        self.env.cr.execute(
             "SELECT EXISTS (SELECT FROM information_schema.tables "
             "WHERE table_schema = 'public' AND table_name = 'stock_valuation_layer')"
         )
-        return cr.fetchone()[0]
+        svl_exists = self.env.cr.fetchone()[0]
 
-    def init(self):
-        tools.drop_view_if_exists(self.env.cr, self._table)
-        if not self._svl_exists(self.env.cr):
-            # stock_account not installed — create an empty view with correct column types
-            self.env.cr.execute(f"""
-                CREATE OR REPLACE VIEW {self._table} AS (
-                    SELECT
-                        NULL::integer           AS id,
-                        NULL::integer           AS product_id,
-                        NULL::integer           AS product_tmpl_id,
-                        NULL::integer           AS categ_id,
-                        NULL::integer           AS uom_id,
-                        NULL::integer           AS stock_move_id,
-                        NULL::integer           AS picking_type_id,
-                        NULL::integer           AS location_id,
-                        NULL::integer           AS location_dest_id,
-                        NULL::integer           AS partner_id,
-                        NULL::integer           AS company_id,
-                        NULL::integer           AS currency_id,
-                        NULL::double precision  AS quantity,
-                        NULL::double precision  AS unit_cost,
-                        NULL::double precision  AS total_value,
-                        NULL::double precision  AS remaining_qty,
-                        NULL::double precision  AS remaining_value,
-                        NULL::varchar           AS description,
-                        NULL::varchar           AS movement_type,
-                        NULL::timestamp         AS date,
-                        NULL::date              AS date_month
-                    WHERE FALSE
-                )
-            """)
-            return
-
-        self.env.cr.execute(f"""
-            CREATE OR REPLACE VIEW {self._table} AS (
+        if not svl_exists:
+            return """
                 SELECT
-                    svl.id,
-                    svl.product_id,
-                    pp.product_tmpl_id,
-                    pt.categ_id,
-                    svl.uom_id,
-                    svl.stock_move_id,
-                    sm.picking_type_id,
-                    sm.location_id,
-                    sm.location_dest_id,
-                    sm.partner_id,
-                    svl.company_id,
-                    rc.currency_id,
-                    svl.quantity,
-                    svl.unit_cost,
-                    svl.value                                       AS total_value,
-                    svl.remaining_qty,
-                    svl.remaining_value,
-                    svl.description,
-                    CASE
-                        WHEN svl.quantity >= 0 THEN 'in'
-                        ELSE 'out'
-                    END                                             AS movement_type,
-                    svl.create_date                                 AS date,
-                    DATE_TRUNC('month', svl.create_date)::date      AS date_month
-                FROM stock_valuation_layer svl
-                JOIN product_product  pp ON pp.id = svl.product_id
-                JOIN product_template pt ON pt.id = pp.product_tmpl_id
-                JOIN res_company      rc ON rc.id = svl.company_id
-                LEFT JOIN stock_move  sm ON sm.id = svl.stock_move_id
-            )
-        """)
+                    NULL::integer           AS id,
+                    NULL::integer           AS product_id,
+                    NULL::integer           AS product_tmpl_id,
+                    NULL::integer           AS categ_id,
+                    NULL::integer           AS uom_id,
+                    NULL::integer           AS stock_move_id,
+                    NULL::integer           AS picking_type_id,
+                    NULL::integer           AS location_id,
+                    NULL::integer           AS location_dest_id,
+                    NULL::integer           AS partner_id,
+                    NULL::integer           AS company_id,
+                    NULL::integer           AS currency_id,
+                    NULL::double precision  AS quantity,
+                    NULL::double precision  AS unit_cost,
+                    NULL::double precision  AS total_value,
+                    NULL::double precision  AS remaining_qty,
+                    NULL::double precision  AS remaining_value,
+                    NULL::varchar           AS description,
+                    NULL::varchar           AS movement_type,
+                    NULL::timestamp         AS date,
+                    NULL::date              AS date_month
+                WHERE FALSE
+            """
+
+        return """
+            SELECT
+                svl.id,
+                svl.product_id,
+                pp.product_tmpl_id,
+                pt.categ_id,
+                svl.uom_id,
+                svl.stock_move_id,
+                sm.picking_type_id,
+                sm.location_id,
+                sm.location_dest_id,
+                sm.partner_id,
+                svl.company_id,
+                rc.currency_id,
+                svl.quantity,
+                svl.unit_cost,
+                svl.value                                       AS total_value,
+                svl.remaining_qty,
+                svl.remaining_value,
+                svl.description,
+                CASE
+                    WHEN svl.quantity >= 0 THEN 'in'
+                    ELSE 'out'
+                END                                             AS movement_type,
+                svl.create_date                                 AS date,
+                DATE_TRUNC('month', svl.create_date)::date      AS date_month
+            FROM stock_valuation_layer svl
+            JOIN product_product  pp ON pp.id = svl.product_id
+            JOIN product_template pt ON pt.id = pp.product_tmpl_id
+            JOIN res_company      rc ON rc.id = svl.company_id
+            LEFT JOIN stock_move  sm ON sm.id = svl.stock_move_id
+        """
