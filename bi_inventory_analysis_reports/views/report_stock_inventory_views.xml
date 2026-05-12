@@ -79,10 +79,7 @@
                 <filter string="Has Reserved Qty" name="filter_reserved"
                     domain="[('qty_reserved','&gt;',0)]"/>
                 <separator/>
-                <filter string="Updated This Month" name="filter_this_month"
-                    domain="[('last_update','&gt;=', (context_today() + relativedelta(day=1)).strftime('%Y-%m-%d'))]"/>
-                <filter string="Updated This Week" name="filter_this_week"
-                    domain="[('last_update','&gt;=', (context_today() + relativedelta(weeks=-1, weekday=0)).strftime('%Y-%m-%d'))]"/>
+                <filter string="Last Update" name="filter_last_update" date="last_update"/>
 
                 <group expand="0" string="Group By">
                     <filter string="Product" name="group_product"

@@ -87,18 +87,6 @@
                 <filter string="Internal" name="filter_internal"
                     domain="[('move_type','=','internal')]"/>
                 <separator/>
-                <filter string="Today" name="filter_today"
-                    domain="[('date','&gt;=',context_today().strftime('%Y-%m-%d')),
-                              ('date','&lt;', (context_today()+relativedelta(days=1)).strftime('%Y-%m-%d'))]"/>
-                <filter string="This Week" name="filter_week"
-                    domain="[('date','&gt;=',(context_today()+relativedelta(weeks=-1,weekday=0)).strftime('%Y-%m-%d'))]"/>
-                <filter string="This Month" name="filter_month"
-                    domain="[('date','&gt;=',(context_today()+relativedelta(day=1)).strftime('%Y-%m-%d'))]"/>
-                <filter string="This Quarter" name="filter_quarter"
-                    domain="[('date','&gt;=',(context_today()+relativedelta(months=-3,day=1)).strftime('%Y-%m-%d'))]"/>
-                <filter string="This Year" name="filter_year"
-                    domain="[('date','&gt;=',(context_today()+relativedelta(month=1,day=1)).strftime('%Y-%m-%d'))]"/>
-                <separator/>
                 <filter string="Date" name="filter_date" date="date"/>
 
                 <group expand="0" string="Group By">
