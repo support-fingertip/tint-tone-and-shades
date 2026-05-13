@@ -2,16 +2,23 @@
 <odoo>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         ALL INVENTORY ANALYSIS REPORTS — Menu Structure
-         Path: Inventory > Reporting > Inventory Analysis Reports
+         ALL INVENTORY ANALYSIS REPORTS — Standalone Application
+         Top-level app with its own icon in the Apps grid.
     ═══════════════════════════════════════════════════════════════════════ -->
 
-    <!-- Sub-menu parent under Inventory > Reporting -->
+    <!-- Top-level application menu (appears in the apps grid with icon) -->
+    <menuitem
+        id="menu_bi_inventory_analysis_app"
+        name="Inventory Analysis Reports"
+        web_icon="bi_inventory_analysis_reports,static/description/icon.png"
+        sequence="55"/>
+
+    <!-- Navbar category "Reports" -->
     <menuitem
         id="menu_bi_inventory_analysis_root"
-        name="Inventory Analysis Reports"
-        parent="stock.menu_warehouse_report"
-        sequence="25"/>
+        name="Reports"
+        parent="menu_bi_inventory_analysis_app"
+        sequence="10"/>
 
     <!-- 1. Current Stock Analysis -->
     <menuitem
