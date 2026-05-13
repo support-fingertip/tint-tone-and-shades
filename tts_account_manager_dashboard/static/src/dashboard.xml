@@ -235,63 +235,11 @@
                     </div>
                 </div><!-- /row 2 -->
 
-                <!-- ─── Row 3 : Pending Approvals + Vendor Payments ── -->
+                <!-- ─── Row 3 : Vendor Payments ── -->
                 <div class="tts-widget-row">
 
-                    <!-- ══ Widget 4 — Pending Approvals ══ -->
-                    <div class="tts-widget tts-widget-half">
-                        <div class="tts-widget-head">
-                            <span class="tts-wh-icon tts-icon-red"><i class="fa fa-clock-o"/></span>
-                            <div class="tts-wh-text">
-                                <h2>Pending Approvals</h2>
-                                <p>Invoices, bills and purchase orders awaiting approval</p>
-                            </div>
-                            <div class="tts-count-badge tts-badge-red" t-esc="state.pendingApprovals.count"/>
-                        </div>
-
-                        <t t-if="state.pendingApprovals.count">
-                            <div class="tts-list-header">
-                                <span>Type</span><span>Reference</span><span>Partner</span><span class="text-end">Amount</span>
-                            </div>
-                        </t>
-
-                        <div class="tts-scrollable-list">
-                            <t t-if="!state.pendingApprovals.items.length">
-                                <div class="tts-empty-state">
-                                    <i class="fa fa-check-circle-o fa-2x text-success"/>
-                                    <p>No pending approvals</p>
-                                </div>
-                            </t>
-                            <t t-foreach="state.pendingApprovals.items" t-as="item" t-key="item.model + '-' + item.id">
-                                <div
-                                    class="tts-list-row tts-clickable"
-                                    t-on-click="() => openRecord(item.model, item.id)"
-                                >
-                                    <span t-attf-class="tts-type-pill tts-pill-#{item.source === 'Purchase' ? 'purple' : 'amber'}">
-                                        <t t-esc="item.type"/>
-                                    </span>
-                                    <span class="tts-ref fw-semibold" t-esc="item.name"/>
-                                    <span class="tts-partner text-muted" t-esc="item.partner"/>
-                                    <span class="tts-amount text-end fw-semibold">
-                                        <t t-esc="item.currency_symbol"/>
-                                        <t t-esc="fmtMoney(item.amount)"/>
-                                    </span>
-                                </div>
-                            </t>
-                        </div>
-
-                        <t t-if="state.pendingApprovals.count > 0">
-                            <div class="tts-widget-footer">
-                                <button class="btn btn-sm btn-outline-danger" t-on-click="openPendingApprovalsList">
-                                    View all <t t-esc="state.pendingApprovals.count"/> pending approvals
-                                    <i class="fa fa-arrow-right ms-1"/>
-                                </button>
-                            </div>
-                        </t>
-                    </div>
-
                     <!-- ══ Widget 5 — Vendor Payment Requests ══ -->
-                    <div class="tts-widget tts-widget-half">
+                    <div class="tts-widget tts-widget-full">
                         <div class="tts-widget-head">
                             <span class="tts-wh-icon tts-icon-blue"><i class="fa fa-money"/></span>
                             <div class="tts-wh-text">
