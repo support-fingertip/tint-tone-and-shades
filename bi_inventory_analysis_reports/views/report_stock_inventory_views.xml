@@ -79,7 +79,7 @@
                     domain="[('has_lot', '=', 'no')]"/>
                 <separator/>
 
-                <group expand="0" string="Group By">
+                <group>
                     <filter string="Product" name="group_product"
                         context="{'group_by': 'product_id'}"/>
                     <filter string="Product Category" name="group_categ"

@@ -94,7 +94,7 @@
                 <filter string="No Movement in 60 Days" name="filter_60"
                     domain="[('days_no_movement','&gt;',60)]"/>
 
-                <group expand="0" string="Group By">
+                <group>
                     <filter string="Stock Status" name="group_status"
                         context="{'group_by': 'stock_status'}"/>
                     <filter string="Product" name="group_product"
