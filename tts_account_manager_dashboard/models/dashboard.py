@@ -26,7 +26,6 @@ class TtsAccountDashboard(models.AbstractModel):
             "revenue": self._monthly_revenue(),
             "overheads": self._monthly_overheads(),
             "office_expenses": self._office_expenses_by_category(),
-            "pending_approvals": self._pending_approvals(),
             "vendor_payments": self._vendor_payment_requests(),
             "summary": self._summary_kpis(),
         }
@@ -157,89 +156,6 @@ class TtsAccountDashboard(models.AbstractModel):
             })
 
         return {"categories": categories, "monthly": monthly}
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # Widget 4 — Pending Approvals
-    # Integrates with infinys_account_move_approval + infinys_purchase_order_approval
-    # Falls back gracefully when those modules are absent.
-    # ─────────────────────────────────────────────────────────────────────────
-    @api.model
-    def _pending_approvals(self):
-        items = []
-
-        # Account Move approvals
-        AccountMove = self.env["account.move"]
-        if "approval_state" in AccountMove._fields:
-            for move in AccountMove.search(
-                [("approval_state", "=", "pending")],
-                order="invoice_date desc",
-                limit=50,
-            ):
-                items.append({
-                    "source": "Account",
-                    "type": (
-                        "Customer Invoice" if move.move_type == "out_invoice"
-                        else "Vendor Bill" if move.move_type == "in_invoice"
-                        else move.move_type.replace("_", " ").title()
-                    ),
-                    "name": move.name or "Draft",
-                    "partner": move.partner_id.name or "",
-                    "amount": round(move.amount_total, 2),
-                    "currency_symbol": move.currency_id.symbol or "",
-                    "date": move.invoice_date.strftime("%Y-%m-%d") if move.invoice_date else "",
-                    "id": move.id,
-                    "model": "account.move",
-                    "approval_status": move.approval_state,
-                })
-        else:
-            # Fallback: draft invoices/bills sitting for > 3 days
-            from_date = (datetime.today() - relativedelta(days=3)).strftime("%Y-%m-%d")
-            for move in AccountMove.search(
-                [
-                    ("state", "=", "draft"),
-                    ("move_type", "in", ["out_invoice", "in_invoice"]),
-                    ("create_date", "<=", from_date),
-                ],
-                order="create_date asc",
-                limit=30,
-            ):
-                items.append({
-                    "source": "Account",
-                    "type": "Draft " + (
-                        "Invoice" if move.move_type == "out_invoice" else "Bill"
-                    ),
-                    "name": move.name or "Draft",
-                    "partner": move.partner_id.name or "",
-                    "amount": round(move.amount_total, 2),
-                    "currency_symbol": move.currency_id.symbol or "",
-                    "date": move.invoice_date.strftime("%Y-%m-%d") if move.invoice_date else "",
-                    "id": move.id,
-                    "model": "account.move",
-                    "approval_status": "draft",
-                })
-
-        # Purchase Order approvals
-        PO = self.env.get("purchase.order")
-        if PO is not None:
-            for po in PO.search(
-                [("state", "=", "to approve")],
-                order="date_order desc",
-                limit=50,
-            ):
-                items.append({
-                    "source": "Purchase",
-                    "type": "Purchase Order",
-                    "name": po.name,
-                    "partner": po.partner_id.name or "",
-                    "amount": round(po.amount_total, 2),
-                    "currency_symbol": po.currency_id.symbol or "",
-                    "date": po.date_order.strftime("%Y-%m-%d") if po.date_order else "",
-                    "id": po.id,
-                    "model": "purchase.order",
-                    "approval_status": "to approve",
-                })
-
-        return {"count": len(items), "items": items[:40]}
 
     # ─────────────────────────────────────────────────────────────────────────
     # Widget 5 — Vendor Payment Requests
