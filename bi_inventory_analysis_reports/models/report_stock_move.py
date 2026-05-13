@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models
+from odoo import fields, models, tools
 
 
 class BiStockMoveReport(models.Model):
@@ -17,8 +17,8 @@ class BiStockMoveReport(models.Model):
     picking_id = fields.Many2one('stock.picking', string='Transfer', readonly=True)
     picking_type_id = fields.Many2one('stock.picking.type', string='Operation Type', readonly=True)
     move_type = fields.Selection([
-        ('in', 'Incoming'),
-        ('out', 'Outgoing'),
+        ('incoming', 'Incoming'),
+        ('outgoing', 'Outgoing'),
         ('internal', 'Internal'),
         ('other', 'Other'),
     ], string='Move Type', readonly=True)
@@ -57,13 +57,14 @@ class BiStockMoveReport(models.Model):
     # ─────────────────────────────────────────────────────────────────────────
 
     def _auto_init(self):
-        self.env.cr.execute(
-            "CREATE OR REPLACE VIEW %s AS (%s)" % (self._table, self._table_query)
-        )
+        self.init()
         return super()._auto_init()
 
-    @property
-    def _table_query(self):
+    def init(self):
+        tools.drop_view_if_exists(self.env.cr, self._table)
+        self.env.cr.execute("""CREATE VIEW %s AS (%s)""" % (self._table, self._get_query()))
+
+    def _get_query(self):
         return """
             SELECT
                 sm.id,
@@ -71,8 +72,8 @@ class BiStockMoveReport(models.Model):
                 sm.picking_id,
                 sm.picking_type_id,
                 CASE
-                    WHEN spt.code = 'incoming' THEN 'in'
-                    WHEN spt.code = 'outgoing' THEN 'out'
+                    WHEN spt.code = 'incoming' THEN 'incoming'
+                    WHEN spt.code = 'outgoing' THEN 'outgoing'
                     WHEN spt.code = 'internal' THEN 'internal'
                     ELSE 'other'
                 END                                                 AS move_type,

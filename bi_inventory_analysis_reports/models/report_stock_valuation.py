@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models
+from odoo import fields, models, tools
 
 
 class BiStockValuationReport(models.Model):
@@ -45,8 +45,8 @@ class BiStockValuationReport(models.Model):
 
     # ── Movement direction ───────────────────────────────────────────────────
     movement_type = fields.Selection([
-        ('in', 'Stock In'),
-        ('out', 'Stock Out'),
+        ('stock_in', 'Stock In'),
+        ('stock_out', 'Stock Out'),
     ], string='Direction', readonly=True)
 
     # ── Dates ────────────────────────────────────────────────────────────────
@@ -56,13 +56,14 @@ class BiStockValuationReport(models.Model):
     # ─────────────────────────────────────────────────────────────────────────
 
     def _auto_init(self):
-        self.env.cr.execute(
-            "CREATE OR REPLACE VIEW %s AS (%s)" % (self._table, self._table_query)
-        )
+        self.init()
         return super()._auto_init()
 
-    @property
-    def _table_query(self):
+    def init(self):
+        tools.drop_view_if_exists(self.env.cr, self._table)
+        self.env.cr.execute("""CREATE VIEW %s AS (%s)""" % (self._table, self._get_query()))
+
+    def _get_query(self):
         self.env.cr.execute(
             "SELECT EXISTS (SELECT FROM information_schema.tables "
             "WHERE table_schema = 'public' AND table_name = 'stock_valuation_layer')"
@@ -117,8 +118,8 @@ class BiStockValuationReport(models.Model):
                 svl.remaining_value,
                 svl.description,
                 CASE
-                    WHEN svl.quantity >= 0 THEN 'in'
-                    ELSE 'out'
+                    WHEN svl.quantity >= 0 THEN 'stock_in'
+                    ELSE 'stock_out'
                 END                                             AS movement_type,
                 svl.create_date                                 AS date,
                 DATE_TRUNC('month', svl.create_date)::date      AS date_month
