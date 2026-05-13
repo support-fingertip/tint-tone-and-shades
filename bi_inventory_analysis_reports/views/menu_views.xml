@@ -18,7 +18,7 @@
         id="menu_bi_stock_inventory_report"
         name="Current Stock Analysis"
         parent="menu_bi_inventory_analysis_root"
-        action="report_stock_inventory_views.action_bi_stock_inventory_report"
+        action="action_bi_stock_inventory_report"
         sequence="10"/>
 
     <!-- 2. Stock Movement Analysis -->
@@ -26,7 +26,7 @@
         id="menu_bi_stock_move_report"
         name="Stock Movement Analysis"
         parent="menu_bi_inventory_analysis_root"
-        action="report_stock_move_views.action_bi_stock_move_report"
+        action="action_bi_stock_move_report"
         sequence="20"/>
 
     <!-- 3. Inventory Aging Analysis -->
@@ -34,7 +34,7 @@
         id="menu_bi_stock_aging_report"
         name="Inventory Aging Analysis"
         parent="menu_bi_inventory_analysis_root"
-        action="report_stock_aging_views.action_bi_stock_aging_report"
+        action="action_bi_stock_aging_report"
         sequence="30"/>
 
     <!-- 4. Stock Valuation Report -->
@@ -42,7 +42,7 @@
         id="menu_bi_stock_valuation_report"
         name="Stock Valuation Report"
         parent="menu_bi_inventory_analysis_root"
-        action="report_stock_valuation_views.action_bi_stock_valuation_report"
+        action="action_bi_stock_valuation_report"
         sequence="40"/>
 
     <!-- 5. Dead / Slow-Moving Stock -->
@@ -50,7 +50,7 @@
         id="menu_bi_stock_dead_report"
         name="Dead / Slow-Moving Stock"
         parent="menu_bi_inventory_analysis_root"
-        action="report_stock_dead_views.action_bi_stock_dead_report"
+        action="action_bi_stock_dead_report"
         sequence="50"/>
 
     <!-- 6. Stock Expiry Report -->
@@ -58,7 +58,7 @@
         id="menu_bi_stock_expiry_report"
         name="Stock Expiry Report"
         parent="menu_bi_inventory_analysis_root"
-        action="report_stock_expiry_views.action_bi_stock_expiry_report"
+        action="action_bi_stock_expiry_report"
         sequence="60"/>
 
 </odoo>
