@@ -91,7 +91,7 @@
                 <filter string="Aged Over 180 Days" name="filter_very_old"
                     domain="[('days_in_stock','&gt;',180)]"/>
 
-                <group expand="0" string="Group By">
+                <group>
                     <filter string="Aging Bucket" name="group_bucket"
                         context="{'group_by': 'aging_bucket'}"/>
                     <filter string="Product" name="group_product"
