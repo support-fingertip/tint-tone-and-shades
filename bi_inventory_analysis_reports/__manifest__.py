@@ -48,6 +48,6 @@ All Reports Include
     ],
     'images': [],
     'installable': True,
-    'application': False,
+    'application': True,
     'auto_install': False,
 }
