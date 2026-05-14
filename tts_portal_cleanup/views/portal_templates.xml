@@ -13,38 +13,54 @@
               name="TTS: hide portal chrome for customers">
         <xpath expr="//head" position="inside">
             <style type="text/css">
-                /* Top "Your logo" + user menu navbar */
+                /* ── Top navbar ("Your logo" + user menu) ───────────────────
+                   Cover every selector variant Odoo uses across versions. */
+                body > header,
+                body > nav,
                 header,
                 header.o_main_navbar,
+                header.o_navbar,
                 nav.o_main_navbar,
-                body > nav.navbar { display: none !important; }
+                nav.o_navbar,
+                .o_main_navbar,
+                .o_navbar,
+                .o_top_fixed_element,
+                #oe_main_menu_navbar,
+                body > nav.navbar {
+                    display: none !important;
+                    visibility: hidden !important;
+                    height: 0 !important;
+                    min-height: 0 !important;
+                    overflow: hidden !important;
+                }
+
+                /* Drop the top padding the navbar normally reserves */
+                body { padding-top: 0 !important; }
+                main { padding-top: 0 !important; }
 
                 /* ── Left sidebar card (breadcrumb, amount, Pay Now, Download,
-                   Salesperson, Powered by odoo) ──────────────────────────────
-                   Odoo 17/19 wraps the row inside a .container, so we use
-                   descendant selectors (.o_portal_sidebar … .row) rather than
-                   direct-child (>). The sidebar column always carries
-                   d-print-none; the document column never does. */
-
-                /* Strategy 1 – class-based descendants */
+                   Salesperson, Powered by odoo) ─────────────────────────────
+                   In a 2-column portal row, the sidebar is always the column
+                   that is NOT the last child. That selector is the most
+                   reliable across Odoo versions. */
+                .o_portal_sidebar .row > div:not(:last-child),
+                .o_portal_sidebar .row > div.d-print-none,
                 .o_portal_sidebar .row > div.col-lg-auto,
                 .o_portal_sidebar .row > div.col-12.col-lg-auto,
                 .o_portal_sidebar .row > div.col-lg-3,
                 .o_portal_sidebar .row > div.col-12.col-lg-3,
                 .o_portal_sidebar_sidebar,
-                .o_portal_my_doc_table + div.col-lg-auto { display: none !important; }
+                [id*="portal-doc-col-left"],
+                [id^="o_portal_sidebar"],
+                .o_portal_my_doc_table + div.col-lg-auto {
+                    display: none !important;
+                    visibility: hidden !important;
+                    width: 0 !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                }
 
-                /* Strategy 2 – d-print-none sidebar column (always present) */
-                .o_portal_sidebar .row > div.d-print-none { display: none !important; }
-
-                /* Strategy 3 – known ids / named sections */
-                #portal-column-account-move-sidebar,
-                #portal_pay,
-                .o_portal_invoice_sidebar { display: none !important; }
-
-                /* ── Pay Now / payment buttons anywhere on page ─────────────
-                   Belt-and-braces for any Pay button rendered outside the
-                   sidebar by an inherited template.                          */
+                /* ── Pay Now / payment buttons anywhere on the page ─────── */
                 a[href*="/invoice/transaction/"],
                 a[href*="/payment/transaction/"],
                 a.btn[href*="transaction"],
@@ -52,16 +68,18 @@
                 button.o_payment_submit_button,
                 #o_payment_form_pay,
                 .o_portal_pay,
-                [name="o_payment_form"],
-                .o_portal_sidebar a:has(> .fa-credit-card),
-                .o_portal_sidebar .o_portal_pay_button { display: none !important; }
+                .o_portal_pay_button,
+                [name="o_payment_form"] {
+                    display: none !important;
+                }
 
-                /* ── Expand document column to full width once sidebar gone ─ */
-                .o_portal_sidebar .row > div:not(.d-print-none),
+                /* ── Expand document column to full width ───────────────── */
+                .o_portal_sidebar .row > div:last-child,
                 .o_portal_sidebar .row > div.col-lg,
                 .o_portal_sidebar .row > div.col-12.col-lg {
                     flex: 0 0 100% !important;
                     max-width: 100% !important;
+                    width: 100% !important;
                 }
             </style>
         </xpath>
