@@ -250,11 +250,10 @@
                         </div>
 
                         <t t-if="state.pendingApprovals.count">
-                            <div class="tts-list-header tts-list-header-appr">
+                            <div class="tts-list-header">
                                 <span>Type</span>
                                 <span>Reference</span>
                                 <span>Requester</span>
-                                <span>Current Approver</span>
                                 <span class="text-end">Amount</span>
                             </div>
                         </t>
@@ -268,7 +267,7 @@
                             </t>
                             <t t-foreach="state.pendingApprovals.items" t-as="item" t-key="item.model + '-' + item.id">
                                 <div
-                                    class="tts-list-row tts-list-row-appr tts-clickable"
+                                    class="tts-list-row tts-clickable"
                                     t-on-click="() => openRecord(item.model, item.id)"
                                 >
                                     <span class="tts-type-pill tts-pill-amber">
@@ -286,14 +285,6 @@
                                         <t t-if="item.partner">
                                             <br/>
                                             <small class="text-muted">for <t t-esc="item.partner"/></small>
-                                        </t>
-                                    </span>
-                                    <span class="tts-partner text-muted">
-                                        <t t-if="item.current_approver">
-                                            <t t-esc="item.current_approver"/>
-                                        </t>
-                                        <t t-else="">
-                                            <small class="text-muted">—</small>
                                         </t>
                                     </span>
                                     <span class="tts-amount text-end fw-semibold">
