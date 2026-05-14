@@ -33,7 +33,7 @@ export class AccountManagerDashboard extends Component {
             revenue:          [],
             overheads:        [],
             officeExpenses:   { categories: [], monthly: [] },
-            pendingApprovals: { count: 0, items: [] },
+            pendingApprovals: { count: 0, bills_count: 0, expenses_count: 0, items: [] },
             vendorPayments:   { count: 0, items: [] },
             summary:          {},
         });
@@ -57,7 +57,7 @@ export class AccountManagerDashboard extends Component {
             this.state.revenue          = data.revenue           || [];
             this.state.overheads        = data.overheads         || [];
             this.state.officeExpenses   = data.office_expenses   || { categories: [], monthly: [] };
-            this.state.pendingApprovals = data.pending_approvals || { count: 0, items: [] };
+            this.state.pendingApprovals = data.pending_approvals || { count: 0, bills_count: 0, expenses_count: 0, items: [] };
             this.state.vendorPayments   = data.vendor_payments   || { count: 0, items: [] };
             this.state.summary          = data.summary           || {};
         } catch (e) {
@@ -132,6 +132,25 @@ export class AccountManagerDashboard extends Component {
         } catch (e) {
             this.notification.add(
                 "Could not open Approvals list — " + (e.message || "view loading error"),
+                { type: "danger", sticky: false },
+            );
+        }
+    };
+
+    openExpenseReportsList = async () => {
+        try {
+            await this.actionService.doAction({
+                type:      "ir.actions.act_window",
+                name:      "Pending Expense Reports",
+                res_model: "hr.expense.sheet",
+                view_mode: "list,form",
+                views:     [[false, "list"], [false, "form"]],
+                domain:    [["state", "=", "submit"]],
+                target:    "current",
+            });
+        } catch (e) {
+            this.notification.add(
+                "Could not open Expense Reports list — " + (e.message || "view loading error"),
                 { type: "danger", sticky: false },
             );
         }

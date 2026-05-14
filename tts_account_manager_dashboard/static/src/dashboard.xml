@@ -297,10 +297,18 @@
 
                         <t t-if="state.pendingApprovals.count > 0">
                             <div class="tts-widget-footer">
-                                <button class="btn btn-sm btn-outline-primary" t-on-click="openApprovalsList">
-                                    View all <t t-esc="state.pendingApprovals.count"/> approval requests
-                                    <i class="fa fa-arrow-right ms-1"/>
-                                </button>
+                                <t t-if="state.pendingApprovals.bills_count > 0">
+                                    <button class="btn btn-sm btn-outline-primary me-2" t-on-click="openApprovalsList">
+                                        View <t t-esc="state.pendingApprovals.bills_count"/> vendor bill(s)
+                                        <i class="fa fa-arrow-right ms-1"/>
+                                    </button>
+                                </t>
+                                <t t-if="state.pendingApprovals.expenses_count > 0">
+                                    <button class="btn btn-sm btn-outline-primary" t-on-click="openExpenseReportsList">
+                                        View <t t-esc="state.pendingApprovals.expenses_count"/> expense report(s)
+                                        <i class="fa fa-arrow-right ms-1"/>
+                                    </button>
+                                </t>
                             </div>
                         </t>
                     </div>
