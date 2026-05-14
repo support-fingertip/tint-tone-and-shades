@@ -213,60 +213,43 @@ class TtsAccountDashboard(models.AbstractModel):
         return {"count": len(items), "items": items}
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Widget 5 — Vendor Payment Requests
+    # Widget 5 — Outstanding Payments (Customer Invoices + Vendor Bills)
+    # Posted moves with payment_state in ('not_paid', 'partial').
     # ─────────────────────────────────────────────────────────────────────────
     @api.model
     def _vendor_payment_requests(self):
         items = []
         today_date = datetime.today().date()
 
-        for bill in self.env["account.move"].search(
+        type_label = {
+            "out_invoice": "Customer Invoice",
+            "in_invoice":  "Vendor Bill",
+        }
+        moves = self.env["account.move"].search(
             [
-                ("move_type", "=", "in_invoice"),
+                ("move_type", "in", list(type_label.keys())),
                 ("state", "=", "posted"),
                 ("payment_state", "in", ["not_paid", "partial"]),
             ],
             order="invoice_date_due asc",
             limit=60,
-        ):
-            due = bill.invoice_date_due
+        )
+        for move in moves:
+            due = move.invoice_date_due
             items.append({
-                "type": "Vendor Bill",
-                "name": bill.name,
-                "vendor": bill.partner_id.name or "",
-                "amount_total": round(bill.amount_total, 2),
-                "amount_residual": round(bill.amount_residual, 2),
-                "currency_symbol": bill.currency_id.symbol or "",
-                "invoice_date": bill.invoice_date.strftime("%Y-%m-%d") if bill.invoice_date else "",
+                "type": type_label.get(move.move_type, "Move"),
+                "name": move.name,
+                "vendor": move.partner_id.name or "",
+                "amount_total": round(move.amount_total, 2),
+                "amount_residual": round(move.amount_residual, 2),
+                "currency_symbol": move.currency_id.symbol or "",
+                "invoice_date": move.invoice_date.strftime("%Y-%m-%d") if move.invoice_date else "",
                 "due_date": due.strftime("%Y-%m-%d") if due else "",
                 "overdue": bool(due and due < today_date),
-                "payment_state": bill.payment_state,
-                "id": bill.id,
+                "payment_state": move.payment_state,
+                "id": move.id,
                 "model": "account.move",
             })
-
-        # Confirmed POs not yet invoiced
-        PO = self.env.get("purchase.order")
-        if PO is not None:
-            for po in PO.search(
-                [("state", "=", "purchase"), ("invoice_status", "=", "to invoice")],
-                order="date_approve desc",
-                limit=30,
-            ):
-                items.append({
-                    "type": "PO — Awaiting Invoice",
-                    "name": po.name,
-                    "vendor": po.partner_id.name or "",
-                    "amount_total": round(po.amount_total, 2),
-                    "amount_residual": round(po.amount_total, 2),
-                    "currency_symbol": po.currency_id.symbol or "",
-                    "invoice_date": po.date_approve.strftime("%Y-%m-%d") if po.date_approve else "",
-                    "due_date": "",
-                    "overdue": False,
-                    "payment_state": "not_invoiced",
-                    "id": po.id,
-                    "model": "purchase.order",
-                })
 
         return {"count": len(items), "items": items}
 
