@@ -244,7 +244,7 @@
                             <span class="tts-wh-icon tts-icon-amber"><i class="fa fa-clock-o"/></span>
                             <div class="tts-wh-text">
                                 <h2>Pending Approvals</h2>
-                                <p>Invoices and bills submitted by associates awaiting manager approval</p>
+                                <p>Vendor bills and expense reports submitted by associates awaiting manager approval</p>
                             </div>
                             <div class="tts-count-badge tts-badge-amber" t-esc="state.pendingApprovals.count"/>
                         </div>
@@ -307,16 +307,16 @@
 
                 </div><!-- /row 2.5 -->
 
-                <!-- ─── Row 3 : Outstanding Invoices & Bills ── -->
+                <!-- ─── Row 3 : Vendor Payment Requests ── -->
                 <div class="tts-widget-row">
 
-                    <!-- ══ Widget 5 — Outstanding Invoices & Bills ══ -->
+                    <!-- ══ Widget 5 — Vendor Payment Requests ══ -->
                     <div class="tts-widget tts-widget-full">
                         <div class="tts-widget-head">
                             <span class="tts-wh-icon tts-icon-blue"><i class="fa fa-money"/></span>
                             <div class="tts-wh-text">
-                                <h2>Outstanding Invoices &amp; Bills</h2>
-                                <p>Posted customer invoices and vendor bills with an outstanding balance</p>
+                                <h2>Vendor Payment Requests</h2>
+                                <p>Posted vendor bills with an outstanding balance</p>
                             </div>
                             <div class="tts-count-badge tts-badge-blue" t-esc="state.vendorPayments.count"/>
                         </div>
@@ -330,7 +330,7 @@
 
                         <t t-if="state.vendorPayments.count">
                             <div class="tts-list-header">
-                                <span>Type</span><span>Reference</span><span>Customer / Vendor</span><span class="text-end">Outstanding</span>
+                                <span>Type</span><span>Reference</span><span>Vendor</span><span class="text-end">Outstanding</span>
                             </div>
                         </t>
 
@@ -338,7 +338,7 @@
                             <t t-if="!state.vendorPayments.items.length">
                                 <div class="tts-empty-state">
                                     <i class="fa fa-check-circle-o fa-2x text-success"/>
-                                    <p>No outstanding invoices or bills</p>
+                                    <p>No pending vendor bills</p>
                                 </div>
                             </t>
                             <t t-foreach="state.vendorPayments.items" t-as="item" t-key="item.model + '-' + item.id">
@@ -374,7 +374,7 @@
                         <t t-if="state.vendorPayments.count > 0">
                             <div class="tts-widget-footer">
                                 <button class="btn btn-sm btn-outline-primary" t-on-click="openVendorBillsList">
-                                    View all <t t-esc="state.vendorPayments.count"/> outstanding invoices &amp; bills
+                                    View all <t t-esc="state.vendorPayments.count"/> vendor payment requests
                                     <i class="fa fa-arrow-right ms-1"/>
                                 </button>
                             </div>

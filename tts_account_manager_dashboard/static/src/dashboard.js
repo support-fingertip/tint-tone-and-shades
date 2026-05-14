@@ -125,8 +125,7 @@ export class AccountManagerDashboard extends Component {
                 views:     [[false, "list"], [false, "form"]],
                 domain:    [
                     ["inv_receipt_approval_state", "=", "submitted"],
-                    ["move_type", "in",
-                        ["out_invoice", "in_invoice", "out_receipt", "in_receipt", "entry"]],
+                    ["move_type", "=", "in_invoice"],
                 ],
                 target:    "current",
             });
@@ -142,12 +141,12 @@ export class AccountManagerDashboard extends Component {
         try {
             await this.actionService.doAction({
                 type:      "ir.actions.act_window",
-                name:      "Outstanding Invoices & Bills",
+                name:      "Vendor Payment Requests",
                 res_model: "account.move",
                 view_mode: "list,form",
                 views:     [[false, "list"], [false, "form"]],
                 domain:    [
-                    ["move_type",     "in", ["out_invoice", "in_invoice"]],
+                    ["move_type",     "=",  "in_invoice"],
                     ["state",         "=",  "posted"],
                     ["payment_state", "in", ["not_paid", "partial"]],
                 ],
@@ -155,7 +154,7 @@ export class AccountManagerDashboard extends Component {
             });
         } catch (e) {
             this.notification.add(
-                "Could not open Outstanding Payments — " + (e.message || "view loading error"),
+                "Could not open Vendor Payment Requests — " + (e.message || "view loading error"),
                 { type: "danger", sticky: false },
             );
         }

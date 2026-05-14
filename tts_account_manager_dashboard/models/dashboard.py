@@ -174,11 +174,7 @@ class TtsAccountDashboard(models.AbstractModel):
             return {"count": 0, "items": items}
 
         type_label = {
-            "out_invoice": "Customer Invoice",
-            "in_invoice":  "Vendor Bill",
-            "out_receipt": "Sales Receipt",
-            "in_receipt":  "Purchase Receipt",
-            "entry":       "Journal Entry",
+            "in_invoice": "Vendor Bill",
         }
         moves = AccountMove.sudo().search(
             [
@@ -210,24 +206,49 @@ class TtsAccountDashboard(models.AbstractModel):
                 "model": "account.move",
             })
 
+        # Expense reports submitted by associates awaiting manager approval
+        ExpenseSheet = self.env.get("hr.expense.sheet")
+        if ExpenseSheet is not None:
+            sheets = ExpenseSheet.sudo().search(
+                [("state", "=", "submit")],
+                order="create_date desc",
+                limit=60,
+            )
+            for sheet in sheets:
+                items.append({
+                    "type": "Expense Report",
+                    "name": sheet.name or "Draft",
+                    "requester": (
+                        sheet.employee_id.name
+                        or sheet.create_uid.name
+                        or ""
+                    ),
+                    "partner": "",
+                    "amount_total": round(sheet.total_amount, 2),
+                    "currency_symbol": sheet.currency_id.symbol or "",
+                    "submitted_date": (
+                        sheet.create_date.strftime("%Y-%m-%d")
+                        if sheet.create_date else ""
+                    ),
+                    "current_approver": "",
+                    "id": sheet.id,
+                    "model": "hr.expense.sheet",
+                })
+
         return {"count": len(items), "items": items}
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Widget 5 — Outstanding Payments (Customer Invoices + Vendor Bills)
-    # Posted moves with payment_state in ('not_paid', 'partial').
+    # Widget 5 — Vendor Payment Requests (pending vendor bills only)
+    # Posted vendor bills with payment_state in ('not_paid', 'partial').
     # ─────────────────────────────────────────────────────────────────────────
     @api.model
     def _vendor_payment_requests(self):
         items = []
         today_date = datetime.today().date()
 
-        type_label = {
-            "out_invoice": "Customer Invoice",
-            "in_invoice":  "Vendor Bill",
-        }
         moves = self.env["account.move"].search(
             [
-                ("move_type", "in", list(type_label.keys())),
+                ("move_type", "=", "in_invoice"),
                 ("state", "=", "posted"),
                 ("payment_state", "in", ["not_paid", "partial"]),
             ],
@@ -237,7 +258,7 @@ class TtsAccountDashboard(models.AbstractModel):
         for move in moves:
             due = move.invoice_date_due
             items.append({
-                "type": type_label.get(move.move_type, "Move"),
+                "type": "Vendor Bill",
                 "name": move.name,
                 "vendor": move.partner_id.name or "",
                 "amount_total": round(move.amount_total, 2),
