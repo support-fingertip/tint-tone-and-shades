@@ -168,10 +168,11 @@ class TtsAccountDashboard(models.AbstractModel):
     @api.model
     def _pending_approvals(self):
         items = []
+        bills_count = 0
+        expenses_count = 0
 
         AccountMove = self.env["account.move"]
-        if "inv_receipt_approval_state" not in AccountMove._fields:
-            return {"count": 0, "items": items}
+        has_approval_field = "inv_receipt_approval_state" in AccountMove._fields
 
         type_label = {
             "in_invoice": "Vendor Bill",
@@ -183,7 +184,8 @@ class TtsAccountDashboard(models.AbstractModel):
             ],
             order="create_date desc",
             limit=60,
-        )
+        ) if has_approval_field else AccountMove.browse()
+        bills_count = len(moves)
         for move in moves:
             requester = (
                 move.invoice_user_id.name
@@ -214,6 +216,7 @@ class TtsAccountDashboard(models.AbstractModel):
                 order="create_date desc",
                 limit=60,
             )
+            expenses_count = len(sheets)
             for sheet in sheets:
                 items.append({
                     "type": "Expense Report",
@@ -235,7 +238,12 @@ class TtsAccountDashboard(models.AbstractModel):
                     "model": "hr.expense.sheet",
                 })
 
-        return {"count": len(items), "items": items}
+        return {
+            "count": len(items),
+            "bills_count": bills_count,
+            "expenses_count": expenses_count,
+            "items": items,
+        }
 
     # ─────────────────────────────────────────────────────────────────────────
     # Widget 5 — Vendor Payment Requests (pending vendor bills only)
