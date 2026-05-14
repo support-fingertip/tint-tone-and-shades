@@ -204,6 +204,35 @@ class AccountManagerDashboardController(http.Controller):
                 "model": "account.move",
             })
 
+        # Expense reports submitted by associates awaiting manager approval
+        ExpenseSheet = request.env.get("hr.expense.sheet")
+        if ExpenseSheet is not None:
+            sheets = ExpenseSheet.sudo().search(
+                [("state", "=", "submit")],
+                order="create_date desc",
+                limit=60,
+            )
+            for sheet in sheets:
+                items.append({
+                    "type": "Expense Report",
+                    "name": sheet.name or "Draft",
+                    "requester": (
+                        sheet.employee_id.name
+                        or sheet.create_uid.name
+                        or ""
+                    ),
+                    "partner": "",
+                    "amount_total": round(sheet.total_amount, 2),
+                    "currency_symbol": sheet.currency_id.symbol or "",
+                    "submitted_date": (
+                        sheet.create_date.strftime("%Y-%m-%d")
+                        if sheet.create_date else ""
+                    ),
+                    "current_approver": "",
+                    "id": sheet.id,
+                    "model": "hr.expense.sheet",
+                })
+
         return {"count": len(items), "items": items}
 
     # ─────────────────────────────────────────────────────────────────────────
