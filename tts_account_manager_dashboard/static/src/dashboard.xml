@@ -235,6 +235,87 @@
                     </div>
                 </div><!-- /row 2 -->
 
+                <!-- ─── Row 2.5 : Pending Approvals (from associates) ── -->
+                <div class="tts-widget-row">
+
+                    <!-- ══ Widget 4 — Pending Approval Requests ══ -->
+                    <div class="tts-widget tts-widget-full">
+                        <div class="tts-widget-head">
+                            <span class="tts-wh-icon tts-icon-amber"><i class="fa fa-clock-o"/></span>
+                            <div class="tts-wh-text">
+                                <h2>Pending Approval Requests</h2>
+                                <p>Invoices, bills and purchase orders submitted by associates awaiting approval</p>
+                            </div>
+                            <div class="tts-count-badge tts-badge-amber" t-esc="state.pendingApprovals.count"/>
+                        </div>
+
+                        <t t-if="state.pendingApprovals.count">
+                            <div class="tts-list-header tts-list-header-appr">
+                                <span>Type</span>
+                                <span>Reference</span>
+                                <span>Requester</span>
+                                <span>Current Approver</span>
+                                <span class="text-end">Amount</span>
+                            </div>
+                        </t>
+
+                        <div class="tts-scrollable-list">
+                            <t t-if="!state.pendingApprovals.items.length">
+                                <div class="tts-empty-state">
+                                    <i class="fa fa-check-circle-o fa-2x text-success"/>
+                                    <p>No approval requests pending</p>
+                                </div>
+                            </t>
+                            <t t-foreach="state.pendingApprovals.items" t-as="item" t-key="item.model + '-' + item.id">
+                                <div
+                                    class="tts-list-row tts-list-row-appr tts-clickable"
+                                    t-on-click="() => openRecord(item.model, item.id)"
+                                >
+                                    <span class="tts-type-pill tts-pill-amber">
+                                        <t t-esc="item.type"/>
+                                    </span>
+                                    <span class="tts-ref fw-semibold">
+                                        <t t-esc="item.name"/>
+                                        <t t-if="item.submitted_date">
+                                            <br/>
+                                            <small class="text-muted">Submitted: <t t-esc="item.submitted_date"/></small>
+                                        </t>
+                                    </span>
+                                    <span class="tts-partner text-muted">
+                                        <t t-esc="item.requester"/>
+                                        <t t-if="item.partner">
+                                            <br/>
+                                            <small class="text-muted">for <t t-esc="item.partner"/></small>
+                                        </t>
+                                    </span>
+                                    <span class="tts-partner text-muted">
+                                        <t t-if="item.current_approver">
+                                            <t t-esc="item.current_approver"/>
+                                        </t>
+                                        <t t-else="">
+                                            <small class="text-muted">—</small>
+                                        </t>
+                                    </span>
+                                    <span class="tts-amount text-end fw-semibold">
+                                        <t t-esc="item.currency_symbol"/>
+                                        <t t-esc="fmtMoney(item.amount_total)"/>
+                                    </span>
+                                </div>
+                            </t>
+                        </div>
+
+                        <t t-if="state.pendingApprovals.count > 0">
+                            <div class="tts-widget-footer">
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="openApprovalsList">
+                                    View all <t t-esc="state.pendingApprovals.count"/> approval requests
+                                    <i class="fa fa-arrow-right ms-1"/>
+                                </button>
+                            </div>
+                        </t>
+                    </div>
+
+                </div><!-- /row 2.5 -->
+
                 <!-- ─── Row 3 : Vendor Payments ── -->
                 <div class="tts-widget-row">
 

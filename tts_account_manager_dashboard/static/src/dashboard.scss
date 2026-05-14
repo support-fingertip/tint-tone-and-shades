@@ -198,10 +198,12 @@
     .tts-icon-teal   { background: #16a085; }
     .tts-icon-red    { background: #e74c3c; }
     .tts-icon-blue   { background: #2980b9; }
+    .tts-icon-amber  { background: #f39c12; }
 
     // Badge colours
-    .tts-badge-red  { background: #e74c3c; }
-    .tts-badge-blue { background: #2980b9; }
+    .tts-badge-red   { background: #e74c3c; }
+    .tts-badge-blue  { background: #2980b9; }
+    .tts-badge-amber { background: #f39c12; }
 
     // ── Bar chart ─────────────────────────────────────────────────────────────
     .tts-bar-chart {
@@ -421,6 +423,12 @@
 
     .tts-overdue-alert { font-size: 12px; border-radius: 6px; }
 
+    // ── Approval list (5 columns: Type, Ref, Requester, Approver, Amount) ────
+    .tts-list-header.tts-list-header-appr,
+    .tts-list-row.tts-list-row-appr {
+        grid-template-columns: 140px 1.2fr 1fr 1fr 110px;
+    }
+
     // ── Responsive ────────────────────────────────────────────────────────────
     @media (max-width: 960px) {
         .tts-kpi-strip  { flex-wrap: wrap; }
@@ -431,5 +439,14 @@
         .tts-list-row { grid-template-columns: 120px 1fr 100px; }
         .tts-list-header span:nth-child(3),
         .tts-list-row .tts-partner { display: none; }
+
+        .tts-list-header.tts-list-header-appr,
+        .tts-list-row.tts-list-row-appr {
+            grid-template-columns: 110px 1fr 110px;
+        }
+        .tts-list-header.tts-list-header-appr span:nth-child(3),
+        .tts-list-header.tts-list-header-appr span:nth-child(4),
+        .tts-list-row.tts-list-row-appr > span:nth-child(3),
+        .tts-list-row.tts-list-row-appr > span:nth-child(4) { display: none; }
     }
 }
