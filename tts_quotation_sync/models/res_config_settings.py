@@ -149,9 +149,12 @@ class ResConfigSettings(models.TransientModel):
             return self._notif('danger', 'Error', str(exc))
 
         if resp.status_code == 200:
-            count = len(resp.json().get('quotations', []))
-            return self._notif('success', 'Connection Successful',
-                               f'Connected! {count} pending quotation(s) available.')
+            try:
+                count = len(resp.json().get('quotations', []))
+                msg = f'Connected! {count} pending quotation(s) available.'
+            except Exception:
+                msg = 'Connected! (response was not JSON)'
+            return self._notif('success', 'Connection Successful', msg)
         if resp.status_code == 401:
             return self._notif('danger', 'Authentication Failed',
                                'Invalid or missing API key (HTTP 401).')
