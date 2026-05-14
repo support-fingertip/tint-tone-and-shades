@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Inject a small style block into <head> on every portal page that
+        hides the top navbar and the invoice page's left sidebar card,
+        but only when the visitor is a portal/public user (share=True).
+        Internal users see the full chrome so the manager preview still
+        renders normally.
+    -->
+    <template id="hide_portal_chrome_for_customers"
+              inherit_id="portal.frontend_layout"
+              name="TTS: hide portal chrome for customers">
+        <xpath expr="//head" position="inside">
+            <t t-if="request and request.env.user.share">
+                <style type="text/css">
+                    /* Top "Your logo" + user menu navbar */
+                    header,
+                    header.o_main_navbar,
+                    nav.o_main_navbar,
+                    body > nav.navbar { display: none !important; }
+
+                    /* Left card on the invoice / bill portal page:
+                       breadcrumb, amount, Pay Now, Download, Salesperson,
+                       'Powered by odoo'. The standard Odoo layout puts this
+                       inside a column with class col-lg-auto / col-lg-3 next
+                       to the document column inside .o_portal_sidebar. */
+                    .o_portal_sidebar > .row > div.col-lg-auto:first-child,
+                    .o_portal_sidebar > .row > div.col-lg-3:first-child,
+                    .o_portal_sidebar > .row > div.col-12.col-lg-3:first-child,
+                    .o_portal_sidebar_sidebar,
+                    .o_portal_my_doc_table + div.col-lg-auto { display: none !important; }
+
+                    /* Let the document column take the full width once the
+                       sidebar is gone, so the invoice doesn't sit squashed. */
+                    .o_portal_sidebar > .row > div:not(:first-child),
+                    .o_portal_sidebar > .row > div.col-lg,
+                    .o_portal_sidebar > .row > div.col-12.col-lg {
+                        flex: 0 0 100% !important;
+                        max-width: 100% !important;
+                    }
+                </style>
+            </t>
+        </xpath>
+    </template>
+
+</odoo>
