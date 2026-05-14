@@ -160,43 +160,35 @@ class TtsAccountDashboard(models.AbstractModel):
 
     # ─────────────────────────────────────────────────────────────────────────
     # Widget 4 — Pending Approval Requests
-    # Source : customer invoices / vendor bills (and their credit notes) with
-    #          approval_state == 'pending'.
-    # Surfaces entries submitted by associates that are awaiting manager
-    # approval. Purchase order approvals are intentionally excluded.
+    # Source : customer invoices / vendor bills / sales receipts / purchase
+    #          receipts (and journal entries) submitted by associates via the
+    #          invoice_receipt_approval module — inv_receipt_approval_state ==
+    #          'submitted'.
     # ─────────────────────────────────────────────────────────────────────────
     @api.model
     def _pending_approvals(self):
         items = []
 
         AccountMove = self.env["account.move"]
-        if "approval_state" not in AccountMove._fields:
+        if "inv_receipt_approval_state" not in AccountMove._fields:
             return {"count": 0, "items": items}
 
         type_label = {
             "out_invoice": "Customer Invoice",
             "in_invoice":  "Vendor Bill",
-            "out_refund":  "Customer Credit Note",
-            "in_refund":   "Vendor Credit Note",
+            "out_receipt": "Sales Receipt",
+            "in_receipt":  "Purchase Receipt",
+            "entry":       "Journal Entry",
         }
         moves = AccountMove.sudo().search(
             [
-                ("approval_state", "=", "pending"),
+                ("inv_receipt_approval_state", "=", "submitted"),
                 ("move_type", "in", list(type_label.keys())),
             ],
             order="create_date desc",
             limit=60,
         )
         for move in moves:
-            current_approver = ""
-            if "approval_line_ids" in move._fields:
-                current = move.approval_line_ids.filtered(
-                    lambda l: l.status == "current"
-                )[:1]
-                if current:
-                    current_approver = ", ".join(
-                        current.user_ids.mapped("name")
-                    )
             requester = (
                 move.invoice_user_id.name
                 or move.create_uid.name
@@ -213,7 +205,7 @@ class TtsAccountDashboard(models.AbstractModel):
                     move.create_date.strftime("%Y-%m-%d")
                     if move.create_date else ""
                 ),
-                "current_approver": current_approver,
+                "current_approver": "",
                 "id": move.id,
                 "model": "account.move",
             })

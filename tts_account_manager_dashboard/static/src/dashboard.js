@@ -119,14 +119,14 @@ export class AccountManagerDashboard extends Component {
         try {
             await this.actionService.doAction({
                 type:      "ir.actions.act_window",
-                name:      "Pending Invoice/Bill Approvals",
+                name:      "Pending Approvals",
                 res_model: "account.move",
                 view_mode: "list,form",
                 views:     [[false, "list"], [false, "form"]],
                 domain:    [
-                    ["approval_state", "=", "pending"],
+                    ["inv_receipt_approval_state", "=", "submitted"],
                     ["move_type", "in",
-                        ["out_invoice", "in_invoice", "out_refund", "in_refund"]],
+                        ["out_invoice", "in_invoice", "out_receipt", "in_receipt", "entry"]],
                 ],
                 target:    "current",
             });
