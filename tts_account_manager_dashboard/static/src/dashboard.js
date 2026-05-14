@@ -33,6 +33,7 @@ export class AccountManagerDashboard extends Component {
             revenue:          [],
             overheads:        [],
             officeExpenses:   { categories: [], monthly: [] },
+            pendingApprovals: { count: 0, items: [] },
             vendorPayments:   { count: 0, items: [] },
             summary:          {},
         });
@@ -56,6 +57,7 @@ export class AccountManagerDashboard extends Component {
             this.state.revenue          = data.revenue           || [];
             this.state.overheads        = data.overheads         || [];
             this.state.officeExpenses   = data.office_expenses   || { categories: [], monthly: [] };
+            this.state.pendingApprovals = data.pending_approvals || { count: 0, items: [] };
             this.state.vendorPayments   = data.vendor_payments   || { count: 0, items: [] };
             this.state.summary          = data.summary           || {};
         } catch (e) {
@@ -108,6 +110,29 @@ export class AccountManagerDashboard extends Component {
         } catch (e) {
             this.notification.add(
                 "Could not open record — " + (e.message || "view loading error"),
+                { type: "danger", sticky: false },
+            );
+        }
+    };
+
+    openApprovalsList = async () => {
+        try {
+            await this.actionService.doAction({
+                type:      "ir.actions.act_window",
+                name:      "Pending Invoice/Bill Approvals",
+                res_model: "account.move",
+                view_mode: "list,form",
+                views:     [[false, "list"], [false, "form"]],
+                domain:    [
+                    ["approval_state", "=", "pending"],
+                    ["move_type", "in",
+                        ["out_invoice", "in_invoice", "out_refund", "in_refund"]],
+                ],
+                target:    "current",
+            });
+        } catch (e) {
+            this.notification.add(
+                "Could not open Approvals list — " + (e.message || "view loading error"),
                 { type: "danger", sticky: false },
             );
         }

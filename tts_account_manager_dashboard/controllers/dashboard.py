@@ -19,6 +19,7 @@ class AccountManagerDashboardController(http.Controller):
             "revenue": self._monthly_revenue(),
             "overheads": self._monthly_overheads(),
             "office_expenses": self._office_expenses_by_category(),
+            "pending_approvals": self._pending_approvals(),
             "vendor_payments": self._vendor_payment_requests(),
             "summary": self._summary_kpis(),
         }
@@ -154,6 +155,65 @@ class AccountManagerDashboardController(http.Controller):
             })
 
         return {"categories": categories, "monthly": monthly}
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Widget 4 — Pending Approval Requests
+    # Source : customer invoices / vendor bills (and their credit notes) with
+    #          approval_state == 'pending'.
+    # Purchase order approvals are intentionally excluded.
+    # ─────────────────────────────────────────────────────────────────────────
+    def _pending_approvals(self):
+        items = []
+
+        AccountMove = request.env["account.move"].sudo()
+        if "approval_state" not in AccountMove._fields:
+            return {"count": 0, "items": items}
+
+        type_label = {
+            "out_invoice": "Customer Invoice",
+            "in_invoice":  "Vendor Bill",
+            "out_refund":  "Customer Credit Note",
+            "in_refund":   "Vendor Credit Note",
+        }
+        moves = AccountMove.search(
+            [
+                ("approval_state", "=", "pending"),
+                ("move_type", "in", list(type_label.keys())),
+            ],
+            order="create_date desc",
+            limit=60,
+        )
+        for move in moves:
+            current_approver = ""
+            if "approval_line_ids" in move._fields:
+                current = move.approval_line_ids.filtered(
+                    lambda l: l.status == "current"
+                )[:1]
+                if current:
+                    current_approver = ", ".join(
+                        current.user_ids.mapped("name")
+                    )
+            items.append({
+                "type": type_label.get(move.move_type, "Move"),
+                "name": move.name or "Draft",
+                "requester": (
+                    move.invoice_user_id.name
+                    or move.create_uid.name
+                    or ""
+                ),
+                "partner": move.partner_id.name or "",
+                "amount_total": round(move.amount_total, 2),
+                "currency_symbol": move.currency_id.symbol or "",
+                "submitted_date": (
+                    move.create_date.strftime("%Y-%m-%d")
+                    if move.create_date else ""
+                ),
+                "current_approver": current_approver,
+                "id": move.id,
+                "model": "account.move",
+            })
+
+        return {"count": len(items), "items": items}
 
     # ─────────────────────────────────────────────────────────────────────────
     # Widget 5 — Vendor Payment Requests
