@@ -123,7 +123,11 @@ export class AccountManagerDashboard extends Component {
                 res_model: "account.move",
                 view_mode: "list,form",
                 views:     [[false, "list"], [false, "form"]],
-                domain:    [["approval_state", "=", "pending"]],
+                domain:    [
+                    ["approval_state", "=", "pending"],
+                    ["move_type", "in",
+                        ["out_invoice", "in_invoice", "out_refund", "in_refund"]],
+                ],
                 target:    "current",
             });
         } catch (e) {
