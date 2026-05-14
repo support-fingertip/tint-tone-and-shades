@@ -25,10 +25,10 @@
                             groups="account.group_account_invoice"
                             invisible="not inv_is_associate or not inv_approval_required or state != 'draft' or inv_receipt_approval_state not in ('none', 'rejected') or move_type == 'entry'"/>
 
-                    <!-- Manager: Approve directly when approval is required -->
+                    <!-- Manager: Approve only when an associate has submitted the document -->
                     <button name="action_approve_invoice" type="object"
                             string="Approve" class="btn-success"
-                            invisible="not inv_is_account_manager or not inv_approval_required or state != 'draft' or inv_receipt_approval_state not in ('none', 'rejected', 'submitted') or move_type == 'entry'"
+                            invisible="not inv_is_account_manager or inv_receipt_approval_state != 'submitted' or move_type == 'entry'"
                             groups="account.group_account_manager"/>
 
                     <!-- Admin: Reject (opens remark wizard) -->
@@ -43,7 +43,7 @@
                     and for everyone while the document is in the submitted state.
                 -->
                 <xpath expr="(//button[@name='action_post'])[2]" position="attributes">
-                    <attribute name="invisible">hide_post_button or move_type == 'entry' or display_inactive_currency_warning or ((inv_is_associate or inv_is_account_manager) and inv_approval_required and inv_receipt_approval_state != 'approved') or inv_receipt_approval_state == 'submitted'</attribute>
+                    <attribute name="invisible">hide_post_button or move_type == 'entry' or display_inactive_currency_warning or (inv_is_associate and inv_approval_required and inv_receipt_approval_state != 'approved') or inv_receipt_approval_state == 'submitted'</attribute>
                 </xpath>
 
                 <!-- Status banners -->
