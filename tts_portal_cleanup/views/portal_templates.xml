@@ -38,6 +38,17 @@
                     flex: 0 0 100% !important;
                     max-width: 100% !important;
                 }
+
+                /* Belt-and-braces: hide any Pay Now / payment action
+                   button that an inherited template might render outside
+                   the sidebar card on the invoice portal page. */
+                .o_portal_sidebar a[href*="/my/invoices/"][href*="/payment"],
+                .o_portal_sidebar a[href*="/invoice/transaction/"],
+                .o_portal_sidebar a.o_payment_submit_button,
+                .o_portal_sidebar button.o_payment_submit_button,
+                .o_portal_sidebar #o_payment_form_pay,
+                .o_portal_sidebar .o_portal_pay,
+                .o_portal_sidebar [name="o_payment_form"] { display: none !important; }
             </style>
         </xpath>
     </template>

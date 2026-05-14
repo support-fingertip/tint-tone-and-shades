@@ -169,11 +169,7 @@ class AccountManagerDashboardController(http.Controller):
             return {"count": 0, "items": items}
 
         type_label = {
-            "out_invoice": "Customer Invoice",
-            "in_invoice":  "Vendor Bill",
-            "out_receipt": "Sales Receipt",
-            "in_receipt":  "Purchase Receipt",
-            "entry":       "Journal Entry",
+            "in_invoice": "Vendor Bill",
         }
         moves = AccountMove.search(
             [

@@ -244,7 +244,7 @@
                             <span class="tts-wh-icon tts-icon-amber"><i class="fa fa-clock-o"/></span>
                             <div class="tts-wh-text">
                                 <h2>Pending Approvals</h2>
-                                <p>Invoices, bills and expense reports submitted by associates awaiting manager approval</p>
+                                <p>Vendor bills and expense reports submitted by associates awaiting manager approval</p>
                             </div>
                             <div class="tts-count-badge tts-badge-amber" t-esc="state.pendingApprovals.count"/>
                         </div>

@@ -125,8 +125,7 @@ export class AccountManagerDashboard extends Component {
                 views:     [[false, "list"], [false, "form"]],
                 domain:    [
                     ["inv_receipt_approval_state", "=", "submitted"],
-                    ["move_type", "in",
-                        ["out_invoice", "in_invoice", "out_receipt", "in_receipt", "entry"]],
+                    ["move_type", "=", "in_invoice"],
                 ],
                 target:    "current",
             });
