@@ -125,7 +125,7 @@ export class AccountManagerDashboard extends Component {
                 views:     [[false, "list"], [false, "form"]],
                 domain:    [
                     ["inv_receipt_approval_state", "=", "submitted"],
-                    ["move_type", "=", "in_invoice"],
+                    ["move_type", "in", ["out_invoice", "in_invoice", "out_receipt", "in_receipt"]],
                 ],
                 target:    "current",
             });
@@ -141,16 +141,16 @@ export class AccountManagerDashboard extends Component {
         try {
             await this.actionService.doAction({
                 type:      "ir.actions.act_window",
-                name:      "Pending Expense Reports",
-                res_model: "hr.expense.sheet",
+                name:      "Pending Expenses",
+                res_model: "hr.expense",
                 view_mode: "list,form",
                 views:     [[false, "list"], [false, "form"]],
-                domain:    [["state", "=", "submit"]],
+                domain:    [["state", "in", ["submitted", "reported"]]],
                 target:    "current",
             });
         } catch (e) {
             this.notification.add(
-                "Could not open Expense Reports list — " + (e.message || "view loading error"),
+                "Could not open Expense list — " + (e.message || "view loading error"),
                 { type: "danger", sticky: false },
             );
         }

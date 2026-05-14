@@ -161,9 +161,10 @@ class TtsAccountDashboard(models.AbstractModel):
     # ─────────────────────────────────────────────────────────────────────────
     # Widget 4 — Pending Approval Requests
     # Source : customer invoices / vendor bills / sales receipts / purchase
-    #          receipts (and journal entries) submitted by associates via the
+    #          receipts submitted by associates via the
     #          invoice_receipt_approval module — inv_receipt_approval_state ==
-    #          'submitted'.
+    #          'submitted' ; plus standalone hr.expense records and
+    #          hr.expense.sheet records awaiting approval.
     # ─────────────────────────────────────────────────────────────────────────
     @api.model
     def _pending_approvals(self):
@@ -175,7 +176,10 @@ class TtsAccountDashboard(models.AbstractModel):
         has_approval_field = "inv_receipt_approval_state" in AccountMove._fields
 
         type_label = {
-            "in_invoice": "Vendor Bill",
+            "out_invoice": "Customer Invoice",
+            "in_invoice":  "Vendor Bill",
+            "out_receipt": "Customer Receipt",
+            "in_receipt":  "Vendor Receipt",
         }
         moves = AccountMove.sudo().search(
             [
@@ -208,7 +212,45 @@ class TtsAccountDashboard(models.AbstractModel):
                 "model": "account.move",
             })
 
-        # Expense reports submitted by associates awaiting manager approval
+        # Standalone expenses submitted directly (Odoo 17+ flow) — show only
+        # those not yet attached to a sheet to avoid double-counting with the
+        # hr.expense.sheet query below.
+        Expense = self.env.get("hr.expense")
+        if Expense is not None and "state" in Expense._fields:
+            selection = dict(Expense._fields["state"].selection)
+            candidate = [s for s in ("submitted", "reported") if s in selection]
+            if candidate:
+                domain = [("state", "in", candidate)]
+                if "sheet_id" in Expense._fields:
+                    domain.append(("sheet_id", "=", False))
+                expenses = Expense.sudo().search(
+                    domain, order="create_date desc", limit=60,
+                )
+                for exp in expenses:
+                    items.append({
+                        "type": "Expense",
+                        "name": exp.name or "Draft",
+                        "requester": (
+                            (exp.employee_id.name if "employee_id" in exp._fields else "")
+                            or exp.create_uid.name
+                            or ""
+                        ),
+                        "partner": "",
+                        "amount_total": round(
+                            getattr(exp, "total_amount", 0.0) or 0.0, 2,
+                        ),
+                        "currency_symbol": exp.currency_id.symbol or "",
+                        "submitted_date": (
+                            exp.create_date.strftime("%Y-%m-%d")
+                            if exp.create_date else ""
+                        ),
+                        "current_approver": "",
+                        "id": exp.id,
+                        "model": "hr.expense",
+                    })
+                    expenses_count += 1
+
+        # Expense reports (sheets) submitted by associates awaiting manager approval
         ExpenseSheet = self.env.get("hr.expense.sheet")
         if ExpenseSheet is not None:
             sheets = ExpenseSheet.sudo().search(
@@ -216,7 +258,7 @@ class TtsAccountDashboard(models.AbstractModel):
                 order="create_date desc",
                 limit=60,
             )
-            expenses_count = len(sheets)
+            expenses_count += len(sheets)
             for sheet in sheets:
                 items.append({
                     "type": "Expense Report",

@@ -244,7 +244,7 @@
                             <span class="tts-wh-icon tts-icon-amber"><i class="fa fa-clock-o"/></span>
                             <div class="tts-wh-text">
                                 <h2>Pending Approvals</h2>
-                                <p>Vendor bills and expense reports submitted by associates awaiting manager approval</p>
+                                <p>Invoices, vendor bills, receipts and expenses submitted by associates awaiting manager approval</p>
                             </div>
                             <div class="tts-count-badge tts-badge-amber" t-esc="state.pendingApprovals.count"/>
                         </div>
@@ -299,13 +299,13 @@
                             <div class="tts-widget-footer">
                                 <t t-if="state.pendingApprovals.bills_count > 0">
                                     <button class="btn btn-sm btn-outline-primary me-2" t-on-click="openApprovalsList">
-                                        View <t t-esc="state.pendingApprovals.bills_count"/> vendor bill(s)
+                                        View <t t-esc="state.pendingApprovals.bills_count"/> invoice/bill/receipt(s)
                                         <i class="fa fa-arrow-right ms-1"/>
                                     </button>
                                 </t>
                                 <t t-if="state.pendingApprovals.expenses_count > 0">
                                     <button class="btn btn-sm btn-outline-primary" t-on-click="openExpenseReportsList">
-                                        View <t t-esc="state.pendingApprovals.expenses_count"/> expense report(s)
+                                        View <t t-esc="state.pendingApprovals.expenses_count"/> expense(s)
                                         <i class="fa fa-arrow-right ms-1"/>
                                     </button>
                                 </t>
