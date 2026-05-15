@@ -3,40 +3,35 @@
 
     <!--
         Inject a small style block into <head> on every portal page that
-        hides the top navbar and the invoice page's left sidebar card.
-        Applied to ALL visitors of the portal frontend, including internal
-        users in "preview as customer" mode — they should see the document
-        the same way the customer sees it.
+        hides ONLY the "Your logo" brand in the top navbar (the rest of the
+        bar — the user menu / Logout dropdown — stays visible so portal
+        users keep their account access) and the invoice page's left
+        sidebar card. Applied to ALL visitors of the portal frontend,
+        including internal users in "preview as customer" mode.
     -->
     <template id="hide_portal_chrome_for_customers"
               inherit_id="portal.frontend_layout"
               name="TTS: hide portal chrome for customers">
         <xpath expr="//head" position="inside">
             <style type="text/css">
-                /* ── Top navbar ("Your logo" + user menu) ───────────────────
+                /* ── "Your logo" brand only ─────────────────────────────────
+                   Hide just the brand/logo link on the left of the navbar.
+                   The bar itself and the user-menu / Logout dropdown on the
+                   right stay visible so portal users keep account access.
                    Cover every selector variant Odoo uses across versions. */
-                body > header,
-                body > nav,
-                header,
-                header.o_main_navbar,
-                header.o_navbar,
-                nav.o_main_navbar,
-                nav.o_navbar,
-                .o_main_navbar,
-                .o_navbar,
-                .o_top_fixed_element,
-                #oe_main_menu_navbar,
-                body > nav.navbar {
+                header .navbar-brand,
+                nav .navbar-brand,
+                header a.navbar-brand,
+                nav a.navbar-brand,
+                header a.logo,
+                nav a.logo,
+                .o_main_navbar .navbar-brand,
+                .o_navbar .navbar-brand,
+                .o_portal_navbar .navbar-brand,
+                #wrapwrap header .navbar-brand {
                     display: none !important;
                     visibility: hidden !important;
-                    height: 0 !important;
-                    min-height: 0 !important;
-                    overflow: hidden !important;
                 }
-
-                /* Drop the top padding the navbar normally reserves */
-                body { padding-top: 0 !important; }
-                main { padding-top: 0 !important; }
 
                 /* ── Left sidebar card (breadcrumb, amount, Pay Now, Download,
                    Salesperson, Powered by odoo) ─────────────────────────────
