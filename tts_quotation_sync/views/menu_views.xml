@@ -1,4 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <!--
+        Add "Quotation Sync" under the Settings top-level menu so it
+        appears in the Settings navigation bar alongside Technical etc.
+        Opens the standalone settings form (not the merged main Settings
+        page) so Save and action buttons are never blocked by other
+        modules' required fields.
+    -->
+    <menuitem
+        id="menu_tts_quotation_sync_config"
+        name="Quotation Sync"
+        parent="base.menu_administration"
+        action="action_tts_config_settings"
+        sequence="90"
+    />
+
 </odoo>
