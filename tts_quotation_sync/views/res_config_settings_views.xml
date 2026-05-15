@@ -2,16 +2,22 @@
 <odoo>
 
     <!--
-        In this Odoo 19 build the base settings form lives in the 'base'
-        module, not 'base_setup'.  Confirmed from tk_purchase_advance_payment
-        which uses the same ref and installs successfully.
+        Standalone settings form — NOT inheriting the main Settings page.
+        This means Save only validates OUR fields, so other modules' missing
+        required fields cannot block Test Connection / Sync Now / Save.
+
+        js_class="base_settings" ensures get_values() is called on load so
+        all fields are populated from ir.config_parameter correctly.
+
+        priority=999 ensures this view is never auto-selected as the default
+        res.config.settings form — it is only opened via action_tts_config_settings.
     -->
-    <record id="res_config_settings_view_form" model="ir.ui.view">
-        <field name="name">tts.quotation.sync.config.settings</field>
+    <record id="view_tts_config_settings_form" model="ir.ui.view">
+        <field name="name">tts.quotation.sync.settings.form</field>
         <field name="model">res.config.settings</field>
-        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="priority">999</field>
         <field name="arch" type="xml">
-            <xpath expr="//form" position="inside">
+            <form string="Quotation Sync — Configuration" js_class="base_settings">
 
                 <app string="Quotation Sync" name="tts_quotation_sync">
 
@@ -19,10 +25,10 @@
                         <setting string="API Base URL"
                                  help="Quotation Builder backend endpoint">
                             <field name="tts_api_base_url"
-                                   placeholder="https://tts-quotation-dev-backend-app..."/>
+                                   placeholder="https://quote.tinttoneandshades.com"/>
                         </setting>
                         <setting string="API Key (x-api-key)"
-                                 help="DEV environment key">
+                                 help="API authentication key">
                             <field name="tts_api_key" password="True"
                                    placeholder="••••••••••••••••••"/>
                         </setting>
@@ -83,8 +89,18 @@
 
                 </app>
 
-            </xpath>
+            </form>
         </field>
+    </record>
+
+    <!-- Opens ONLY the Quotation Sync settings page — isolated from other modules -->
+    <record id="action_tts_config_settings" model="ir.actions.act_window">
+        <field name="name">Quotation Sync</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_tts_config_settings_form"/>
+        <field name="target">current</field>
+        <field name="context">{'module': 'tts_quotation_sync'}</field>
     </record>
 
 </odoo>

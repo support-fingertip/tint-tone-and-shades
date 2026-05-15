@@ -2,11 +2,18 @@
 <odoo>
 
     <!--
-        No top-level app menu / no web_icon — Quotation Sync is not a
-        separate home-screen app.  All configuration is accessed from
-        Settings → Quotation Sync (sidebar).  Quotations and Sync Logs
-        are reachable via the "View Quotations" / "View Sync Logs" action
-        buttons in that Settings section.
+        Add "Quotation Sync" under the Settings top-level menu so it
+        appears in the Settings navigation bar alongside Technical etc.
+        Opens the standalone settings form (not the merged main Settings
+        page) so Save and action buttons are never blocked by other
+        modules' required fields.
     -->
+    <menuitem
+        id="menu_tts_quotation_sync_config"
+        name="Quotation Sync"
+        parent="base.menu_administration"
+        action="action_tts_config_settings"
+        sequence="90"
+    />
 
 </odoo>
