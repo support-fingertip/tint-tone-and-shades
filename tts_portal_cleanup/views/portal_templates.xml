@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Inject a small style block into <head> on every portal page that
+        hides ONLY the "Your logo" brand in the top navbar (the rest of the
+        bar — the user menu / Logout dropdown — stays visible so portal
+        users keep their account access) and the invoice page's left
+        sidebar card. Applied to ALL visitors of the portal frontend,
+        including internal users in "preview as customer" mode.
+    -->
+    <template id="hide_portal_chrome_for_customers"
+              inherit_id="portal.frontend_layout"
+              name="TTS: hide portal chrome for customers">
+        <xpath expr="//head" position="inside">
+            <style type="text/css">
+                /* ── "Your logo" brand only ─────────────────────────────────
+                   Hide just the brand/logo link on the left of the navbar.
+                   The bar itself and the user-menu / Logout dropdown on the
+                   right stay visible so portal users keep account access.
+                   Cover every selector variant Odoo uses across versions. */
+                header .navbar-brand,
+                nav .navbar-brand,
+                header a.navbar-brand,
+                nav a.navbar-brand,
+                header a.logo,
+                nav a.logo,
+                .o_main_navbar .navbar-brand,
+                .o_navbar .navbar-brand,
+                .o_portal_navbar .navbar-brand,
+                #wrapwrap header .navbar-brand {
+                    display: none !important;
+                    visibility: hidden !important;
+                }
+
+                /* ── Left sidebar card (breadcrumb, amount, Pay Now, Download,
+                   Salesperson, Powered by odoo) ─────────────────────────────
+                   In a 2-column portal row, the sidebar is always the column
+                   that is NOT the last child. That selector is the most
+                   reliable across Odoo versions. */
+                .o_portal_sidebar .row > div:not(:last-child),
+                .o_portal_sidebar .row > div.d-print-none,
+                .o_portal_sidebar .row > div.col-lg-auto,
+                .o_portal_sidebar .row > div.col-12.col-lg-auto,
+                .o_portal_sidebar .row > div.col-lg-3,
+                .o_portal_sidebar .row > div.col-12.col-lg-3,
+                .o_portal_sidebar_sidebar,
+                [id*="portal-doc-col-left"],
+                [id^="o_portal_sidebar"],
+                .o_portal_my_doc_table + div.col-lg-auto {
+                    display: none !important;
+                    visibility: hidden !important;
+                    width: 0 !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                }
+
+                /* ── Pay Now / payment buttons anywhere on the page ─────── */
+                a[href*="/invoice/transaction/"],
+                a[href*="/payment/transaction/"],
+                a.btn[href*="transaction"],
+                a.o_payment_submit_button,
+                button.o_payment_submit_button,
+                #o_payment_form_pay,
+                .o_portal_pay,
+                .o_portal_pay_button,
+                [name="o_payment_form"] {
+                    display: none !important;
+                }
+
+                /* ── Expand document column to full width ───────────────── */
+                .o_portal_sidebar .row > div:last-child,
+                .o_portal_sidebar .row > div.col-lg,
+                .o_portal_sidebar .row > div.col-12.col-lg {
+                    flex: 0 0 100% !important;
+                    max-width: 100% !important;
+                    width: 100% !important;
+                }
+            </style>
+        </xpath>
+    </template>
+
+</odoo>

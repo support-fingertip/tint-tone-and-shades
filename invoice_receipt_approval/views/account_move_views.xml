@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="view_move_form_inherit_inv_receipt_approval" model="ir.ui.view">
+            <field name="name">account.move.form.inherit.inv.receipt.approval</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_form"/>
+            <field name="arch" type="xml">
+
+                <!--
+                    Two action_post buttons in the invoice form:
+                    [1] string="Post"    — journal entries  (move_type == 'entry')
+                    [2] string="Confirm" — invoices/receipts (move_type != 'entry')
+                -->
+                <xpath expr="(//button[@name='action_post'])[1]" position="before">
+                    <field name="inv_receipt_approval_state" invisible="1"/>
+                    <field name="inv_is_associate" invisible="1"/>
+                    <field name="inv_is_account_manager" invisible="1"/>
+                    <field name="inv_approval_required" invisible="1"/>
+
+                    <!-- Invoice user: Submit for Approval — only shown when approval is actually required -->
+                    <button name="action_submit_for_approval" type="object"
+                            string="Submit for Approval" class="btn-primary"
+                            groups="account.group_account_invoice"
+                            invisible="not inv_is_associate or not inv_approval_required or state != 'draft' or inv_receipt_approval_state not in ('none', 'rejected') or move_type == 'entry'"/>
+
+                    <!-- Manager: Approve only when an associate has submitted the document -->
+                    <button name="action_approve_invoice" type="object"
+                            string="Approve" class="btn-success"
+                            invisible="not inv_is_account_manager or inv_receipt_approval_state != 'submitted' or move_type == 'entry'"
+                            groups="account.group_account_manager"/>
+
+                    <!-- Admin: Reject (opens remark wizard) -->
+                    <button name="action_reject_invoice" type="object"
+                            string="Reject" class="btn-danger"
+                            invisible="not inv_is_account_manager or inv_receipt_approval_state != 'submitted' or move_type == 'entry'"
+                            groups="account.group_account_manager"/>
+                </xpath>
+
+                <!--
+                    Hide the Confirm button for associates when approval is required and not yet approved,
+                    and for everyone while the document is in the submitted state.
+                -->
+                <xpath expr="(//button[@name='action_post'])[2]" position="attributes">
+                    <attribute name="invisible">hide_post_button or move_type == 'entry' or display_inactive_currency_warning or (inv_is_associate and inv_approval_required and inv_receipt_approval_state != 'approved') or inv_receipt_approval_state == 'submitted'</attribute>
+                </xpath>
+
+                <!-- Status banners -->
+                <xpath expr="//div[hasclass('oe_title')]" position="before">
+                    <div class="alert alert-warning text-center" role="alert"
+                         invisible="inv_receipt_approval_state != 'submitted'">
+                        <strong>Awaiting Approval</strong> — Submitted for approval. An administrator must approve before posting.
+                    </div>
+                    <div class="alert alert-danger" role="alert"
+                         invisible="inv_receipt_approval_state != 'rejected'">
+                        <strong>Rejected</strong><br/>
+                        <field name="inv_receipt_rejection_reason" readonly="1" nolabel="1"/>
+                    </div>
+                    <div class="alert alert-success text-center" role="alert"
+                         invisible="inv_receipt_approval_state != 'approved'">
+                        <strong>Approved</strong> — This document has been approved and posted.
+                    </div>
+                </xpath>
+
+            </field>
+        </record>
+
+        <!-- Invoice / Bill list view — highlight submitted rows + To Approve button -->
+        <record id="view_invoice_tree_inherit_inv_receipt_approval" model="ir.ui.view">
+            <field name="name">account.invoice.tree.inherit.inv.receipt.approval</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_invoice_tree"/>
+            <field name="arch" type="xml">
+
+                <!-- Colour submitted rows in amber -->
+                <xpath expr="//list" position="attributes">
+                    <attribute name="decoration-warning">inv_receipt_approval_state == 'submitted'</attribute>
+                </xpath>
+
+                <!-- Approval state field + "To Approve" button before the payment status badge -->
+                <xpath expr="//field[@name='status_in_payment']" position="before">
+                    <field name="inv_receipt_approval_state" column_invisible="1"/>
+                    <button name="action_approve_invoice" type="object"
+                            string="To Approve" class="btn-warning"
+                            invisible="inv_receipt_approval_state != 'submitted'"
+                            groups="account.group_account_manager"/>
+                </xpath>
+
+            </field>
+        </record>
+
+        <!-- "Pending Approval" filter in the invoice search view -->
+        <record id="view_account_move_filter_inherit_inv_receipt_approval" model="ir.ui.view">
+            <field name="name">account.move.search.inherit.inv.receipt.approval</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_account_move_filter"/>
+            <field name="arch" type="xml">
+                <xpath expr="//filter[@name='posted']" position="after">
+                    <separator/>
+                    <filter string="Pending Approval" name="inv_pending_approval"
+                            domain="[('inv_receipt_approval_state', '=', 'submitted')]"
+                            groups="account.group_account_manager"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

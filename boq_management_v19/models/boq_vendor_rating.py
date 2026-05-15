@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from markupsafe import Markup, escape
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 
@@ -13,7 +14,7 @@ class BoqVendorRating(models.Model):
     purchase_order_id = fields.Many2one(
         comodel_name='purchase.order',
         string='Purchase Order',
-        required=True,
+        required=False,
         ondelete='cascade',
         index=True,
     )
@@ -143,14 +144,57 @@ class BoqVendorRating(models.Model):
             pass
         return res
 
+    def action_save_and_close(self):
+        """Save the rating and close.
+
+        From the vendor master (show_rating_tab in context): navigate to the
+        partner form so the rating list and stats reload fresh from DB.
+        From a PO dialog: just close — user stays on the PO.
+        """
+        if self.env.context.get('show_rating_tab') and self.partner_id:
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'res.partner',
+                'res_id': self.partner_id.id,
+                'view_mode': 'form',
+                'target': 'current',
+            }
+        return {'type': 'ir.actions.act_window_close'}
+
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
         for rec in records:
-            rec.purchase_order_id.message_post(
-                body=_('Vendor rated: %s/5 — %s') % (
-                    rec.rating, rec.comments or _('No comment.')
-                ),
-                subtype_xmlid='mail.mt_note',
-            )
+            rating_label = dict(rec._fields['rating'].selection).get(rec.rating, rec.rating)
+            body = Markup('<b>Vendor Rated: %s / 5</b>') % rating_label
+            if rec.comments:
+                body += Markup('<br/>') + escape(rec.comments)
+            if rec.partner_id:
+                rec.partner_id.message_post(body=body, subtype_xmlid='mail.mt_note')
+            if rec.purchase_order_id:
+                rec.purchase_order_id.message_post(body=body, subtype_xmlid='mail.mt_note')
         return records
+
+    def write(self, vals):
+        before = {
+            rec.id: {'rating': rec.rating, 'comments': rec.comments}
+            for rec in self
+        }
+        result = super().write(vals)
+        for rec in self:
+            b = before.get(rec.id, {})
+            msgs = []
+            if 'rating' in vals and b.get('rating') != rec.rating:
+                sel = dict(rec._fields['rating'].selection)
+                old_lbl = sel.get(b.get('rating'), b.get('rating') or '—')
+                new_lbl = sel.get(rec.rating, rec.rating or '—')
+                msgs.append(Markup('Rating updated: <b>%s → %s</b> / 5') % (old_lbl, new_lbl))
+            if 'comments' in vals and b.get('comments') != rec.comments:
+                msgs.append(Markup('Comments updated: %s') % escape(rec.comments or '(cleared)'))
+            if msgs:
+                body = Markup('<br/>').join(msgs)
+                if rec.partner_id:
+                    rec.partner_id.message_post(body=body, subtype_xmlid='mail.mt_note')
+                if rec.purchase_order_id:
+                    rec.purchase_order_id.message_post(body=body, subtype_xmlid='mail.mt_note')
+        return result

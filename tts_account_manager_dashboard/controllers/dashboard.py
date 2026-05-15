@@ -1,0 +1,323 @@
+# -*- coding: utf-8 -*-
+from odoo import http
+from odoo.http import request
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
+
+class AccountManagerDashboardController(http.Controller):
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Main entry-point — returns all widget data in one call
+    # ─────────────────────────────────────────────────────────────────────────
+    @http.route("/tts/account/dashboard/data", type="json", auth="user")
+    def get_dashboard_data(self):
+        if not request.env.user.has_group("account.group_account_manager"):
+            return {"error": "Access denied"}
+
+        return {
+            "revenue": self._monthly_revenue(),
+            "overheads": self._monthly_overheads(),
+            "office_expenses": self._office_expenses_by_category(),
+            "pending_approvals": self._pending_approvals(),
+            "vendor_payments": self._vendor_payment_requests(),
+            "summary": self._summary_kpis(),
+        }
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Widget 1 — Monthly Revenue Collection (last 12 months)
+    # Source : posted customer invoices / credit-notes
+    # ─────────────────────────────────────────────────────────────────────────
+    def _monthly_revenue(self):
+        today = datetime.today()
+        months = []
+        for i in range(11, -1, -1):
+            start = (today - relativedelta(months=i)).replace(day=1)
+            end = start + relativedelta(months=1) - relativedelta(days=1)
+
+            moves = request.env["account.move"].sudo().search([
+                ("move_type", "in", ["out_invoice", "out_refund"]),
+                ("state", "=", "posted"),
+                ("invoice_date", ">=", start.strftime("%Y-%m-%d")),
+                ("invoice_date", "<=", end.strftime("%Y-%m-%d")),
+            ])
+
+            total = sum(
+                m.amount_total if m.move_type == "out_invoice" else -m.amount_total
+                for m in moves
+            )
+            months.append({
+                "month": start.strftime("%b %Y"),
+                "month_short": start.strftime("%b"),
+                "year": start.strftime("%Y"),
+                "amount": total,
+                "count": len(moves),
+            })
+        return months
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Widget 2 — Monthly Overheads (last 12 months)
+    # Source : posted vendor bills / refunds — net overhead spend
+    # ─────────────────────────────────────────────────────────────────────────
+    def _monthly_overheads(self):
+        today = datetime.today()
+        months = []
+        for i in range(11, -1, -1):
+            start = (today - relativedelta(months=i)).replace(day=1)
+            end = start + relativedelta(months=1) - relativedelta(days=1)
+
+            moves = request.env["account.move"].sudo().search([
+                ("move_type", "in", ["in_invoice", "in_refund"]),
+                ("state", "=", "posted"),
+                ("invoice_date", ">=", start.strftime("%Y-%m-%d")),
+                ("invoice_date", "<=", end.strftime("%Y-%m-%d")),
+            ])
+
+            total = sum(
+                m.amount_total if m.move_type == "in_invoice" else -m.amount_total
+                for m in moves
+            )
+            months.append({
+                "month": start.strftime("%b %Y"),
+                "month_short": start.strftime("%b"),
+                "year": start.strftime("%Y"),
+                "amount": total,
+                "count": len(moves),
+            })
+        return months
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Widget 3 — Monthly Office Expenses & Maintenance — categorised (YTD)
+    # Source : account.move.line on expense-type accounts, grouped by account
+    # Also returns a monthly breakdown for the trend bar
+    # ─────────────────────────────────────────────────────────────────────────
+    def _office_expenses_by_category(self):
+        today = datetime.today()
+        year_start = today.replace(month=1, day=1)
+
+        lines = request.env["account.move.line"].sudo().search([
+            ("move_id.state", "=", "posted"),
+            ("move_id.move_type", "in", ["in_invoice", "in_refund"]),
+            ("move_id.invoice_date", ">=", year_start.strftime("%Y-%m-%d")),
+            ("account_id.account_type", "in", [
+                "expense",
+                "expense_depreciation",
+                "expense_direct_cost",
+            ]),
+        ])
+
+        # Category breakdown
+        by_account = {}
+        for line in lines:
+            key = line.account_id.name or "Unknown"
+            net = line.debit - line.credit
+            by_account[key] = by_account.get(key, 0.0) + net
+
+        # Keep only positive amounts (actual expenses)
+        by_account = {k: v for k, v in by_account.items() if v > 0}
+        total = sum(by_account.values()) or 1.0
+
+        categories = sorted(
+            [
+                {
+                    "category": name,
+                    "amount": round(amount, 2),
+                    "percentage": round(amount / total * 100, 1),
+                }
+                for name, amount in by_account.items()
+            ],
+            key=lambda x: x["amount"],
+            reverse=True,
+        )[:12]
+
+        # Monthly trend (last 12 months) — total expense per month
+        monthly = []
+        for i in range(11, -1, -1):
+            start = (today - relativedelta(months=i)).replace(day=1)
+            end = start + relativedelta(months=1) - relativedelta(days=1)
+
+            month_lines = request.env["account.move.line"].sudo().search([
+                ("move_id.state", "=", "posted"),
+                ("move_id.move_type", "in", ["in_invoice", "in_refund"]),
+                ("move_id.invoice_date", ">=", start.strftime("%Y-%m-%d")),
+                ("move_id.invoice_date", "<=", end.strftime("%Y-%m-%d")),
+                ("account_id.account_type", "in", [
+                    "expense",
+                    "expense_depreciation",
+                    "expense_direct_cost",
+                ]),
+            ])
+            total_month = sum(max(l.debit - l.credit, 0) for l in month_lines)
+            monthly.append({
+                "month": start.strftime("%b %Y"),
+                "month_short": start.strftime("%b"),
+                "amount": round(total_month, 2),
+            })
+
+        return {"categories": categories, "monthly": monthly}
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Widget 4 — Pending Approval Requests
+    # Source : invoices / bills / receipts / journal entries submitted by
+    #          associates via the invoice_receipt_approval module.
+    # ─────────────────────────────────────────────────────────────────────────
+    def _pending_approvals(self):
+        items = []
+
+        AccountMove = request.env["account.move"].sudo()
+        if "inv_receipt_approval_state" not in AccountMove._fields:
+            return {"count": 0, "items": items}
+
+        type_label = {
+            "in_invoice": "Vendor Bill",
+        }
+        moves = AccountMove.search(
+            [
+                ("inv_receipt_approval_state", "=", "submitted"),
+                ("move_type", "in", list(type_label.keys())),
+            ],
+            order="create_date desc",
+            limit=60,
+        )
+        for move in moves:
+            items.append({
+                "type": type_label.get(move.move_type, "Move"),
+                "name": move.name or "Draft",
+                "requester": (
+                    move.invoice_user_id.name
+                    or move.create_uid.name
+                    or ""
+                ),
+                "partner": move.partner_id.name or "",
+                "amount_total": round(move.amount_total, 2),
+                "currency_symbol": move.currency_id.symbol or "",
+                "submitted_date": (
+                    move.create_date.strftime("%Y-%m-%d")
+                    if move.create_date else ""
+                ),
+                "current_approver": "",
+                "id": move.id,
+                "model": "account.move",
+            })
+
+        # Expense reports submitted by associates awaiting manager approval
+        ExpenseSheet = request.env.get("hr.expense.sheet")
+        if ExpenseSheet is not None:
+            sheets = ExpenseSheet.sudo().search(
+                [("state", "=", "submit")],
+                order="create_date desc",
+                limit=60,
+            )
+            for sheet in sheets:
+                items.append({
+                    "type": "Expense Report",
+                    "name": sheet.name or "Draft",
+                    "requester": (
+                        sheet.employee_id.name
+                        or sheet.create_uid.name
+                        or ""
+                    ),
+                    "partner": "",
+                    "amount_total": round(sheet.total_amount, 2),
+                    "currency_symbol": sheet.currency_id.symbol or "",
+                    "submitted_date": (
+                        sheet.create_date.strftime("%Y-%m-%d")
+                        if sheet.create_date else ""
+                    ),
+                    "current_approver": "",
+                    "id": sheet.id,
+                    "model": "hr.expense.sheet",
+                })
+
+        return {"count": len(items), "items": items}
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Widget 5 — Vendor Payment Requests (pending vendor bills only)
+    # Source : posted vendor bills with payment_state in ('not_paid','partial')
+    # ─────────────────────────────────────────────────────────────────────────
+    def _vendor_payment_requests(self):
+        items = []
+        today_date = datetime.today().date()
+
+        moves = request.env["account.move"].sudo().search(
+            [
+                ("move_type", "=", "in_invoice"),
+                ("state", "=", "posted"),
+                ("payment_state", "in", ["not_paid", "partial"]),
+            ],
+            order="invoice_date_due asc",
+            limit=60,
+        )
+        for move in moves:
+            due = move.invoice_date_due
+            items.append({
+                "type": "Vendor Bill",
+                "name": move.name,
+                "vendor": move.partner_id.name or "",
+                "amount_total": round(move.amount_total, 2),
+                "amount_residual": round(move.amount_residual, 2),
+                "currency_symbol": move.currency_id.symbol or "",
+                "invoice_date": move.invoice_date.strftime("%Y-%m-%d") if move.invoice_date else "",
+                "due_date": due.strftime("%Y-%m-%d") if due else "",
+                "overdue": bool(due and due < today_date),
+                "payment_state": move.payment_state,
+                "id": move.id,
+                "model": "account.move",
+            })
+
+        return {"count": len(items), "items": items}
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Summary KPIs — top strip cards
+    # ─────────────────────────────────────────────────────────────────────────
+    def _summary_kpis(self):
+        today = datetime.today()
+        ytd_start = today.replace(month=1, day=1).strftime("%Y-%m-%d")
+
+        # YTD Revenue
+        rev_moves = request.env["account.move"].sudo().search([
+            ("move_type", "in", ["out_invoice", "out_refund"]),
+            ("state", "=", "posted"),
+            ("invoice_date", ">=", ytd_start),
+        ])
+        ytd_revenue = sum(
+            m.amount_total if m.move_type == "out_invoice" else -m.amount_total
+            for m in rev_moves
+        )
+
+        # YTD Expenses
+        exp_moves = request.env["account.move"].sudo().search([
+            ("move_type", "in", ["in_invoice", "in_refund"]),
+            ("state", "=", "posted"),
+            ("invoice_date", ">=", ytd_start),
+        ])
+        ytd_expenses = sum(
+            m.amount_total if m.move_type == "in_invoice" else -m.amount_total
+            for m in exp_moves
+        )
+
+        # Outstanding payables (residual on posted vendor bills)
+        bills = request.env["account.move"].sudo().search([
+            ("move_type", "=", "in_invoice"),
+            ("state", "=", "posted"),
+            ("payment_state", "in", ["not_paid", "partial"]),
+        ])
+        outstanding_payables = sum(b.amount_residual for b in bills)
+
+        # Outstanding receivables
+        inv = request.env["account.move"].sudo().search([
+            ("move_type", "=", "out_invoice"),
+            ("state", "=", "posted"),
+            ("payment_state", "in", ["not_paid", "partial"]),
+        ])
+        outstanding_receivables = sum(i.amount_residual for i in inv)
+
+        currency = request.env.company.currency_id
+        return {
+            "ytd_revenue": round(ytd_revenue, 2),
+            "ytd_expenses": round(ytd_expenses, 2),
+            "net_profit": round(ytd_revenue - ytd_expenses, 2),
+            "outstanding_payables": round(outstanding_payables, 2),
+            "outstanding_receivables": round(outstanding_receivables, 2),
+            "currency_symbol": currency.symbol or "",
+        }

@@ -86,42 +86,25 @@ class PurchaseOrderBoqExtend(models.Model):
         string='Margin %',
         compute='_compute_po_margin',
         store=False,
-        digits='Discount',
+        digits=(16, 4),
         help='Average margin % computed from BOQ lines assigned to this vendor.',
     )
 
-    @api.depends('order_line', 'order_line.price_unit', 'order_line.product_id',
-                 'order_line.product_qty')
+    @api.depends(
+        'order_line',
+        'order_line.margin_percent',
+        'order_line.display_type',
+    )
     def _compute_po_margin(self):
         for order in self:
-            if order.boq_id:
-                total_sell = 0.0
-                total_cost = 0.0
-                for line in order.boq_id.line_ids:
-                    if order.partner_id in line.vendor_ids:
-                        sell = line.unit_price * line.qty * (
-                            1.0 - (line.discount or 0.0) / 100.0
-                        )
-                        cost = (line.cost_price or 0.0) * line.qty
-                        total_sell += sell
-                        total_cost += cost
-                if total_sell > 0:
-                    order.margin_percent = (
-                        (total_sell - total_cost) / total_sell * 100.0
-                    )
-                    continue
-          
-            total_std = 0.0
-            total_po = 0.0
-            for line in order.order_line:
-                std = (line.product_id.standard_price or 0.0) * line.product_qty
-                po = line.price_unit * line.product_qty
-                total_std += std
-                total_po += po
-            order.margin_percent = (
-                (total_std - total_po) / total_std * 100.0
-            ) if total_std > 0 else 0.0
-
+            lines = order.order_line.filtered(
+                lambda l: not l.display_type and not getattr(l, 'is_downpayment', False)
+            )
+            if lines:
+                avg = sum(lines.mapped('margin_percent')) / len(lines)
+                order.margin_percent = avg / 100
+            else:
+                order.margin_percent = 0.0
    
     partner_type = fields.Selection(
         related='partner_id.partner_type',
@@ -141,6 +124,11 @@ class PurchaseOrderBoqExtend(models.Model):
         compute='_compute_vendor_rating_id',
         store=False,
     )
+    vendor_rating_int = fields.Integer(
+        string='Rating',
+        compute='_compute_vendor_rating_id',
+        store=False,
+    )
 
     @api.depends('state', 'picking_ids', 'picking_ids.state')
     def _compute_show_rate_vendor(self):
@@ -152,13 +140,14 @@ class PurchaseOrderBoqExtend(models.Model):
             )
             order.show_rate_vendor = is_purchase and pickings_done
 
-    @api.depends('partner_id')
+    @api.depends('partner_id', 'state')
     def _compute_vendor_rating_id(self):
         for order in self:
             rating = self.env['boq.vendor.rating'].search(
                 [('purchase_order_id', '=', order.id)], limit=1
             )
             order.vendor_rating_id = rating
+            order.vendor_rating_int = rating.rating_int if rating else 0
 
     def action_rate_vendor(self):
         """

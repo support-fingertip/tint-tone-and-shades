@@ -53,7 +53,6 @@
                             <field name="sale_order_count" widget="statinfo"
                                    string="Sale Order"/>
                         </button>
-                        <!-- Task 5: BOQ smart button — create or navigate -->
                         <button name="action_create_boq"
                                 type="object"
                                 class="oe_stat_button"
@@ -105,7 +104,6 @@
                                placeholder="No client notes"/>
                     </group>
 
-                    <!-- Task 2: Error reason — always visible when set -->
                     <group invisible="not error_reason" string="Failure Details">
                         <field name="error_reason" readonly="1" widget="text"
                                string="Error Reason"/>
@@ -151,7 +149,6 @@
                             </field>
                         </page>
 
-                        <!-- Task 1: Raw API response bodies for traceability -->
                         <page string="API Responses" name="api_responses">
                             <group>
                                 <field name="api_response_body" readonly="1"

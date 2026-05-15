@@ -364,6 +364,10 @@
                                   class="badge boq_badge_neutral ms-1 small">
                                 <t t-esc="state.stats.rfq_draft"/> pending
                             </span>
+                            <span t-if="state.stats.rfq_to_approve"
+                                  class="badge bg-warning text-dark ms-1 small">
+                                <t t-esc="state.stats.rfq_to_approve"/> to approve
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -572,7 +576,7 @@
 
                                     </div>
 
-s                                    <t t-if="vs.project_names and vs.project_names !== '—'">
+                                    <t t-if="vs.project_names and vs.project_names !== '—'">
                                         <div class="boq_vc_projects text-muted small mt-2 text-truncate">
                                             <i class="fa fa-briefcase me-1"/>
                                             <t t-esc="vs.project_names"/>

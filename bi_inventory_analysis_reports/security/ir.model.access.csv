@@ -1,0 +1,13 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_bi_stock_inventory_report_user,bi.stock.inventory.report user,model_bi_stock_inventory_report,stock.group_stock_user,1,0,0,0
+access_bi_stock_inventory_report_manager,bi.stock.inventory.report manager,model_bi_stock_inventory_report,stock.group_stock_manager,1,0,0,0
+access_bi_stock_move_report_user,bi.stock.move.report user,model_bi_stock_move_report,stock.group_stock_user,1,0,0,0
+access_bi_stock_move_report_manager,bi.stock.move.report manager,model_bi_stock_move_report,stock.group_stock_manager,1,0,0,0
+access_bi_stock_aging_report_user,bi.stock.aging.report user,model_bi_stock_aging_report,stock.group_stock_user,1,0,0,0
+access_bi_stock_aging_report_manager,bi.stock.aging.report manager,model_bi_stock_aging_report,stock.group_stock_manager,1,0,0,0
+access_bi_stock_valuation_report_user,bi.stock.valuation.report user,model_bi_stock_valuation_report,stock.group_stock_user,1,0,0,0
+access_bi_stock_valuation_report_manager,bi.stock.valuation.report manager,model_bi_stock_valuation_report,stock.group_stock_manager,1,0,0,0
+access_bi_stock_dead_report_user,bi.stock.dead.report user,model_bi_stock_dead_report,stock.group_stock_user,1,0,0,0
+access_bi_stock_dead_report_manager,bi.stock.dead.report manager,model_bi_stock_dead_report,stock.group_stock_manager,1,0,0,0
+access_bi_stock_expiry_report_user,bi.stock.expiry.report user,model_bi_stock_expiry_report,stock.group_stock_user,1,0,0,0
+access_bi_stock_expiry_report_manager,bi.stock.expiry.report manager,model_bi_stock_expiry_report,stock.group_stock_manager,1,0,0,0

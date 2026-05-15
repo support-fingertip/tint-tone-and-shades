@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         ALL INVENTORY ANALYSIS REPORTS — Standalone Application
+         Top-level app with its own icon in the Apps grid.
+    ═══════════════════════════════════════════════════════════════════════ -->
+
+    <!-- Top-level application menu (appears in the apps grid with icon) -->
+    <menuitem
+        id="menu_bi_inventory_analysis_app"
+        name="Inventory Analysis Reports"
+        web_icon="bi_inventory_analysis_reports,static/description/icon.png"
+        sequence="55"/>
+
+    <!-- Navbar category "Reports" -->
+    <menuitem
+        id="menu_bi_inventory_analysis_root"
+        name="Reports"
+        parent="menu_bi_inventory_analysis_app"
+        sequence="10"/>
+
+    <!-- 1. Current Stock Analysis -->
+    <menuitem
+        id="menu_bi_stock_inventory_report"
+        name="Current Stock Analysis"
+        parent="menu_bi_inventory_analysis_root"
+        action="action_bi_stock_inventory_report"
+        sequence="10"/>
+
+    <!-- 2. Stock Movement Analysis -->
+    <menuitem
+        id="menu_bi_stock_move_report"
+        name="Stock Movement Analysis"
+        parent="menu_bi_inventory_analysis_root"
+        action="action_bi_stock_move_report"
+        sequence="20"/>
+
+    <!-- 3. Inventory Aging Analysis -->
+    <menuitem
+        id="menu_bi_stock_aging_report"
+        name="Inventory Aging Analysis"
+        parent="menu_bi_inventory_analysis_root"
+        action="action_bi_stock_aging_report"
+        sequence="30"/>
+
+    <!-- 4. Stock Valuation Report -->
+    <menuitem
+        id="menu_bi_stock_valuation_report"
+        name="Stock Valuation Report"
+        parent="menu_bi_inventory_analysis_root"
+        action="action_bi_stock_valuation_report"
+        sequence="40"/>
+
+    <!-- 5. Dead / Slow-Moving Stock -->
+    <menuitem
+        id="menu_bi_stock_dead_report"
+        name="Dead / Slow-Moving Stock"
+        parent="menu_bi_inventory_analysis_root"
+        action="action_bi_stock_dead_report"
+        sequence="50"/>
+
+    <!-- 6. Stock Expiry Report -->
+    <menuitem
+        id="menu_bi_stock_expiry_report"
+        name="Stock Expiry Report"
+        parent="menu_bi_inventory_analysis_root"
+        action="action_bi_stock_expiry_report"
+        sequence="60"/>
+
+</odoo>

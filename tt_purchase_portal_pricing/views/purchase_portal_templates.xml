@@ -14,12 +14,12 @@
         <xpath expr="//div[@t-field='line.price_unit']/.." position="replace">
             <td t-if="display_price_and_taxes" t-attf-class="text-end #{'d-none d-sm-table-cell' if report_type == 'html' else ''}">
                 <t t-if="order.state in ('draft', 'sent')">
-                    <input type="number"
+                    <input type="text"
+                        inputmode="decimal"
+                        pattern="[0-9]*\.?[0-9]*"
                         class="form-control form-control-sm text-end o_purchase_portal_price_input"
                         t-att-data-line-id="line.id"
                         t-att-value="line.price_unit"
-                        step="0.01"
-                        min="0"
                         style="width: 120px; display: inline-block;"/>
                 </t>
                 <t t-else="">
@@ -60,6 +60,21 @@
             <attribute name="t-if">1</attribute>
         </xpath>
 
+        <!-- Add Submit button at the bottom (only visible when RFQ state is 'sent') -->
+        <xpath expr="//div[@id='total']" position="after">
+            <t t-if="order.state == 'sent'">
+                <div class="row justify-content-end mt-3">
+                    <div class="col-12 col-md-4 text-end">
+                        <form t-attf-action="/my/purchase/#{order.id}/submit" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-paper-plane me-1"/> Submit
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </t>
+        </xpath>
 
     </template>
 

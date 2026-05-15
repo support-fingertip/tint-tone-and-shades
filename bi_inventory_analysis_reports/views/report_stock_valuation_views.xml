@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════
+         STOCK VALUATION REPORT
+    ═══════════════════════════════════════════════════ -->
+
+    <!-- List View -->
+    <record id="view_bi_stock_valuation_list" model="ir.ui.view">
+        <field name="name">bi.stock.valuation.report.list</field>
+        <field name="model">bi.stock.valuation.report</field>
+        <field name="arch" type="xml">
+            <list string="Stock Valuation Report" create="0" edit="0" delete="0" export_xlsx="1"
+                  default_order="date desc">
+                <field name="date" optional="show"/>
+                <field name="product_id" optional="show"/>
+                <field name="categ_id" optional="show"/>
+                <field name="movement_type" optional="show"
+                       decoration-success="movement_type=='stock_in'"
+                       decoration-danger="movement_type=='stock_out'"/>
+                <field name="description" optional="show"/>
+                <field name="picking_type_id" optional="show"/>
+                <field name="location_id" optional="hide"/>
+                <field name="location_dest_id" optional="hide"/>
+                <field name="partner_id" optional="show"/>
+                <field name="uom_id" optional="hide" string="UoM"/>
+                <field name="quantity" optional="show" sum="Total Quantity"/>
+                <field name="unit_cost" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="total_value" optional="show" sum="Total Value" widget="monetary"/>
+                <field name="remaining_qty" optional="show" sum="Remaining Qty"/>
+                <field name="remaining_value" optional="show" sum="Remaining Value" widget="monetary"/>
+                <field name="date_month" optional="hide"/>
+                <field name="company_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Pivot View -->
+    <record id="view_bi_stock_valuation_pivot" model="ir.ui.view">
+        <field name="name">bi.stock.valuation.report.pivot</field>
+        <field name="model">bi.stock.valuation.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Stock Valuation Report" disable_linking="True">
+                <field name="date_month" type="col"/>
+                <field name="categ_id" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="quantity" type="measure"/>
+                <field name="total_value" type="measure"/>
+                <field name="remaining_qty" type="measure"/>
+                <field name="remaining_value" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Graph View -->
+    <record id="view_bi_stock_valuation_graph" model="ir.ui.view">
+        <field name="name">bi.stock.valuation.report.graph</field>
+        <field name="model">bi.stock.valuation.report</field>
+        <field name="arch" type="xml">
+            <graph string="Stock Valuation Report" type="line">
+                <field name="date_month" type="row"/>
+                <field name="movement_type" type="col"/>
+                <field name="total_value" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_bi_stock_valuation_search" model="ir.ui.view">
+        <field name="name">bi.stock.valuation.report.search</field>
+        <field name="model">bi.stock.valuation.report</field>
+        <field name="arch" type="xml">
+            <search string="Stock Valuation Report">
+                <field name="product_id"/>
+                <field name="categ_id"/>
+                <field name="partner_id"/>
+                <field name="picking_type_id" string="Operation Type"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+
+                <filter string="Stock In" name="filter_in"
+                    domain="[('movement_type','=','stock_in')]"/>
+                <filter string="Stock Out" name="filter_out"
+                    domain="[('movement_type','=','stock_out')]"/>
+                <separator/>
+                <filter string="Month" name="filter_date" date="date_month"/>
+
+                <group>
+                    <filter string="Product" name="group_product"
+                        context="{'group_by': 'product_id'}"/>
+                    <filter string="Product Category" name="group_categ"
+                        context="{'group_by': 'categ_id'}"/>
+                    <filter string="Direction" name="group_movement_type"
+                        context="{'group_by': 'movement_type'}"/>
+                    <filter string="Operation Type" name="group_picking_type"
+                        context="{'group_by': 'picking_type_id'}"/>
+                    <filter string="Partner" name="group_partner"
+                        context="{'group_by': 'partner_id'}"/>
+                    <filter string="Month" name="group_month"
+                        context="{'group_by': 'date_month'}"/>
+                    <filter string="Company" name="group_company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Window Action -->
+    <record id="action_bi_stock_valuation_report" model="ir.actions.act_window">
+        <field name="name">Stock Valuation Report</field>
+        <field name="res_model">bi.stock.valuation.report</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="view_bi_stock_valuation_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No valuation data found
+            </p>
+            <p>This report shows stock valuation history (AVCO / FIFO / Standard costing). Make sure costing method is properly configured.</p>
+        </field>
+    </record>
+
+</odoo>

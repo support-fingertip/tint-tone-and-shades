@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="res_config_settings_view_form_inv_receipt_approval" model="ir.ui.view">
+            <field name="name">res.config.settings.view.form.inherit.inv.receipt.approval</field>
+            <field name="model">res.config.settings</field>
+            <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+            <field name="arch" type="xml">
+
+                <xpath expr="//block[@id='account_vendor_bills']" position="after">
+                    <block title="Invoice &amp; Receipt Approval" id="inv_receipt_approval_settings" name="inv_receipt_approval_setting_container">
+
+                        <setting id="inv_invoice_approval"
+                                 company_dependent="1"
+                                 help="Require Associate users to submit invoices for approval when the total exceeds the minimum amount.">
+                            <field name="invoice_approval_active" string="Invoice Approval"/>
+                            <div class="content-group" invisible="not invoice_approval_active">
+                                <div class="row mt16">
+                                    <label for="invoice_approval_amount" class="col-lg-4 o_light_label" string="Minimum Amount"/>
+                                    <field name="invoice_approval_amount"/>
+                                </div>
+                            </div>
+                        </setting>
+
+                        <setting id="inv_receipt_approval"
+                                 company_dependent="1"
+                                 help="Require Associate users to submit receipts for approval when the total exceeds the minimum amount.">
+                            <field name="receipt_approval_active" string="Receipt Approval"/>
+                            <div class="content-group" invisible="not receipt_approval_active">
+                                <div class="row mt16">
+                                    <label for="receipt_approval_amount" class="col-lg-4 o_light_label" string="Minimum Amount"/>
+                                    <field name="receipt_approval_amount"/>
+                                </div>
+                            </div>
+                        </setting>
+
+                    </block>
+                </xpath>
+
+            </field>
+        </record>
+
+    </data>
+</odoo>

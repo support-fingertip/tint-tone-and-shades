@@ -94,6 +94,31 @@ class PurchaseOrder(models.Model):
 
     def button_confirm(self):
         for order in self:
+            # ── Warn if any line has qty_on_hand=0 or unit_price=0 ──
+            warning_parts = []
+
+            zero_qty_lines = self.order_line.filtered(
+                lambda l: not l.display_type
+                          and not getattr(l, 'is_downpayment', False)
+                          and l.product_qty == 0
+            )
+
+            if zero_qty_lines:
+                warning_parts.append(_('Product quantity cannot be zero.'))
+
+            zero_price_lines = self.order_line.filtered(
+                lambda l: not l.display_type
+                          and not getattr(l, 'is_downpayment', False)
+                          and l.product_qty > 0
+                          and l.price_unit == 0.0
+            )
+            if zero_price_lines:
+                warning_parts.append(_('product have 0 unit price.'))
+
+            if warning_parts:
+                raise UserError(
+                    '\n'.join(warning_parts) + '\n\n' + _('Please verify before requesting margin approval.'))
+
             if order.has_margin_below_threshold and order.margin_approval_status not in ('approved',):
                 raise UserError(_(
                     "Cannot confirm this order. Some product margins are below the threshold. "
@@ -124,6 +149,30 @@ class PurchaseOrder(models.Model):
 
     def action_request_margin_approval(self):
         self.ensure_one()
+        # ── Warn if any line has qty_on_hand=0 or unit_price=0 ──
+        warning_parts = []
+
+        zero_qty_lines = self.order_line.filtered(
+            lambda l: not l.display_type
+                      and not getattr(l, 'is_downpayment', False)
+                      and l.product_qty == 0
+        )
+
+        if zero_qty_lines:
+            warning_parts.append(_('Product quantity cannot be zero.'))
+
+        zero_price_lines = self.order_line.filtered(
+            lambda l: not l.display_type
+                      and not getattr(l, 'is_downpayment', False)
+                      and l.product_qty > 0
+                      and l.price_unit == 0.0
+        )
+        if zero_price_lines:
+            warning_parts.append(_('product have 0 unit price.'))
+
+        if warning_parts:
+            raise UserError('\n'.join(warning_parts) + '\n\n' + _('Please verify before requesting margin approval.'))
+
         if not self.has_margin_below_threshold:
             raise UserError(_("All margins are within acceptable thresholds. No approval needed."))
 

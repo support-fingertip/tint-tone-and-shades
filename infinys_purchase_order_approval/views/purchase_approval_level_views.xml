@@ -32,7 +32,7 @@
                                 <field name="sequence"/>
                                 <field name="user_ids" widget="many2many_tags"/>
                                 <field name="company_id"/>
-                                <field name="type" readonly="1"/>
+                                <field name="type" readonly="id"/>
                             </group>
                         </group>
                     </sheet>

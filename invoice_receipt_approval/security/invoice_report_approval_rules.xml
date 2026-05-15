@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_user_own_customer_invoice" model="ir.rule">
+        <field name="name">Invoice Users: Own Sales, Purchase and Expense Moves</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="groups" eval="[(4, ref('account.group_account_invoice'))]"/>
+        <field name="domain_force">[
+            '&amp;',
+                '|',
+                    ('move_type', 'in', ['out_invoice', 'out_refund', 'out_receipt', 'in_invoice', 'in_refund', 'in_receipt']),
+                    ('expense_ids', '!=', False),
+                '|',
+                    '|',
+                        ('create_uid', '=', user.id),
+                        ('invoice_user_id', '=', user.id),
+                    ('expense_ids.employee_id.user_id', '=', user.id)
+        ]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="rule_manager_all_account_moves" model="ir.rule">
+        <field name="name">Account Managers: All Account Moves</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="groups" eval="[(4, ref('account.group_account_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="account.account_move_see_all" model="ir.rule">
+        <field name="name">Invoice Users: Own Sales, Purchase and Expense Moves</field>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('account.group_account_manager') else [
+            '&amp;',
+                '|',
+                    ('move_type', 'in', ['out_invoice', 'out_refund', 'out_receipt', 'in_invoice', 'in_refund', 'in_receipt']),
+                    ('expense_ids', '!=', False),
+                '|',
+                    '|',
+                        ('create_uid', '=', user.id),
+                        ('invoice_user_id', '=', user.id),
+                    ('expense_ids.employee_id.user_id', '=', user.id)
+        ]</field>
+    </record>
+
+    <record id="account.account_move_rule_group_invoice" model="ir.rule">
+        <field name="name">Invoice Users: Own Sales, Purchase and Expense Moves</field>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('account.group_account_manager') else [
+            '&amp;',
+                '|',
+                    ('move_type', 'in', ['out_invoice', 'out_refund', 'out_receipt', 'in_invoice', 'in_refund', 'in_receipt']),
+                    ('expense_ids', '!=', False),
+                '|',
+                    '|',
+                        ('create_uid', '=', user.id),
+                        ('invoice_user_id', '=', user.id),
+                    ('expense_ids.employee_id.user_id', '=', user.id)
+        ]</field>
+    </record>
+</odoo>

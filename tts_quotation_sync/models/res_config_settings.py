@@ -20,7 +20,6 @@ _INTERVAL_MAP = {
 class ResConfigSettings(models.TransientModel):
     _inherit = 'res.config.settings'
 
-    # ── Connection settings ────────────────────────────────────────────────
     tts_api_base_url = fields.Char(
         string='API Base URL',
         config_parameter='tts_quotation_sync.api_base_url',
@@ -42,7 +41,6 @@ class ResConfigSettings(models.TransientModel):
         help='Switch before going live',
     )
 
-    # ── Cron / auto-sync settings ──────────────────────────────────────────
     tts_sync_interval = fields.Selection(
         selection=[
             ('5',    'Every 5 minutes'),
@@ -83,15 +81,12 @@ class ResConfigSettings(models.TransientModel):
         help='Notify when PUT returns Failure',
     )
 
-    # Many2one for Default Customer — must use get_values/set_values in Odoo 19
-    # (compute/inverse on TransientModel causes InFailedSqlTransaction on flush)
     tts_default_customer_id = fields.Many2one(
         comodel_name='res.partner',
         string='Default Customer',
         help='Customer placed on auto-created Sale Orders',
     )
 
-    # ── get_values: load Many2one from ir.config_parameter ────────────────
     @api.model
     def get_values(self):
         res = super().get_values()
@@ -104,7 +99,6 @@ class ResConfigSettings(models.TransientModel):
             res['tts_default_customer_id'] = False
         return res
 
-    # ── set_values: persist Many2one + update cron interval ───────────────
     def set_values(self):
         super().set_values()
         self.env['ir.config_parameter'].sudo().set_param(
@@ -123,7 +117,6 @@ class ResConfigSettings(models.TransientModel):
         number, unit = _INTERVAL_MAP.get(interval_key, (15, 'minutes'))
         cron.write({'interval_number': number, 'interval_type': unit})
 
-    # ── Test Connection button ─────────────────────────────────────────────
     def action_test_connection(self):
         base_url = (self.tts_api_base_url or '').rstrip('/')
         api_key = self.tts_api_key or ''
@@ -161,13 +154,13 @@ class ResConfigSettings(models.TransientModel):
         return self._notif('warning', 'Unexpected Response',
                            f'HTTP {resp.status_code}: {resp.text[:200]}')
 
-    # ── Trigger a manual sync from settings ───────────────────────────────
+   
     def action_sync_now(self):
         self.env['tts.quotation']._cron_sync_quotations()
         return self._notif('success', 'Sync Triggered',
                            'Sync completed. Check Sync Logs for details.')
 
-    # ── Navigate to Quotations list ───────────────────────────────────────
+ 
     def action_view_quotations(self):
         return {
             'type': 'ir.actions.act_window',
@@ -177,7 +170,7 @@ class ResConfigSettings(models.TransientModel):
             'target': 'current',
         }
 
-    # ── Navigate to Sync Logs list ────────────────────────────────────────
+    
     def action_view_sync_logs(self):
         return {
             'type': 'ir.actions.act_window',

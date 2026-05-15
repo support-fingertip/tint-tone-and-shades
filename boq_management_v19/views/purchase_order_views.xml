@@ -30,10 +30,17 @@
 
                 <button name="action_rate_vendor" type="object"
                         class="oe_stat_button" icon="fa-star"
-                        invisible="not show_rate_vendor"
-                        string="Rate Vendor"/>
+                        invisible="not show_rate_vendor">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value">
+                            <field name="vendor_rating_int"/>&#160;/ 5
+                        </span>
+                        <span class="o_stat_text">Rating</span>
+                    </div>
+                </button>
 
                 <field name="show_rate_vendor" invisible="1"/>
+                <field name="vendor_rating_int" invisible="1"/>
 
             </xpath>
 
@@ -169,6 +176,7 @@
         <field name="res_model">res.partner</field>
         <field name="view_mode">list,form,kanban</field>
         <field name="domain">[('partner_type', '=', 'vendor')]</field>
+        <field name="context">{'default_partner_type': 'vendor'}</field>
     </record>
 
     <record id="action_supplier_contacts" model="ir.actions.act_window">
@@ -176,6 +184,7 @@
         <field name="res_model">res.partner</field>
         <field name="view_mode">list,form,kanban</field>
         <field name="domain">[('partner_type', '=', 'supplier')]</field>
+        <field name="context">{'default_partner_type': 'supplier'}</field>
     </record>
 
     <menuitem

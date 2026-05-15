@@ -6,7 +6,16 @@ export class PurchasePortalUpdatePrice extends Interaction {
     static selector = ".o_purchase_portal_price_input";
 
     start() {
+        this.el.addEventListener("input", this._onPriceInput.bind(this));
         this.el.addEventListener("change", this._onPriceChange.bind(this));
+    }
+
+    _onPriceInput(ev) {
+        const input = ev.currentTarget;
+        const cleaned = input.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+        if (input.value !== cleaned) {
+            input.value = cleaned;
+        }
     }
 
     _onPriceChange(ev) {
